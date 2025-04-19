@@ -63,6 +63,9 @@ if st.button("在庫数を取得"):
             data["vacancy_count"].append(c if c is not None else 0)
         df = pd.DataFrame(data).set_index("date")
 
+        # ← ここで index を DatetimeIndex に変換
+        df.index = pd.to_datetime(df.index)
+
         # テーブル＆折れ線グラフ
         st.write("### 過去7日間の推移", df)
         st.line_chart(df["vacancy_count"])
@@ -98,4 +101,3 @@ if st.button("在庫数を取得"):
                         )
                     else:
                         st.write("")  # 空セル
-
