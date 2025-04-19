@@ -62,5 +62,33 @@ if st.button("在庫数を取得"):
             data["vacancy_count"].append(c if c is not None else 0)
         df = pd.DataFrame(data).set_index("date")
 
-        st.write("### 過去7日間の推移", df)
-        st.line_chart(df["vacancy_count"])
+# ── カレンダー形式で今月の残室数を表示 ──
+df = df.copy()  # インデックス（日付）を活用するため
+ df["weekday"] = df.index.weekday
+ df["week"]    = (df.index.day - 1 + df["weekday"]) // 7
+
+ st.write("### 今月の空室カレンダー")
+ weeks = df["week"].max() + 1
+ for w in range(weeks):
+     cols = st.columns(7)
+     wk = df[df["week"] == w]
+     for dow in range(7):
+         cell = wk[wk["weekday"] == dow]
+         with cols[dow]:
+             if not cell.empty:
+                day = cell.index.day[0]
+                 val = int(cell["vacancy_count"][0])
+                 # 色の濃淡設定（最大値を基準に）
+                 intensity = min(255, int(255 * val / df["vacancy_count"].max()))
+                 color = f"rgb(255, {255-intensity}, {255-intensity})"
+                 st.markdown(
+                     f"<div style='background:{color};"
+                     " padding:8px; border-radius:4px; text-align:center;'>"
+                     f"<strong>{day}</strong><br><span style='font-size:20px;'>{val}件</span>"
+                     "</div>",
+                     unsafe_allow_html=True
+                 )
+             else:
+                 st.write("")
+
+
