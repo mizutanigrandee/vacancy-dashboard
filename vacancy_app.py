@@ -8,6 +8,9 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import calendar
 
+# --- 0. カレンダーの曜日を日曜始まりに設定 ---
+calendar.setfirstweekday(calendar.SUNDAY)
+
 # --- 1. データ取得ロジック ---
 def fetch_vacancy_count(checkin_date: str) -> int:
     url = (
@@ -57,8 +60,8 @@ def draw_month_html(df: pd.DataFrame, year: int, month: int):
     st.caption("目標進捗率")
     st.progress(progress)
 
-    # カレンダー構造
-    cal = calendar.monthcalendar(year, month)  # 各週ごとに日付リスト（0は空セル）
+    # カレンダー構造（日曜始まり）
+    cal = calendar.monthcalendar(year, month)
     max_val = df["vacancy_count"].max() or 1
 
     html = "<table style='border-collapse: collapse; width: 100%;'>"
@@ -66,7 +69,7 @@ def draw_month_html(df: pd.DataFrame, year: int, month: int):
     weekdays = ['日','月','火','水','木','金','土']
     html += "<tr>"
     for wd in weekdays:
-        html += f"<th style='border:1px solid #ddd; padding:8px; background:#f0f0f0;'>{wd}</th>"
+        html += f"<th style='border:1px solid #ccc; padding:4px; background:#f5f5f5;'>{wd}</th>"
     html += "</tr>"
 
     # 日付セル
@@ -74,16 +77,17 @@ def draw_month_html(df: pd.DataFrame, year: int, month: int):
         html += "<tr>"
         for day in week:
             if day == 0:
-                html += "<td style='border:1px solid #ddd; padding:8px;'></td>"
+                html += "<td style='border:1px solid #ccc; padding:4px; background:#fafafa;'></td>"
             else:
                 val = int(df.loc[pd.Timestamp(year, month, day), 'vacancy_count'])
                 intensity = min(255, int(255 * val / max_val))
                 color = f"rgb(255, {255-intensity}, {255-intensity})"
                 html += (
-                    "<td style='border:1px solid #ddd; padding:8px; vertical-align:top;"
-                    f"background:{color};'>"
-                    f"<strong>{day}</strong><br>"
-                    f"<small>{val}件</small>"
+                    "<td style='border:1px solid #ccc; padding:0; position:relative; height:80px; background:" + color + ";'>"
+                    # 日付を右上に配置
+                    "<div style='position:absolute; top:4px; right:4px; font-size:12px;'>" + str(day) + "</div>"
+                    # 残室数を中央下部に配置
+                    "<div style='position:absolute; bottom:4px; left:50%; transform:translateX(-50%); font-size:14px;'>" + str(val) + "件</div>"
                     "</td>"
                 )
         html += "</tr>"
