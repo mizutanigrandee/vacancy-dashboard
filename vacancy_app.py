@@ -5,15 +5,17 @@ from dateutil.relativedelta import relativedelta
 import calendar
 import time  # レート制限対策
 
-# --- APP_ID の読み込み & デバッグ ---
-APP_ID = st.secrets.get("RAKUTEN_APP_ID", "")
-st.sidebar.write("DEBUG – APP_ID:", APP_ID)
-
-# --- Streamlit ページ設定 ---
+# --- ページ設定は必ず最初に呼び出す ---
 st.set_page_config(
     page_title="空室カレンダー（2か月表示）",
     layout="wide"
 )
+
+# --- APP_ID の読み込み & デバッグ ---
+APP_ID = st.secrets.get("RAKUTEN_APP_ID", "")
+st.sidebar.write("DEBUG – APP_ID:", APP_ID)
+
+# --- Streamlit タイトル ---
 st.title("楽天トラベル 空室カレンダー（2か月表示）")
 
 # --- API 呼び出し関数 ---
@@ -45,6 +47,7 @@ def fetch_vacancy_count(date: dt.date) -> int:
         r.raise_for_status()
         data = r.json()
         count = data.get("pagingInfo", {}).get("recordCount", 0)
+        # デバッグ: recordCount
         st.sidebar.write(f"DEBUG – {date} → recordCount = {count}")
     except Exception as e:
         st.sidebar.write(f"DEBUG – {date} API ERROR: {e}")
