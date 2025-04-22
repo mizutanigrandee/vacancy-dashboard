@@ -32,6 +32,7 @@ def fetch_vacancy_count(date: dt.date) -> int:
     if date < dt.date.today():
         return 0
 
+    # パラメータを組み立て
     params = {
         "applicationId": APP_ID,
         "format": "json",
@@ -40,18 +41,27 @@ def fetch_vacancy_count(date: dt.date) -> int:
         "adultNum": 1,
         "largeClassCode":  "japan",
         "middleClassCode": "osaka",
-        # なんば・心斎橋エリアの smallClassCode を指定
-        "smallClassCode": "osaka_namba_shinsaibashi"
+        "smallClassCode":  "osaka_namba_shinsaibashi"
     }
+    # デバッグ出力: パラメータ
+    st.sidebar.write("DEBUG ▶ params:", params)
+
     url = (
         "https://app.rakuten.co.jp/services/api/"
         "Travel/VacantHotelSearch/20170426"
     )
     try:
         r = requests.get(url, params=params, timeout=10)
+        # デバッグ出力: 実際に送られたURL
+        st.sidebar.write("DEBUG ▶ request URL:", r.request.url)
         r.raise_for_status()
-        return r.json().get("pagingInfo", {}).get("recordCount", 0)
-    except Exception:
+        data = r.json()
+        # デバッグ出力: レスポンス JSON
+        st.sidebar.write("DEBUG ▶ response:", data)
+        return data.get("pagingInfo", {}).get("recordCount", 0)
+    except Exception as e:
+        # デバッグ出力: エラー内容
+        st.sidebar.write("DEBUG ▶ API ERROR:", e)
         return 0
     finally:
         # レート制限回避
