@@ -5,16 +5,9 @@ from dateutil.relativedelta import relativedelta
 import calendar
 import time  # レート制限対策
 
-import streamlit as st
-# すでにこの行がある場合は不要です
-APP_ID = st.secrets["RAKUTEN_APP_ID"]
-
-# ↓ デバッグ用にシークレットの中身をサイドバーに表示
+# --- APP_ID の読み込み & デバッグ ---
+APP_ID = st.secrets.get("RAKUTEN_APP_ID", "")
 st.sidebar.write("DEBUG – APP_ID:", APP_ID)
-
-
-# ① 直書き動作確認用
-APP_ID = "YOUR_APPLICATION_ID_HERE"
 
 # --- Streamlit ページ設定 ---
 st.set_page_config(
@@ -52,8 +45,9 @@ def fetch_vacancy_count(date: dt.date) -> int:
         r.raise_for_status()
         data = r.json()
         count = data.get("pagingInfo", {}).get("recordCount", 0)
-    except Exception:
-        # エラー時はログ出力せず件数を 0 として扱う
+        st.sidebar.write(f"DEBUG – {date} → recordCount = {count}")
+    except Exception as e:
+        st.sidebar.write(f"DEBUG – {date} API ERROR: {e}")
         count = 0
     time.sleep(0.6)
     return count
