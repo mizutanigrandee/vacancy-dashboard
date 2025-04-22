@@ -3,3 +3,5 @@ requests
 beautifulsoup4
 pandas
 jpholiday
+python-dateutil
+jpholiday
