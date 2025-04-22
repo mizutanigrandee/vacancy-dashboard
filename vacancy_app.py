@@ -6,7 +6,7 @@ import calendar
 import time  # レート制限対策
 
 # ① 直書き動作確認用
-APP_ID = "1080095124292517179"
+APP_ID = "YOUR_APPLICATION_ID_HERE"
 
 # --- Streamlit ページ設定 ---
 st.set_page_config(
