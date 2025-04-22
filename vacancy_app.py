@@ -38,6 +38,8 @@ def fetch_vacancy_count(date: dt.date) -> int:
         "checkinDate": date.strftime("%Y-%m-%d"),
         "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
         "adultNum": 1,
+        "largeClassCode":  "japan",
+        "middleClassCode": "osaka",
         # なんば・心斎橋エリアの smallClassCode を指定
         "smallClassCode": "osaka_namba_shinsaibashi"
     }
