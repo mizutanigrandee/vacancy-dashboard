@@ -7,55 +7,54 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import calendar
-\# --- 0. カレンダーの曜日を日曜始まりに設定 ---
+import re
+
+# --- 0. カレンダーを日曜始まりに設定 ---
 calendar.setfirstweekday(calendar.SUNDAY)
 
-# --- 1. データ取得ロジック（ページネーション対応 & 取得時間記録） ---
-def fetch_vacancy_count(checkin_date: str) -> (int, datetime.datetime):
+# --- 1. データ取得ロジック（HTMLスクレイピング版） ---
+def fetch_vacancy_count(checkin_date: str):
     """
-    指定日の在庫ありホテル数を、全ページから合計して取得し、
-    (count, fetch_time) のタプルで返す。
+    画面から「なんば・心斎橋・天王寺・阿倍野・長居」エリアの
+    指定日の空室ホテル数を取得し、
+    (count, fetch_time) を返す
     """
-    base_url = "https://travel.rakuten.co.jp/vacancy/"
-    params = {
-        "l-id": "vacancy_test_c_map_osaka",
-        "checkinDate": checkin_date
-    }
-    session = requests.Session()
-    # --- 1.1 初回取得 ---
-    resp = session.get(base_url, params=params, timeout=10)
+    url = "https://travel.rakuten.co.jp/vacancy/"
+    params = {"l-id": "vacancy_test_c_map_osaka", "checkinDate": checkin_date}
+    resp = requests.get(url, params=params, timeout=10)
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "html.parser")
-    # ページ数を調べる（数字リンクを収集）
-    pager_links = soup.select("ul.rp-pagenavi li a")
-    pages = [int(a.text) for a in pager_links if a.text.isdigit()]
-    max_page = max(pages) if pages else 1
 
-    total_count = 0
-    # 各ページを巡回
-    for p in range(1, max_page+1):
-        if p == 1:
-            sp = soup
-        else:
-            resp = session.get(base_url, params={**params, "page": p}, timeout=10)
-            resp.raise_for_status()
-            sp = BeautifulSoup(resp.text, "html.parser")
-        # 在庫ありアイテムをカウント（要セレクタ確認）
-        items = sp.select(".hotelList_item .vacancy-available")
-        total_count += len(items)
+    # 最終取得時刻をヘッダーの緑帯からパース
+    fetch_time = None
+    info = soup.select_one("div.rp-update")  # classは要確認
+    if info:
+        txt = info.get_text(strip=True)
+        m = re.search(r"(\d{1,2}月\d{1,2}日\d{2}:\d{2})", txt)
+        if m:
+            # 年は本年として補完
+            tm = datetime.datetime.strptime(m.group(1), "%m月%d日%H:%M")
+            fetch_time = tm.replace(year=datetime.datetime.now().year)
 
-    fetch_time = datetime.datetime.now()
-    return total_count, fetch_time
+    # 本文テーブルから対象行を探す
+    table = soup.find("table")
+    count = 0
+    if table:
+        for tr in table.find_all("tr"):
+            th = tr.find("th")
+            if th and "なんば・心斎橋・天王寺・阿倍野・長居" in th.get_text():
+                # <td> が1つずつホテルを表すので、要素数をカウント
+                tds = tr.find_all("td")
+                count = len(tds)
+                break
+    return count, fetch_time
 
 @st.cache_data(ttl=3600)
 def get_vacancy_info(date: datetime.date):
-    """
-    checkinDate パラメータで全ページを取得し、
-    (count, fetch_time) を返すラッパー関数
-    """
+    """日付を渡して、(count, fetch_time) を返すラッパー"""
     return fetch_vacancy_count(date.strftime("%Y-%m-%d"))
 
-# --- 2. 月ごとの DataFrame を作成する関数 ---
+# --- 2. 月ごとのデータフレーム作成 ---
 def make_month_df(year: int, month: int) -> pd.DataFrame:
     start = datetime.date(year, month, 1)
     end = (start + relativedelta(months=1)) - datetime.timedelta(days=1)
@@ -68,22 +67,21 @@ def make_month_df(year: int, month: int) -> pd.DataFrame:
     df = pd.DataFrame(data).set_index("date")
     return df
 
-# --- 3. HTMLテーブルでカレンダーを描画 ---
+# --- 3. カレンダー描画(HTMLテーブル) ---
 def draw_month_html(df: pd.DataFrame, year: int, month: int):
     st.subheader(f"{year}年{month}月")
-    # 取得時間を表示
-    today = datetime.date.today()
-    _, fetch_time = get_vacancy_info(today)  # 当日取得時刻を取得例
-    st.caption(f"最終取得: {fetch_time.strftime('%Y-%m-%d %H:%M:%S')}")
+    # 取得時刻表示
+    _, fetch_time = get_vacancy_info(datetime.date.today())
+    if fetch_time:
+        st.caption(f"最終取得: {fetch_time.strftime('%Y-%m-%d %H:%M')}")
 
-    # 目標進捗バー
+    # 進捗バー
     total = int(df["vacancy_count"].sum())
     target = 20 * len(df)
-    progress = min(1.0, total / target) if target > 0 else 0
     st.caption("目標進捗率")
-    st.progress(progress)
+    st.progress(min(1.0, total / target) if target > 0 else 0)
 
-    # カレンダー構造（日曜始まり）
+    # カレンダーのマトリクスを生成（日曜始まり）
     cal = calendar.monthcalendar(year, month)
     max_val = df["vacancy_count"].max() or 1
 
@@ -95,7 +93,7 @@ def draw_month_html(df: pd.DataFrame, year: int, month: int):
         html += f"<th style='border:1px solid #ccc; padding:4px; background:#f5f5f5;'>{wd}</th>"
     html += "</tr>"
 
-    # 日付セル
+    # 各週ごとの行
     for week in cal:
         html += "<tr>"
         for day in week:
@@ -107,9 +105,7 @@ def draw_month_html(df: pd.DataFrame, year: int, month: int):
                 color = f"rgb(255, {255-intensity}, {255-intensity})"
                 html += (
                     "<td style='border:1px solid #ccc; padding:0; position:relative; height:80px; background:" + color + ";'>"
-                    # 日付を右上に配置
                     "<div style='position:absolute; top:4px; right:4px; font-size:12px;'>" + str(day) + "</div>"
-                    # 残室数を中央下部に配置
                     "<div style='position:absolute; bottom:4px; left:50%; transform:translateX(-50%); font-size:14px;'>" + str(val) + "件</div>"
                     "</td>"
                 )
