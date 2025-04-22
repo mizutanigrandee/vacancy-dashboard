@@ -14,32 +14,27 @@ st.set_page_config(
 # --- 秘密情報 ---
 APP_ID = st.secrets["RAKUTEN_APP_ID"]
 
-# --- 日本の祝日（2025年4月〜5月）を手動定義 ---
-HOLIDAYS = {
-    dt.date(2025, 4, 29),  # 昭和の日
-    dt.date(2025, 5, 3),   # 憲法記念日
-    dt.date(2025, 5, 4),   # みどりの日
-    dt.date(2025, 5, 5),   # こどもの日
-}
-
 # --- タイトル ---
 st.title("楽天トラベル 空室カレンダー（2か月表示）")
 
 # --- 空室取得 ---
 @st.cache_data(ttl=24*60*60)
 def fetch_vacancy_count(date: dt.date) -> int:
+    """
+    指定日の VacantHotelSearch API から、小エリアコード指定で空室ホテル数を返す
+    """
+    # 過去日は呼び出さず 0 件
     if date < dt.date.today():
         return 0
+
     params = {
         "applicationId": APP_ID,
         "format": "json",
         "checkinDate": date.strftime("%Y-%m-%d"),
         "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
         "adultNum": 1,
-        "latitude": 34.667,
-        "longitude": 135.502,
-        "datumType": 1,
-        "searchRadius": 3
+        # なんば・心斎橋エリアの smallClassCode を指定
+        "smallClassCode": "osaka_namba_shinsaibashi"
     }
     url = (
         "https://app.rakuten.co.jp/services/api/"
@@ -48,19 +43,24 @@ def fetch_vacancy_count(date: dt.date) -> int:
     try:
         r = requests.get(url, params=params, timeout=10)
         r.raise_for_status()
-        data = r.json()
-        count = data.get("pagingInfo", {}).get("recordCount", 0)
+        return r.json().get("pagingInfo", {}).get("recordCount", 0)
     except Exception:
-        count = 0
+        return 0
     finally:
+        # レート制限回避
         time.sleep(0.6)
-    return count
 
 # --- カレンダー描画 ---
 def draw_calendar(month_date: dt.date) -> str:
     cal = calendar.Calendar(firstweekday=calendar.SUNDAY)
     weeks = cal.monthdayscalendar(month_date.year, month_date.month)
     today = dt.date.today()
+
+    # 祝日リスト（2025年4月〜5月）
+    HOLIDAYS = {
+        dt.date(2025, 4, 29), dt.date(2025, 5, 3),
+        dt.date(2025, 5, 4), dt.date(2025, 5, 5)
+    }
 
     html = '<table style="border-collapse:collapse;width:100%;text-align:center;">'
     html += '<thead><tr>' + ''.join(
@@ -75,13 +75,13 @@ def draw_calendar(month_date: dt.date) -> str:
                 html += '<td style="border:1px solid #aaa;padding:8px;background:#fff;"></td>'
             else:
                 current = dt.date(month_date.year, month_date.month, day)
-                # 色付け
+                # セル背景色判定
                 if current < today:
-                    bg = '#ddd'  # 過去日グレー
+                    bg = '#ddd'
                 elif current in HOLIDAYS or current.weekday() == 6:
-                    bg = '#ffecec'  # 日曜・祝日レッド
+                    bg = '#ffecec'
                 elif current.weekday() == 5:
-                    bg = '#e0f7ff'  # 土曜ブルー
+                    bg = '#e0f7ff'
                 else:
                     bg = '#fff'
 
@@ -97,7 +97,7 @@ def draw_calendar(month_date: dt.date) -> str:
     html += '</tbody></table>'
     return html
 
-# --- レイアウト: 2か月 ---
+# --- メイン: 2か月表示 ---
 today = dt.date.today()
 baseline = st.sidebar.date_input("基準月を選択", today.replace(day=1))
 month1 = baseline.replace(day=1)
