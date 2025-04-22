@@ -24,7 +24,9 @@ def fetch_vacant_count_api(checkin: datetime.date) -> int:
     params = {
         "applicationId": APP_ID,
         "format": "json",
-        # 「なんば・心斎橋・天王寺・阿倍野・長居」付近の緯度経度
+        # 座標系。1: 日本測地系、0: WGS84
+        "datumType": 1,
+        # なんば〜長居エリア付近の緯度経度
         "latitude": 34.667,   
         "longitude": 135.502, 
         "searchRadius": 2,     # 半径2km以内
@@ -32,12 +34,16 @@ def fetch_vacant_count_api(checkin: datetime.date) -> int:
         "checkinDate":  checkin.strftime("%Y-%m-%d"),
         "checkoutDate": (checkin + datetime.timedelta(days=1)).strftime("%Y-%m-%d"),
         "adultNum": 1,
+        # 1ページあたりの取得上限。十分大きめに指定
+        "hits": 100,
+        # ページ番号（通常1でOK）
+        "pageNo": 1
     }
     try:
         r = requests.get(url, params=params, timeout=10)
         r.raise_for_status()
         data = r.json()
-        # API ドキュメントの count フィールドを返す
+        # count フィールドを返す（items長さでも可）
         return data.get("count", len(data.get("items", [])))
     except HTTPError as e:
         st.error(f"API HTTPError: {e}")
