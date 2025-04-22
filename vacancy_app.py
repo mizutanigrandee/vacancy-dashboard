@@ -4,7 +4,6 @@ import datetime as dt
 from dateutil.relativedelta import relativedelta
 import calendar
 import time
-import jpholiday  # 日本の祝日判定ライブラリ
 
 # --- ページ設定 ---
 st.set_page_config(
@@ -12,21 +11,25 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- 秘密情報の読み込み ---
+# --- 秘密情報 ---
 APP_ID = st.secrets["RAKUTEN_APP_ID"]
+
+# --- 日本の祝日（2025年4月〜5月）を手動定義 ---
+HOLIDAYS = {
+    dt.date(2025, 4, 29),  # 昭和の日
+    dt.date(2025, 5, 3),   # 憲法記念日
+    dt.date(2025, 5, 4),   # みどりの日
+    dt.date(2025, 5, 5),   # こどもの日
+}
 
 # --- タイトル ---
 st.title("楽天トラベル 空室カレンダー（2か月表示）")
 
-# --- API 呼び出し関数 ---
+# --- 空室取得 ---
 @st.cache_data(ttl=24*60*60)
 def fetch_vacancy_count(date: dt.date) -> int:
-    """
-    未来日の VacantHotelSearch recordCount を返す。過去日は0スキップ。
-    """
     if date < dt.date.today():
         return 0
-
     params = {
         "applicationId": APP_ID,
         "format": "json",
@@ -46,21 +49,20 @@ def fetch_vacancy_count(date: dt.date) -> int:
         r = requests.get(url, params=params, timeout=10)
         r.raise_for_status()
         data = r.json()
-        return data.get("pagingInfo", {}).get("recordCount", 0)
+        count = data.get("pagingInfo", {}).get("recordCount", 0)
     except Exception:
-        return 0
+        count = 0
     finally:
         time.sleep(0.6)
+    return count
 
-# --- カレンダー描画関数 ---
+# --- カレンダー描画 ---
 def draw_calendar(month_date: dt.date) -> str:
     cal = calendar.Calendar(firstweekday=calendar.SUNDAY)
     weeks = cal.monthdayscalendar(month_date.year, month_date.month)
     today = dt.date.today()
 
-    # テーブル作成
     html = '<table style="border-collapse:collapse;width:100%;text-align:center;">'
-    # ヘッダー
     html += '<thead><tr>' + ''.join(
         f'<th style="border:1px solid #aaa;padding:4px;background:#f0f0f0;">{d}</th>'
         for d in ["日","月","火","水","木","金","土"]
@@ -70,19 +72,18 @@ def draw_calendar(month_date: dt.date) -> str:
         html += '<tr>'
         for day in week:
             if day == 0:
-                # 当月外
                 html += '<td style="border:1px solid #aaa;padding:8px;background:#fff;"></td>'
             else:
                 current = dt.date(month_date.year, month_date.month, day)
-                # CSS 背景色設定
+                # 色付け
                 if current < today:
-                    bg = "#ddd"  # 過去日グレーアウト
-                elif jpholiday.is_holiday(current) or current.weekday() == 6:
-                    bg = "#ffecec"  # 祝日／日曜 レッド系
+                    bg = '#ddd'  # 過去日グレー
+                elif current in HOLIDAYS or current.weekday() == 6:
+                    bg = '#ffecec'  # 日曜・祝日レッド
                 elif current.weekday() == 5:
-                    bg = "#e0f7ff"  # 土曜 ブルー系
+                    bg = '#e0f7ff'  # 土曜ブルー
                 else:
-                    bg = "#fff"  # 通常白
+                    bg = '#fff'
 
                 count = fetch_vacancy_count(current)
                 count_html = f'<div>{count} 件</div>' if count > 0 else ''
@@ -96,7 +97,7 @@ def draw_calendar(month_date: dt.date) -> str:
     html += '</tbody></table>'
     return html
 
-# --- メイン: 2か月を並べる ---
+# --- レイアウト: 2か月 ---
 today = dt.date.today()
 baseline = st.sidebar.date_input("基準月を選択", today.replace(day=1))
 month1 = baseline.replace(day=1)
@@ -109,5 +110,3 @@ with col1:
 with col2:
     st.subheader(f"{month2.year}年 {month2.month}月")
     st.markdown(draw_calendar(month2), unsafe_allow_html=True)
-
-# --- 注意: 必要に応じて requirements.txt に "jpholiday" を追加してください ---
