@@ -11,9 +11,8 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- APP_ID の読み込み & デバッグ ---
+# --- APP_ID の読み込み ---
 APP_ID = st.secrets.get("RAKUTEN_APP_ID", "")
-st.sidebar.write("DEBUG – APP_ID:", APP_ID)
 
 # --- Streamlit タイトル ---
 st.title("楽天トラベル 空室カレンダー（2か月表示）")
@@ -24,7 +23,12 @@ def fetch_vacancy_count(date: dt.date) -> int:
     """
     指定日のチェックイン 1 泊分の空室ホテル数を取得して返す
     レート制限回避のため、呼び出し後に sleep を挟む
+    関数内では過去日付の API 呼び出しをスキップ
     """
+    # 当日より前は API 呼び出しせず 0 を返す
+    if date < dt.date.today():
+        return 0
+
     checkin = date.strftime("%Y-%m-%d")
     checkout = (date + dt.timedelta(days=1)).strftime("%Y-%m-%d")
     params = {
@@ -46,14 +50,12 @@ def fetch_vacancy_count(date: dt.date) -> int:
         r = requests.get(url, params=params, timeout=10)
         r.raise_for_status()
         data = r.json()
-        count = data.get("pagingInfo", {}).get("recordCount", 0)
-        # デバッグ: recordCount
-        st.sidebar.write(f"DEBUG – {date} → recordCount = {count}")
-    except Exception as e:
-        st.sidebar.write(f"DEBUG – {date} API ERROR: {e}")
-        count = 0
-    time.sleep(0.6)
-    return count
+        return data.get("pagingInfo", {}).get("recordCount", 0)
+    except Exception:
+        # エラー時は 0 を返す
+        return 0
+    finally:
+        time.sleep(0.6)
 
 # --- サイドバー：基準月選択 ---
 today = dt.date.today()
@@ -61,7 +63,8 @@ baseline = st.sidebar.date_input(
     "基準月を選択",
     today.replace(day=1)
 )
-# 左：基準月、右：翌月
+
+# 左: 基準月、右: 翌月
 month1 = baseline.replace(day=1)
 month2 = (month1 + relativedelta(months=1)).replace(day=1)
 
@@ -70,11 +73,10 @@ def draw_calendar(month_date: dt.date) -> str:
     cal = calendar.Calendar(firstweekday=calendar.SUNDAY)
     weeks = cal.monthdayscalendar(month_date.year, month_date.month)
 
-    html = '<table style="border-collapse: collapse; width: 100%; text-align: center;">'
+    html = '<table style="border-collapse:collapse;width:100%;text-align:center;">'
     headers = ["日","月","火","水","木","金","土"]
     html += '<thead><tr>' + ''.join(
-        f'<th style="border:1px solid #aaa; padding:4px; background:#f0f0f0;">{d}</th>'
-        for d in headers
+        f'<th style="border:1px solid #aaa;padding:4px;background:#f0f0f0;">{d}</th>' for d in headers
     ) + '</tr></thead>'
 
     html += '<tbody>'
@@ -82,14 +84,18 @@ def draw_calendar(month_date: dt.date) -> str:
         html += '<tr>'
         for day in week:
             if day == 0:
-                html += '<td style="border:1px solid #aaa; padding:8px;"></td>'
+                # 当月外の日付
+                html += '<td style="border:1px solid #aaa;padding:8px;"></td>'
             else:
                 current = dt.date(month_date.year, month_date.month, day)
+                # 過去日はカウントなし表示（0件）
                 count = fetch_vacancy_count(current)
-                html += f'''<td style="border:1px solid #aaa; padding:8px;">
-<div><strong>{day}</strong></div>
-<div>{count} 件</div>
-</td>'''
+                html += f'''
+                    <td style="border:1px solid #aaa;padding:8px;">
+                      <div><strong>{day}</strong></div>
+                      <div>{count if count>0 else ""}</div>
+                    </td>
+                '''
         html += '</tr>'
     html += '</tbody></table>'
     return html
