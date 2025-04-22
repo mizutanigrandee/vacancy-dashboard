@@ -14,24 +14,28 @@ st.set_page_config(
 # --- 秘密情報 ---
 APP_ID = st.secrets["RAKUTEN_APP_ID"]
 
-# --- smallClassCode の一覧を取得（デバッグ用） ---
-@st.cache_data(ttl=24*60*60)
+# --- smallClassCode 一覧を取得（デバッグ用） ---
 def get_small_codes():
+    """
+    GetAreaClass API から Osaka の smallClassCode をリストで返す
+    """
     url = "https://app.rakuten.co.jp/services/api/Travel/GetAreaClass/20131024"
     params = {"applicationId": APP_ID, "format": "json", "formatVersion": 2}
     r = requests.get(url, params=params, timeout=10)
     r.raise_for_status()
     data = r.json()
-    # 大エリア「国内」→中エリア「osaka」を探す
-    for large in data.get("areaClasses", {}).get("largeClasses", []):
-        for middle in large.get("middleClasses", []):
-            if middle.get("code") == "osaka":
-                return [(c.get("code"), c.get("name")) for c in middle.get("smallClasses", [])]
+    # areaClasses はリスト
+    for large in data.get("areaClasses", []):
+        if large.get("code") == "japan":
+            for middle in large.get("middleClasses", []):
+                if middle.get("code") == "osaka":
+                    # smallClasses の一覧を返す
+                    return [(c.get("code"), c.get("name")) for c in middle.get("smallClasses", [])]
     return []
 
+# 一度だけ動かしてコードを確認
 small_codes = get_small_codes()
-# サイドバーに表示して確認
-st.sidebar.write("DEBUG: Available smallClassCodes for Osaka:", small_codes)
+st.sidebar.write("DEBUG: smallClassCode list for Osaka:", small_codes)
 
 # --- タイトル ---
 st.title("楽天トラベル 空室カレンダー（2か月表示）")
@@ -50,8 +54,8 @@ def fetch_vacancy_count(date: dt.date) -> int:
         "checkinDate": date.strftime("%Y-%m-%d"),
         "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
         "adultNum": 1,
-        # 一旦選択済みのコードを手動で設定
-        "smallClassCode": "osaka_namba_shinsaibashi"
+        # ここを見つけたコードに書き換えてください
+        "smallClassCode": "<ここに smallClassCode をコピペ>"
     }
     url = "https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
     try:
@@ -68,11 +72,13 @@ def draw_calendar(month_date: dt.date) -> str:
     cal = calendar.Calendar(firstweekday=calendar.SUNDAY)
     weeks = cal.monthdayscalendar(month_date.year, month_date.month)
     today = dt.date.today()
+
     html = '<table style="border-collapse:collapse;width:100%;text-align:center;">'
     html += '<thead><tr>' + ''.join(
         f'<th style="border:1px solid #aaa;padding:4px;background:#f0f0f0;">{d}</th>'
         for d in ["日","月","火","水","木","金","土"]
     ) + '</tr></thead><tbody>'
+
     for week in weeks:
         html += '<tr>'
         for day in week:
@@ -89,6 +95,7 @@ def draw_calendar(month_date: dt.date) -> str:
                     bg = '#e0f7ff'
                 else:
                     bg = '#fff'
+
                 count = fetch_vacancy_count(current)
                 count_html = f'<div>{count} 件</div>' if count > 0 else ''
                 html += (
