@@ -6,45 +6,47 @@ import requests
 import pandas as pd
 from bs4 import BeautifulSoup
 from dateutil.relativedelta import relativedelta
+import calendar
 
+# カレンダーの曜日を日曜始まりに設定
+calendar.setfirstweekday(calendar.SUNDAY)
+
+# 取得対象ページ
 URL = "https://travel.rakuten.co.jp/vacancy/?l-id=vacancy_test_c_map_osaka"
 
 @st.cache_data(ttl=3600)
 def fetch_namba_counts():
     """
-    公式ページの一番上にある「大阪府 宿泊可能な施設数」テーブルを
-    スクレイピングして、日付→在庫件数 を dict で返す。
+    公式ページの在庫テーブルをスクレイピングし、
+    日→在庫件数 の dict を返す。
     """
     resp = requests.get(URL, timeout=10)
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "html.parser")
 
-    # 1) 一番最初に出てくる table を取得
+    # 一番上にある最初のテーブルを取得
     table = soup.find("table")
     if table is None:
         st.error("在庫テーブルが見つかりませんでした")
         return {}
 
-    # 2) thead から日付情報をパース
-    header_ths = table.find("thead").find_all("th")[1:]  # 先頭の「エリア」列を除外
+    # thead から日付（数字部分）を抜き出し
+    header_ths = table.find("thead").find_all("th")[1:]  # 「エリア」列を除く
     dates = []
     for th in header_ths:
         txt = th.get_text(strip=True)
-        # たとえば "4/22(火)" なら日付部分だけ取り出す
+        # 例: "4/23(水)" → 日付部分だけ int(23)
         day = int(txt.split("/")[1].split("(")[0])
         dates.append(day)
 
-    # 3) 対象行（「なんば・心斎橋…」）を tbody から探す
+    # tbody から「なんば・心斎橋〜長居」の行を探す
     counts = {}
     for tr in table.find("tbody").find_all("tr"):
         th = tr.find("th")
-        if not th:
-            continue
-        if "なんば・心斎橋・天王寺・阿倍野・長居" in th.get_text():
+        if th and "なんば・心斎橋・天王寺・阿倍野・長居" in th.get_text():
             tds = tr.find_all("td")
             for day, td in zip(dates, tds):
                 txt = td.get_text(strip=True)
-                # 数値以外（－や空欄）は 0 とみなす
                 counts[day] = int(txt) if txt.isdigit() else 0
             break
 
@@ -52,24 +54,26 @@ def fetch_namba_counts():
 
 def make_month_df(year: int, month: int, counts: dict) -> pd.DataFrame:
     """
-    指定年月の全日を生成し、counts dict で在庫数を埋めた DataFrame を返す
+    指定年月の日付を全生成→counts dict で在庫数を埋めた DataFrame を返す
     """
     start = datetime.date(year, month, 1)
     end   = (start + relativedelta(months=1)) - datetime.timedelta(days=1)
     dates = pd.date_range(start, end, freq="D")
-
     data = {"date": [], "vacancy": []}
     for d in dates:
         data["date"].append(d)
         data["vacancy"].append(counts.get(d.day, 0))
-
     df = pd.DataFrame(data).set_index("date")
     df["weekday"] = df.index.weekday
     df["week"]    = (df.index.day - 1 + df["weekday"]) // 7
     return df
 
 def draw_month(df: pd.DataFrame, year: int, month: int):
+    """
+    Streamlit でカレンダーセルを描画
+    """
     st.subheader(f"{year}年{month}月")
+    # 曜日ヘッダー
     cols = st.columns(7)
     for i, wd in enumerate(["日","月","火","水","木","金","土"]):
         cols[i].markdown(f"**{wd}**")
@@ -98,19 +102,22 @@ def draw_month(df: pd.DataFrame, year: int, month: int):
                     )
 
 # ── Streamlit レイアウト ──
+
+# サイドバーで年月選択
 st.sidebar.title("カレンダー月選択")
 year  = st.sidebar.number_input("左カレンダー 年", 2020, 2030, datetime.date.today().year)
 month = st.sidebar.number_input("左カレンダー 月",  1,   12,   datetime.date.today().month)
-
-# キャッシュ付きで在庫を一度だけ取得
-counts = fetch_namba_counts()
-
 left  = datetime.date(year, month, 1)
 right = left + relativedelta(months=1)
 
+# 在庫データをキャッシュ付きで１回だけ取得
+counts = fetch_namba_counts()
+
+# 月毎 DataFrame
 df1 = make_month_df(left.year,  left.month,  counts)
 df2 = make_month_df(right.year, right.month, counts)
 
+# タイトルと２か月ビュー
 st.title("なんば・心斎橋〜長居エリア 空室カレンダー (2か月ビュー)")
 col1, col2 = st.columns(2)
 with col1:
