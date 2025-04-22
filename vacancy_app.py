@@ -25,33 +25,37 @@ def fetch_vacancy_count(checkin_date: str):
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "html.parser")
 
-    # 最終取得時刻をヘッダーの緑帯からパース
+    # 1-1) 最終取得時刻をパース
     fetch_time = None
     info = soup.select_one("div.rp-update")  # classは要確認
     if info:
         txt = info.get_text(strip=True)
         m = re.search(r"(\d{1,2}月\d{1,2}日\d{2}:\d{2})", txt)
         if m:
-            # 年は本年として補完
             tm = datetime.datetime.strptime(m.group(1), "%m月%d日%H:%M")
             fetch_time = tm.replace(year=datetime.datetime.now().year)
 
-    # 本文テーブルから対象行を探す
-    table = soup.find("table")
+    # 1-2) 対象行を探して、先頭<td>の数値を取得
     count = 0
+    table = soup.find("table")  # ページ内最初のテーブル
     if table:
         for tr in table.find_all("tr"):
             th = tr.find("th")
             if th and "なんば・心斎橋・天王寺・阿倍野・長居" in th.get_text():
-                # <td> が1つずつホテルを表すので、要素数をカウント
                 tds = tr.find_all("td")
-                count = len(tds)
+                if tds:
+                    # 一番左の<td>がチェックイン日の在庫数
+                    val = tds[0].get_text(strip=True)
+                    # 数字だけ抽出
+                    digits = re.search(r"(\d+)", val)
+                    count = int(digits.group(1)) if digits else 0
                 break
+
     return count, fetch_time
 
 @st.cache_data(ttl=3600)
 def get_vacancy_info(date: datetime.date):
-    """日付を渡して、(count, fetch_time) を返すラッパー"""
+    """日付を渡して (count, fetch_time) を返す"""
     return fetch_vacancy_count(date.strftime("%Y-%m-%d"))
 
 # --- 2. 月ごとのデータフレーム作成 ---
@@ -73,7 +77,7 @@ def draw_month_html(df: pd.DataFrame, year: int, month: int):
     # 取得時刻表示
     _, fetch_time = get_vacancy_info(datetime.date.today())
     if fetch_time:
-        st.caption(f"最終取得: {fetch_time.strftime('%Y-%m-%d %H:%M')}")
+        st.caption(f"最終取得: {fetch_time.strftime('%m/%d %H:%M')} 現在")
 
     # 進捗バー
     total = int(df["vacancy_count"].sum())
@@ -81,7 +85,7 @@ def draw_month_html(df: pd.DataFrame, year: int, month: int):
     st.caption("目標進捗率")
     st.progress(min(1.0, total / target) if target > 0 else 0)
 
-    # カレンダーのマトリクスを生成（日曜始まり）
+    # カレンダー構造（日曜始まり）
     cal = calendar.monthcalendar(year, month)
     max_val = df["vacancy_count"].max() or 1
 
