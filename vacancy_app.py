@@ -25,7 +25,7 @@ HOLIDAYS = {
     dt.date(2025, 5, 5),   # こどもの日
 }
 
-# --- VacantHotelSearch API 呼び出し（デバッグ付き） ---
+# --- VacantHotelSearch API 呼び出し ---
 @st.cache_data(ttl=24*60*60)
 def fetch_vacancy_count(date: dt.date) -> int:
     # 過去日は API 呼び出しせず 0 件
@@ -50,19 +50,27 @@ def fetch_vacancy_count(date: dt.date) -> int:
         "https://app.rakuten.co.jp/services/api/"
         "Travel/VacantHotelSearch/20170426"
     )
+    # HTTPリクエスト
+    r = requests.get(url, params=params, timeout=10)
+    # デバッグ出力: ステータス
+    st.sidebar.write("  status:", r.status_code)
     try:
-        r = requests.get(url, params=params, timeout=10)
-        # デバッグ出力: ステータスコードとレスポンス
-        st.sidebar.write("  status:", r.status_code)
-        st.sidebar.write("  resp:", r.json())
-        r.raise_for_status()
-        return r.json().get("pagingInfo", {}).get("recordCount", 0)
-    except Exception as e:
-        st.sidebar.write("  API ERROR:", e)
+        data = r.json()
+        st.sidebar.write("  resp:", data)
+    except ValueError:
+        st.sidebar.write("  response not JSON")
         return 0
-    finally:
-        # レート制限回避
-        time.sleep(0.6)
+
+    # 404はデータ無しとして扱う
+    if r.status_code == 404:
+        return 0
+n    # 200以外は例外ログを残して0件
+    if r.status_code != 200:
+        st.sidebar.write("  API ERROR status", r.status_code)
+        return 0
+
+    # 正常時は recordCount を取得
+    return data.get("pagingInfo", {}).get("recordCount", 0)
 
 # --- カレンダー描画関数 ---
 def draw_calendar(month_date: dt.date) -> str:
