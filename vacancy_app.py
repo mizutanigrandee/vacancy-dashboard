@@ -7,36 +7,53 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import calendar
-
-# --- 0. カレンダーの曜日を日曜始まりに設定 ---
+\# --- 0. カレンダーの曜日を日曜始まりに設定 ---
 calendar.setfirstweekday(calendar.SUNDAY)
 
-# --- 1. データ取得ロジック ---
-def fetch_vacancy_count(checkin_date: str) -> int:
-    url = (
-        "https://travel.rakuten.co.jp/vacancy/"
-        "?l-id=vacancy_test_c_map_osaka"
-        "#regular/normal/2/9/osaka/"
-        f"?checkinDate={checkin_date}"
-    )
-    resp = requests.get(url, timeout=10)
+# --- 1. データ取得ロジック（ページネーション対応 & 取得時間記録） ---
+def fetch_vacancy_count(checkin_date: str) -> (int, datetime.datetime):
+    """
+    指定日の在庫ありホテル数を、全ページから合計して取得し、
+    (count, fetch_time) のタプルで返す。
+    """
+    base_url = "https://travel.rakuten.co.jp/vacancy/"
+    params = {
+        "l-id": "vacancy_test_c_map_osaka",
+        "checkinDate": checkin_date
+    }
+    session = requests.Session()
+    # --- 1.1 初回取得 ---
+    resp = session.get(base_url, params=params, timeout=10)
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "html.parser")
-    # 実際のセレクタ要確認
-    items = soup.select(".hotelList_item .vacancy-available")
-    return len(items)
+    # ページ数を調べる（数字リンクを収集）
+    pager_links = soup.select("ul.rp-pagenavi li a")
+    pages = [int(a.text) for a in pager_links if a.text.isdigit()]
+    max_page = max(pages) if pages else 1
+
+    total_count = 0
+    # 各ページを巡回
+    for p in range(1, max_page+1):
+        if p == 1:
+            sp = soup
+        else:
+            resp = session.get(base_url, params={**params, "page": p}, timeout=10)
+            resp.raise_for_status()
+            sp = BeautifulSoup(resp.text, "html.parser")
+        # 在庫ありアイテムをカウント（要セレクタ確認）
+        items = sp.select(".hotelList_item .vacancy-available")
+        total_count += len(items)
+
+    fetch_time = datetime.datetime.now()
+    return total_count, fetch_time
 
 @st.cache_data(ttl=3600)
-def get_count(date: datetime.date) -> int:
-    """1時間キャッシュ + 3回リトライ"""
-    last_err = None
-    for _ in range(3):
-        try:
-            return fetch_vacancy_count(date.strftime("%Y-%m-%d"))
-        except Exception as e:
-            last_err = e
-    st.error(f"取得に失敗しました: {last_err}")
-    return 0
+def get_vacancy_info(date: datetime.date):
+    """
+    checkinDate パラメータで全ページを取得し、
+    (count, fetch_time) を返すラッパー関数
+    """
+    return fetch_vacancy_count(date.strftime("%Y-%m-%d"))
 
 # --- 2. 月ごとの DataFrame を作成する関数 ---
 def make_month_df(year: int, month: int) -> pd.DataFrame:
@@ -45,14 +62,20 @@ def make_month_df(year: int, month: int) -> pd.DataFrame:
     dates = pd.date_range(start, end, freq="D")
     data = {"date": [], "vacancy_count": []}
     for d in dates:
+        count, _ = get_vacancy_info(d)
         data["date"].append(d)
-        data["vacancy_count"].append(get_count(d))
+        data["vacancy_count"].append(count)
     df = pd.DataFrame(data).set_index("date")
     return df
 
 # --- 3. HTMLテーブルでカレンダーを描画 ---
 def draw_month_html(df: pd.DataFrame, year: int, month: int):
     st.subheader(f"{year}年{month}月")
+    # 取得時間を表示
+    today = datetime.date.today()
+    _, fetch_time = get_vacancy_info(today)  # 当日取得時刻を取得例
+    st.caption(f"最終取得: {fetch_time.strftime('%Y-%m-%d %H:%M:%S')}")
+
     # 目標進捗バー
     total = int(df["vacancy_count"].sum())
     target = 20 * len(df)
