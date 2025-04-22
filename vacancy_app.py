@@ -1,126 +1,99 @@
-# vacancy_app.py
-
 import streamlit as st
-import datetime
 import requests
-import pandas as pd
-from bs4 import BeautifulSoup
+import datetime as dt
 from dateutil.relativedelta import relativedelta
 import calendar
+import time  # レート制限対策
 
-# カレンダーの曜日を日曜始まりに設定
-calendar.setfirstweekday(calendar.SUNDAY)
+# ① 直書き動作確認用
+APP_ID = "1080095124292517179"
 
-# 取得対象ページ
-URL = "https://travel.rakuten.co.jp/vacancy/?l-id=vacancy_test_c_map_osaka"
+# --- Streamlit ページ設定 ---
+st.set_page_config(
+    page_title="空室カレンダー（2か月表示）",
+    layout="wide"
+)
+st.title("楽天トラベル 空室カレンダー（2か月表示）")
 
-@st.cache_data(ttl=3600)
-def fetch_namba_counts():
+# --- API 呼び出し関数 ---
+@st.cache_data(ttl=24*60*60)
+def fetch_vacancy_count(date: dt.date) -> int:
     """
-    公式ページの在庫テーブルをスクレイピングし、
-    日→在庫件数 の dict を返す。
+    指定日のチェックイン 1 泊分の空室ホテル数を取得して返す
+    レート制限回避のため、呼び出し後に sleep を挟む
     """
-    resp = requests.get(URL, timeout=10)
-    resp.raise_for_status()
-    soup = BeautifulSoup(resp.text, "html.parser")
+    checkin = date.strftime("%Y-%m-%d")
+    checkout = (date + dt.timedelta(days=1)).strftime("%Y-%m-%d")
+    params = {
+        "applicationId": APP_ID,
+        "format": "json",
+        "checkinDate": checkin,
+        "checkoutDate": checkout,
+        "adultNum": 1,
+        "latitude": 34.667,
+        "longitude": 135.502,
+        "datumType": 1,
+        "searchRadius": 3
+    }
+    url = (
+        "https://app.rakuten.co.jp/services/api/"
+        "Travel/VacantHotelSearch/20170426"
+    )
+    try:
+        r = requests.get(url, params=params, timeout=10)
+        r.raise_for_status()
+        data = r.json()
+        count = data.get("pagingInfo", {}).get("recordCount", 0)
+    except Exception:
+        # エラー時はログ出力せず件数を 0 として扱う
+        count = 0
+    time.sleep(0.6)
+    return count
 
-    # 一番上にある最初のテーブルを取得
-    table = soup.find("table")
-    if table is None:
-        st.error("在庫テーブルが見つかりませんでした")
-        return {}
+# --- サイドバー：基準月選択 ---
+today = dt.date.today()
+baseline = st.sidebar.date_input(
+    "基準月を選択",
+    today.replace(day=1)
+)
+# 左：基準月、右：翌月
+month1 = baseline.replace(day=1)
+month2 = (month1 + relativedelta(months=1)).replace(day=1)
 
-    # thead から日付（数字部分）を抜き出し
-    header_ths = table.find("thead").find_all("th")[1:]  # 「エリア」列を除く
-    dates = []
-    for th in header_ths:
-        txt = th.get_text(strip=True)
-        # 例: "4/23(水)" → 日付部分だけ int(23)
-        day = int(txt.split("/")[1].split("(")[0])
-        dates.append(day)
+# --- カレンダー描画関数 ---
+def draw_calendar(month_date: dt.date) -> str:
+    cal = calendar.Calendar(firstweekday=calendar.SUNDAY)
+    weeks = cal.monthdayscalendar(month_date.year, month_date.month)
 
-    # tbody から「なんば・心斎橋〜長居」の行を探す
-    counts = {}
-    for tr in table.find("tbody").find_all("tr"):
-        th = tr.find("th")
-        if th and "なんば・心斎橋・天王寺・阿倍野・長居" in th.get_text():
-            tds = tr.find_all("td")
-            for day, td in zip(dates, tds):
-                txt = td.get_text(strip=True)
-                counts[day] = int(txt) if txt.isdigit() else 0
-            break
+    html = '<table style="border-collapse: collapse; width: 100%; text-align: center;">'
+    headers = ["日","月","火","水","木","金","土"]
+    html += '<thead><tr>' + ''.join(
+        f'<th style="border:1px solid #aaa; padding:4px; background:#f0f0f0;">{d}</th>'
+        for d in headers
+    ) + '</tr></thead>'
 
-    return counts
+    html += '<tbody>'
+    for week in weeks:
+        html += '<tr>'
+        for day in week:
+            if day == 0:
+                html += '<td style="border:1px solid #aaa; padding:8px;"></td>'
+            else:
+                current = dt.date(month_date.year, month_date.month, day)
+                count = fetch_vacancy_count(current)
+                html += f'''<td style="border:1px solid #aaa; padding:8px;">
+<div><strong>{day}</strong></div>
+<div>{count} 件</div>
+</td>'''
+        html += '</tr>'
+    html += '</tbody></table>'
+    return html
 
-def make_month_df(year: int, month: int, counts: dict) -> pd.DataFrame:
-    """
-    指定年月の日付を全生成→counts dict で在庫数を埋めた DataFrame を返す
-    """
-    start = datetime.date(year, month, 1)
-    end   = (start + relativedelta(months=1)) - datetime.timedelta(days=1)
-    dates = pd.date_range(start, end, freq="D")
-    data = {"date": [], "vacancy": []}
-    for d in dates:
-        data["date"].append(d)
-        data["vacancy"].append(counts.get(d.day, 0))
-    df = pd.DataFrame(data).set_index("date")
-    df["weekday"] = df.index.weekday
-    df["week"]    = (df.index.day - 1 + df["weekday"]) // 7
-    return df
-
-def draw_month(df: pd.DataFrame, year: int, month: int):
-    """
-    Streamlit でカレンダーセルを描画
-    """
-    st.subheader(f"{year}年{month}月")
-    # 曜日ヘッダー
-    cols = st.columns(7)
-    for i, wd in enumerate(["日","月","火","水","木","金","土"]):
-        cols[i].markdown(f"**{wd}**")
-
-    weeks = int(df["week"].max()) + 1
-    for w in range(weeks):
-        cols = st.columns(7)
-        wk   = df[df["week"] == w]
-        for dow in range(7):
-            with cols[dow]:
-                cell = wk[wk["weekday"] == dow]
-                if cell.empty:
-                    st.markdown(
-                        "<div style='background:#f5f5f5; border:1px solid #eee; height:80px;'></div>",
-                        unsafe_allow_html=True
-                    )
-                else:
-                    day = cell.index.day[0]
-                    val = int(cell["vacancy"][0])
-                    st.markdown(
-                        f"<div style='border:1px solid #ccc; height:80px; padding:6px;'>"
-                        f"<div style='text-align:right; font-size:14px;'>{day}</div>"
-                        f"<div style='text-align:center; font-size:20px;'>{val}件</div>"
-                        "</div>",
-                        unsafe_allow_html=True
-                    )
-
-# ── Streamlit レイアウト ──
-
-# サイドバーで年月選択
-st.sidebar.title("カレンダー月選択")
-year  = st.sidebar.number_input("左カレンダー 年", 2020, 2030, datetime.date.today().year)
-month = st.sidebar.number_input("左カレンダー 月",  1,   12,   datetime.date.today().month)
-left  = datetime.date(year, month, 1)
-right = left + relativedelta(months=1)
-
-# 在庫データをキャッシュ付きで１回だけ取得
-counts = fetch_namba_counts()
-
-# 月毎 DataFrame
-df1 = make_month_df(left.year,  left.month,  counts)
-df2 = make_month_df(right.year, right.month, counts)
-
-# タイトルと２か月ビュー
-st.title("なんば・心斎橋〜長居エリア 空室カレンダー (2か月ビュー)")
+# --- メイン：左右に2か月分を並べる ---
 col1, col2 = st.columns(2)
 with col1:
-    draw_month(df1, left.year,  left.month)
+    st.subheader(f"{month1.year}年 {month1.month}月")
+    st.markdown(draw_calendar(month1), unsafe_allow_html=True)
 with col2:
-    draw_month(df2, right.year, right.month)
+    st.subheader(f"{month2.year}年 {month2.month}月")
+    st.markdown(draw_calendar(month2), unsafe_allow_html=True)
