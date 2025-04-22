@@ -5,6 +5,14 @@ from dateutil.relativedelta import relativedelta
 import calendar
 import time  # レート制限対策
 
+import streamlit as st
+# すでにこの行がある場合は不要です
+APP_ID = st.secrets["RAKUTEN_APP_ID"]
+
+# ↓ デバッグ用にシークレットの中身をサイドバーに表示
+st.sidebar.write("DEBUG – APP_ID:", APP_ID)
+
+
 # ① 直書き動作確認用
 APP_ID = "YOUR_APPLICATION_ID_HERE"
 
