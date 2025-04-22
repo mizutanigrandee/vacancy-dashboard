@@ -24,16 +24,19 @@ def get_small_codes():
     r = requests.get(url, params=params, timeout=10)
     r.raise_for_status()
     data = r.json()
-    # areaClasses はリスト
-    for large in data.get("areaClasses", []):
+    # areaClasses: { largeClasses: [...] }
+    for large in data.get("areaClasses", {}).get("largeClasses", []):
         if large.get("code") == "japan":
             for middle in large.get("middleClasses", []):
                 if middle.get("code") == "osaka":
-                    # smallClasses の一覧を返す
                     return [(c.get("code"), c.get("name")) for c in middle.get("smallClasses", [])]
     return []
 
-# 一度だけ動かしてコードを確認
+# 都度呼び出しは重いため、一度だけ動かしてコードを確認
+small_codes = get_small_codes()
+st.sidebar.write("DEBUG: smallClassCode list for Osaka:", small_codes)
+
+# --- タイトル ---
 small_codes = get_small_codes()
 st.sidebar.write("DEBUG: smallClassCode list for Osaka:", small_codes)
 
