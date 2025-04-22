@@ -25,13 +25,14 @@ HOLIDAYS = {
     dt.date(2025, 5, 5),   # こどもの日
 }
 
-# --- VacantHotelSearch API 呼び出し ---
+# --- VacantHotelSearch API 呼び出し（デバッグ付き） ---
 @st.cache_data(ttl=24*60*60)
 def fetch_vacancy_count(date: dt.date) -> int:
     # 過去日は API 呼び出しせず 0 件
     if date < dt.date.today():
         return 0
 
+    # パラメータを組み立て
     params = {
         "applicationId": APP_ID,
         "format": "json",
@@ -40,17 +41,24 @@ def fetch_vacancy_count(date: dt.date) -> int:
         "adultNum": 1,
         "largeClassCode":  "japan",
         "middleClassCode": "osaka",
-        "smallClassCode":  "osaka_namba_shinsaibashi"  # なんば・心斎橋エリア
+        "smallClassCode":  "osaka_namba_shinsaibashi"
     }
+    # デバッグ出力: 日付とパラメータ
+    st.sidebar.write(f"▶ fetch_vacancy_count({date}):", params)
+
     url = (
         "https://app.rakuten.co.jp/services/api/"
         "Travel/VacantHotelSearch/20170426"
     )
     try:
         r = requests.get(url, params=params, timeout=10)
+        # デバッグ出力: ステータスコードとレスポンス
+        st.sidebar.write("  status:", r.status_code)
+        st.sidebar.write("  resp:", r.json())
         r.raise_for_status()
         return r.json().get("pagingInfo", {}).get("recordCount", 0)
-    except Exception:
+    except Exception as e:
+        st.sidebar.write("  API ERROR:", e)
         return 0
     finally:
         # レート制限回避
@@ -72,6 +80,7 @@ def draw_calendar(month_date: dt.date) -> str:
         html += '<tr>'
         for day in week:
             if day == 0:
+                # 当月外の日付
                 html += '<td style="border:1px solid #aaa;padding:8px;background:#fff;"></td>'
             else:
                 current = dt.date(month_date.year, month_date.month, day)
