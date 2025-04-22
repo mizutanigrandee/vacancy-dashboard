@@ -7,88 +7,73 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from dateutil.relativedelta import relativedelta
 
-BASE_URL = "https://travel.rakuten.co.jp/vacancy/"
+URL = "https://travel.rakuten.co.jp/vacancy/?l-id=vacancy_test_c_map_osaka"
 
 @st.cache_data(ttl=3600)
-def fetch_monthly_counts():
+def fetch_namba_counts():
     """
-    なんば〜長居エリアの月間在庫データをまとめて取得し、
-    {day: count} の dict を返します。
+    公式ページの一番上にある「大阪府 宿泊可能な施設数」テーブルを
+    スクレイピングして、日付→在庫件数 を dict で返す。
     """
-    # ここでは「今月＋来月」の両方を一度に取ってくる想定ですが、
-    # まずは左カレンダー月だけ取得するシンプル版です。
-    # 必要に応じて後でループで複数月対応してください。
-    today = datetime.date.today()
-    year, month = today.year, today.month
+    resp = requests.get(URL, timeout=10)
+    resp.raise_for_status()
+    soup = BeautifulSoup(resp.text, "html.parser")
 
-    # 取得したい2か月分をループ
-    all_counts = {}
-    for offset in [0, 1]:
-        ym = (today + relativedelta(months=offset))
-        y, m = ym.year, ym.month
-        # 1日から月末まで回す
-        start = datetime.date(y, m, 1)
-        end = (start + relativedelta(months=1)) - datetime.timedelta(days=1)
-        for d in pd.date_range(start, end, freq="D"):
-            day_str = d.strftime("%Y-%m-%d")
-            # ページ取得
-            resp = requests.get(
-                BASE_URL,
-                params={"l-id": "vacancy_test_c_map_osaka", "checkinDate": day_str},
-                timeout=10
-            )
-            resp.raise_for_status()
-            soup = BeautifulSoup(resp.text, "html.parser")
+    # 1) 一番最初に出てくる table を取得
+    table = soup.find("table")
+    if table is None:
+        st.error("在庫テーブルが見つかりませんでした")
+        return {}
 
-            # テーブルを１つだけ取る（ページ内で最初に出てくるテーブル）
-            table = soup.find("table")
-            if not table:
-                all_counts[d.day] = 0
-                continue
-            tbody = table.find("tbody")
-            if not tbody:
-                all_counts[d.day] = 0
-                continue
+    # 2) thead から日付情報をパース
+    header_ths = table.find("thead").find_all("th")[1:]  # 先頭の「エリア」列を除外
+    dates = []
+    for th in header_ths:
+        txt = th.get_text(strip=True)
+        # たとえば "4/22(火)" なら日付部分だけ取り出す
+        day = int(txt.split("/")[1].split("(")[0])
+        dates.append(day)
 
-            # 行ヘッダに目的エリア名を含む行を探す
-            count = 0
-            for tr in tbody.find_all("tr"):
-                th = tr.find("th")
-                if th and "なんば・心斎橋・天王寺・阿倍野・長居" in th.get_text():
-                    tds = tr.find_all("td")
-                    # セルのテキストが数字になっているものを数える
-                    for td in tds:
-                        txt = td.get_text(strip=True)
-                        if txt.isdigit():
-                            count += 1
-                    break
-            all_counts[d.day] = count
+    # 3) 対象行（「なんば・心斎橋…」）を tbody から探す
+    counts = {}
+    for tr in table.find("tbody").find_all("tr"):
+        th = tr.find("th")
+        if not th:
+            continue
+        if "なんば・心斎橋・天王寺・阿倍野・長居" in th.get_text():
+            tds = tr.find_all("td")
+            for day, td in zip(dates, tds):
+                txt = td.get_text(strip=True)
+                # 数値以外（－や空欄）は 0 とみなす
+                counts[day] = int(txt) if txt.isdigit() else 0
+            break
 
-    return all_counts
+    return counts
 
 def make_month_df(year: int, month: int, counts: dict) -> pd.DataFrame:
     """
-    year,month の全日を DataFrame にし、counts dict から在庫数を埋める
+    指定年月の全日を生成し、counts dict で在庫数を埋めた DataFrame を返す
     """
     start = datetime.date(year, month, 1)
     end   = (start + relativedelta(months=1)) - datetime.timedelta(days=1)
     dates = pd.date_range(start, end, freq="D")
+
     data = {"date": [], "vacancy": []}
     for d in dates:
         data["date"].append(d)
         data["vacancy"].append(counts.get(d.day, 0))
+
     df = pd.DataFrame(data).set_index("date")
-    df["weekday"] = df.index.weekday  # 0=月…6=日
+    df["weekday"] = df.index.weekday
     df["week"]    = (df.index.day - 1 + df["weekday"]) // 7
     return df
 
 def draw_month(df: pd.DataFrame, year: int, month: int):
     st.subheader(f"{year}年{month}月")
-    # 曜日ヘッダー
     cols = st.columns(7)
     for i, wd in enumerate(["日","月","火","水","木","金","土"]):
         cols[i].markdown(f"**{wd}**")
-    # 各週を描画
+
     weeks = int(df["week"].max()) + 1
     for w in range(weeks):
         cols = st.columns(7)
@@ -112,21 +97,20 @@ def draw_month(df: pd.DataFrame, year: int, month: int):
                         unsafe_allow_html=True
                     )
 
-# ── メイン ──
+# ── Streamlit レイアウト ──
 st.sidebar.title("カレンダー月選択")
 year  = st.sidebar.number_input("左カレンダー 年", 2020, 2030, datetime.date.today().year)
 month = st.sidebar.number_input("左カレンダー 月",  1,   12,   datetime.date.today().month)
 
-# 1. まずは2か月合計でスクレイピングしてキャッシュ
-counts = fetch_monthly_counts()
+# キャッシュ付きで在庫を一度だけ取得
+counts = fetch_namba_counts()
 
-# 2. 左右の DataFrame を作成
 left  = datetime.date(year, month, 1)
 right = left + relativedelta(months=1)
+
 df1 = make_month_df(left.year,  left.month,  counts)
 df2 = make_month_df(right.year, right.month, counts)
 
-# 3. 描画
 st.title("なんば・心斎橋〜長居エリア 空室カレンダー (2か月ビュー)")
 col1, col2 = st.columns(2)
 with col1:
