@@ -11,56 +11,40 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- 秘密情報 ---
+# --- シークレット情報 ---
 APP_ID = st.secrets["RAKUTEN_APP_ID"]
-
-# --- smallClassCode 一覧を取得（デバッグ用） ---
-def get_small_codes():
-    """
-    GetAreaClass API から Osaka の smallClassCode をリストで返す
-    """
-    url = "https://app.rakuten.co.jp/services/api/Travel/GetAreaClass/20131024"
-    params = {"applicationId": APP_ID, "format": "json", "formatVersion": 2}
-    r = requests.get(url, params=params, timeout=10)
-    r.raise_for_status()
-    data = r.json()
-    # areaClasses: { largeClasses: [...] }
-    for large in data.get("areaClasses", {}).get("largeClasses", []):
-        if large.get("code") == "japan":
-            for middle in large.get("middleClasses", []):
-                if middle.get("code") == "osaka":
-                    return [(c.get("code"), c.get("name")) for c in middle.get("smallClasses", [])]
-    return []
-
-# 都度呼び出しは重いため、一度だけ動かしてコードを確認
-small_codes = get_small_codes()
-st.sidebar.write("DEBUG: smallClassCode list for Osaka:", small_codes)
-
-# --- タイトル ---
-small_codes = get_small_codes()
-st.sidebar.write("DEBUG: smallClassCode list for Osaka:", small_codes)
 
 # --- タイトル ---
 st.title("楽天トラベル 空室カレンダー（2か月表示）")
 
-# --- 祝日リスト ---
-HOLIDAYS = {dt.date(2025,4,29), dt.date(2025,5,3), dt.date(2025,5,4), dt.date(2025,5,5)}
+# --- 祝日リスト（2025年4月〜5月） ---
+HOLIDAYS = {
+    dt.date(2025, 4, 29),  # 昭和の日
+    dt.date(2025, 5, 3),   # 憲法記念日
+    dt.date(2025, 5, 4),   # みどりの日
+    dt.date(2025, 5, 5),   # こどもの日
+}
 
-# --- VacantHotelSearch API ---
+# --- VacantHotelSearch API 呼び出し ---
 @st.cache_data(ttl=24*60*60)
 def fetch_vacancy_count(date: dt.date) -> int:
+    # 過去日は API 呼び出しせず 0 件
     if date < dt.date.today():
         return 0
+
     params = {
         "applicationId": APP_ID,
         "format": "json",
         "checkinDate": date.strftime("%Y-%m-%d"),
         "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
         "adultNum": 1,
-        # ここを見つけたコードに書き換えてください
-        "smallClassCode": "<ここに smallClassCode をコピペ>"
+        # なんば・心斎橋エリアの smallClassCode を指定
+        "smallClassCode": "osaka_namba_shinsaibashi"
     }
-    url = "https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
+    url = (
+        "https://app.rakuten.co.jp/services/api/"
+        "Travel/VacantHotelSearch/20170426"
+    )
     try:
         r = requests.get(url, params=params, timeout=10)
         r.raise_for_status()
@@ -68,9 +52,10 @@ def fetch_vacancy_count(date: dt.date) -> int:
     except Exception:
         return 0
     finally:
+        # レート制限回避
         time.sleep(0.6)
 
-# --- カレンダー描画 ---
+# --- カレンダー描画関数 ---
 def draw_calendar(month_date: dt.date) -> str:
     cal = calendar.Calendar(firstweekday=calendar.SUNDAY)
     weeks = cal.monthdayscalendar(month_date.year, month_date.month)
@@ -86,18 +71,19 @@ def draw_calendar(month_date: dt.date) -> str:
         html += '<tr>'
         for day in week:
             if day == 0:
+                # 当月外の日付
                 html += '<td style="border:1px solid #aaa;padding:8px;background:#fff;"></td>'
             else:
                 current = dt.date(month_date.year, month_date.month, day)
                 # 背景色判定
                 if current < today:
-                    bg = '#ddd'
+                    bg = '#ddd'  # 過去日グレーアウト
                 elif current in HOLIDAYS or current.weekday() == 6:
-                    bg = '#ffecec'
+                    bg = '#ffecec'  # 日曜・祝日レッド系
                 elif current.weekday() == 5:
-                    bg = '#e0f7ff'
+                    bg = '#e0f7ff'  # 土曜ブルー系
                 else:
-                    bg = '#fff'
+                    bg = '#fff'  # 通常白
 
                 count = fetch_vacancy_count(current)
                 count_html = f'<div>{count} 件</div>' if count > 0 else ''
@@ -111,11 +97,12 @@ def draw_calendar(month_date: dt.date) -> str:
     html += '</tbody></table>'
     return html
 
-# --- メイン: 2か月表示 ---
+# --- メイン：2か月分を並べて表示 ---
 today = dt.date.today()
 baseline = st.sidebar.date_input("基準月を選択", today.replace(day=1))
 month1 = baseline.replace(day=1)
 month2 = (month1 + relativedelta(months=1)).replace(day=1)
+
 col1, col2 = st.columns(2)
 with col1:
     st.subheader(f"{month1.year}年 {month1.month}月")
