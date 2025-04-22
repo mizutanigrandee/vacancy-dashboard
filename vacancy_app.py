@@ -14,33 +14,6 @@ st.set_page_config(
 # --- シークレット情報 ---
 APP_ID = st.secrets["RAKUTEN_APP_ID"]
 
-# --- smallClassCode のリストを取得（GetAreaClass API） ---
-@st.cache_data(ttl=24*60*60)
-def get_small_codes() -> list[tuple[str,str]]:
-    url = "https://app.rakuten.co.jp/services/api/Travel/GetAreaClass/20131024"
-    params = {"applicationId": APP_ID, "format": "json", "formatVersion": 2}
-    r = requests.get(url, params=params, timeout=10)
-    r.raise_for_status()
-    data = r.json()
-    # ネストされたlargeClasses/middleClasses/smallClassesを正しくパース
-    for large_wrap in data.get("areaClasses", {}).get("largeClasses", []):
-        large = large_wrap.get("largeClass", {})
-        if large.get("code") == "japan":
-            for mid_wrap in large.get("middleClasses", []):
-                middle = mid_wrap.get("middleClass", {})
-                if middle.get("code") == "osaka":
-                    # smallClasses内のsmallClassを抽出
-                    return [
-                        (sw.get("smallClass", {}).get("code", ""),
-                         sw.get("smallClass", {}).get("name", ""))
-                        for sw in middle.get("smallClasses", [])
-                    ]
-    return []
-
-small_codes = get_small_codes()
-# サイドバーに小エリアコード一覧を表示
-st.sidebar.write("DEBUG ▶ Osaka smallClassCodes:", small_codes)
-
 # --- タイトル ---
 st.title("楽天トラベル 空室カレンダー（2か月表示）")
 
@@ -55,18 +28,19 @@ HOLIDAYS = {
 # --- VacantHotelSearch API 呼び出し ---
 @st.cache_data(ttl=24*60*60)
 def fetch_vacancy_count(date: dt.date) -> int:
+    # 過去日は API 呼び出しせず 0 件
     if date < dt.date.today():
         return 0
+
     params = {
         "applicationId": APP_ID,
         "format": "json",
         "checkinDate": date.strftime("%Y-%m-%d"),
         "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
         "adultNum": 1,
-        # ここにサイドバーで確認した smallClassCode を設定してください
         "largeClassCode":  "japan",
         "middleClassCode": "osaka",
-        "smallClassCode":  "osaka_namba_shinsaibashi"
+        "smallClassCode":  "osaka_namba_shinsaibashi"  # なんば・心斎橋エリア
     }
     url = (
         "https://app.rakuten.co.jp/services/api/"
@@ -79,6 +53,7 @@ def fetch_vacancy_count(date: dt.date) -> int:
     except Exception:
         return 0
     finally:
+        # レート制限回避
         time.sleep(0.6)
 
 # --- カレンダー描画関数 ---
@@ -100,14 +75,16 @@ def draw_calendar(month_date: dt.date) -> str:
                 html += '<td style="border:1px solid #aaa;padding:8px;background:#fff;"></td>'
             else:
                 current = dt.date(month_date.year, month_date.month, day)
+                # 背景色判定
                 if current < today:
-                    bg = '#ddd'
+                    bg = '#ddd'  # 過去日グレーアウト
                 elif current in HOLIDAYS or current.weekday() == 6:
-                    bg = '#ffecec'
+                    bg = '#ffecec'  # 日曜・祝日レッド系
                 elif current.weekday() == 5:
-                    bg = '#e0f7ff'
+                    bg = '#e0f7ff'  # 土曜ブルー系
                 else:
-                    bg = '#fff'
+                    bg = '#fff'  # 通常白
+
                 count = fetch_vacancy_count(current)
                 count_html = f'<div>{count} 件</div>' if count > 0 else ''
                 html += (
@@ -120,11 +97,12 @@ def draw_calendar(month_date: dt.date) -> str:
     html += '</tbody></table>'
     return html
 
-# --- メイン：2か月分表示 ---
+# --- メイン：2か月分を並べて表示 ---
 today = dt.date.today()
 baseline = st.sidebar.date_input("基準月を選択", today.replace(day=1))
 month1 = baseline.replace(day=1)
 month2 = (month1 + relativedelta(months=1)).replace(day=1)
+
 col1, col2 = st.columns(2)
 with col1:
     st.subheader(f"{month1.year}年 {month1.month}月")
