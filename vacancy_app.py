@@ -6,7 +6,7 @@ import calendar
 
 # --- ページ設定 ---
 st.set_page_config(
-    page_title="空室カレンダー（2か月表示）",
+    page_title="楽天トラベル 空室カレンダー（2か月表示）",
     layout="wide"
 )
 
@@ -24,7 +24,7 @@ HOLIDAYS = {
     dt.date(2025, 5, 5),   # こどもの日
 }
 
-# --- VacantHotelSearch API 呼び出し ---
+# --- API 呼び出し関数 ---
 @st.cache_data(ttl=24*60*60)
 def fetch_vacancy_count(date: dt.date) -> int:
     if date < dt.date.today():
@@ -38,10 +38,10 @@ def fetch_vacancy_count(date: dt.date) -> int:
         "adultNum": 1,
         "largeClassCode": "japan",
         "middleClassCode": "osaka",
-        "smallClassCode": "D"
+        "smallClassCode": "shi"  # 大阪市内（なんば・心斎橋等を含む）
     }
 
-    st.sidebar.write(f"▶ fetch_vacancy_count({date}): {params}")
+    st.sidebar.write(f"\u25b6 fetch_vacancy_count({date}): {params}")
     url = "https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
 
     try:
@@ -49,19 +49,20 @@ def fetch_vacancy_count(date: dt.date) -> int:
         st.sidebar.write(f"  status: {r.status_code}")
         data = r.json()
         st.sidebar.write(f"  resp: {data}")
+
+        if r.status_code == 404:
+            return 0
+        if r.status_code != 200:
+            st.sidebar.write(f"API ERROR status {r.status_code}")
+            return 0
+
+        return data.get("pagingInfo", {}).get("recordCount", 0)
+
     except Exception as e:
-        st.sidebar.write(f"  request error: {e}")
+        st.sidebar.write("  ERROR:", str(e))
         return 0
 
-    if r.status_code == 404:
-        return 0
-    if r.status_code != 200:
-        st.sidebar.write(f"  API ERROR status {r.status_code}")
-        return 0
-
-    return data.get("pagingInfo", {}).get("recordCount", 0)
-
-# --- カレンダー描画関数 ---
+# --- カレンダー描画 ---
 def draw_calendar(month_date: dt.date) -> str:
     cal = calendar.Calendar(firstweekday=calendar.SUNDAY)
     weeks = cal.monthdayscalendar(month_date.year, month_date.month)
@@ -94,7 +95,8 @@ def draw_calendar(month_date: dt.date) -> str:
                 html += (
                     f'<td style="border:1px solid #aaa;padding:8px;background:{bg};">'
                     f'<div><strong>{day}</strong></div>'
-                    f'{count_html}</td>'
+                    f'{count_html}'
+                    '</td>'
                 )
         html += '</tr>'
     html += '</tbody></table>'
