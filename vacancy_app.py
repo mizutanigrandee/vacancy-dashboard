@@ -3,7 +3,6 @@ import requests
 import datetime as dt
 from dateutil.relativedelta import relativedelta
 import calendar
-import time
 
 # --- ページ設定 ---
 st.set_page_config(
@@ -28,6 +27,7 @@ HOLIDAYS = {
 # --- VacantHotelSearch API 呼び出し（デバッグ付き） ---
 @st.cache_data(ttl=24*60*60)
 def fetch_vacancy_count(date: dt.date) -> int:
+    # 過去日は API 呼び出しせず 0 件
     if date < dt.date.today():
         return 0
 
@@ -38,23 +38,25 @@ def fetch_vacancy_count(date: dt.date) -> int:
         "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
         "adultNum": 1,
         "largeClassCode":  "japan",
-        "middleClassCode": "osaka",
-        "smallClassCode":  "osaka_minami"  # ← 修正された部分
+        "middleClassCode": "osaka"
+        # smallClassCode は除外（osaka_minami等は存在しないケースが多い）
     }
 
+    # デバッグ出力
     st.sidebar.write(f"▶ fetch_vacancy_count({date}): {params}")
 
     url = (
         "https://app.rakuten.co.jp/services/api/"
         "Travel/VacantHotelSearch/20170426"
     )
-    r = requests.get(url, params=params, timeout=10)
-    st.sidebar.write(f"  status: {r.status_code}")
+
     try:
+        r = requests.get(url, params=params, timeout=10)
+        st.sidebar.write(f"  status: {r.status_code}")
         data = r.json()
         st.sidebar.write(f"  resp: {data}")
-    except ValueError:
-        st.sidebar.write("  response not JSON")
+    except Exception as e:
+        st.sidebar.write(f"  EXCEPTION: {e}")
         return 0
 
     if r.status_code == 404:
@@ -74,7 +76,7 @@ def draw_calendar(month_date: dt.date) -> str:
     html = '<table style="border-collapse:collapse;width:100%;text-align:center;">'
     html += '<thead><tr>' + ''.join(
         f'<th style="border:1px solid #aaa;padding:4px;background:#f0f0f0;">{d}</th>'
-        for d in ["日","月","火","水","木","金","土"]
+        for d in ["日", "月", "火", "水", "木", "金", "土"]
     ) + '</tr></thead><tbody>'
 
     for week in weeks:
@@ -84,6 +86,7 @@ def draw_calendar(month_date: dt.date) -> str:
                 html += '<td style="border:1px solid #aaa;padding:8px;background:#fff;"></td>'
             else:
                 current = dt.date(month_date.year, month_date.month, day)
+
                 if current < today:
                     bg = '#ddd'
                 elif current in HOLIDAYS or current.weekday() == 6:
@@ -105,7 +108,7 @@ def draw_calendar(month_date: dt.date) -> str:
     html += '</tbody></table>'
     return html
 
-# --- メイン: 2か月表示 ---
+# --- メイン表示（2か月） ---
 today = dt.date.today()
 baseline = st.sidebar.date_input("基準月を選択", today.replace(day=1))
 month1 = baseline.replace(day=1)
