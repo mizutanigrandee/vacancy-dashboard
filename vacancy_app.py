@@ -39,7 +39,7 @@ params = {
     "largeClassCode": "japan",
     "middleClassCode": "osaka",
     "smallClassCode": "shi",
-    "detailClassCode": "D",  # ← 追加ポイント
+    "detailClassCode": "D"
 }
 
     st.sidebar.write(f"\u25b6 fetch_vacancy_count({date}): {params}")
