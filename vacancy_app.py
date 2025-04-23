@@ -24,10 +24,9 @@ HOLIDAYS = {
     dt.date(2025, 5, 5),   # こどもの日
 }
 
-# --- VacantHotelSearch API 呼び出し（デバッグ付き） ---
+# --- VacantHotelSearch API 呼び出し ---
 @st.cache_data(ttl=24*60*60)
 def fetch_vacancy_count(date: dt.date) -> int:
-    # 過去日は API 呼び出しせず 0 件
     if date < dt.date.today():
         return 0
 
@@ -37,32 +36,30 @@ def fetch_vacancy_count(date: dt.date) -> int:
         "checkinDate": date.strftime("%Y-%m-%d"),
         "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
         "adultNum": 1,
-        "largeClassCode":  "japan",
-        "middleClassCode": "osaka"
-        "smallClassCode": "D"
+        "largeClassCode": "japan",
+        "middleClassCode": "osaka",
+        "smallClassCode": "D"  # ← detailClassCode: なんば・心斎橋・天王寺・阿倍野・長居
     }
 
-    # デバッグ出力
     st.sidebar.write(f"▶ fetch_vacancy_count({date}): {params}")
 
     url = (
         "https://app.rakuten.co.jp/services/api/"
         "Travel/VacantHotelSearch/20170426"
     )
-
     try:
         r = requests.get(url, params=params, timeout=10)
         st.sidebar.write(f"  status: {r.status_code}")
         data = r.json()
         st.sidebar.write(f"  resp: {data}")
     except Exception as e:
-        st.sidebar.write(f"  EXCEPTION: {e}")
+        st.sidebar.write(f"  request error: {e}")
         return 0
 
     if r.status_code == 404:
         return 0
     if r.status_code != 200:
-        st.sidebar.write(f"  API ERROR status {r.status_code}")
+        st.sidebar.write(f"API ERROR status {r.status_code}")
         return 0
 
     return data.get("pagingInfo", {}).get("recordCount", 0)
@@ -86,38 +83,6 @@ def draw_calendar(month_date: dt.date) -> str:
                 html += '<td style="border:1px solid #aaa;padding:8px;background:#fff;"></td>'
             else:
                 current = dt.date(month_date.year, month_date.month, day)
-
                 if current < today:
                     bg = '#ddd'
                 elif current in HOLIDAYS or current.weekday() == 6:
-                    bg = '#ffecec'
-                elif current.weekday() == 5:
-                    bg = '#e0f7ff'
-                else:
-                    bg = '#fff'
-
-                count = fetch_vacancy_count(current)
-                count_html = f'<div>{count} 件</div>' if count > 0 else ''
-                html += (
-                    f'<td style="border:1px solid #aaa;padding:8px;background:{bg};">'
-                    f'<div><strong>{day}</strong></div>'
-                    f'{count_html}'
-                    '</td>'
-                )
-        html += '</tr>'
-    html += '</tbody></table>'
-    return html
-
-# --- メイン表示（2か月） ---
-today = dt.date.today()
-baseline = st.sidebar.date_input("基準月を選択", today.replace(day=1))
-month1 = baseline.replace(day=1)
-month2 = (month1 + relativedelta(months=1)).replace(day=1)
-
-col1, col2 = st.columns(2)
-with col1:
-    st.subheader(f"{month1.year}年 {month1.month}月")
-    st.markdown(draw_calendar(month1), unsafe_allow_html=True)
-with col2:
-    st.subheader(f"{month2.year}年 {month2.month}月")
-    st.markdown(draw_calendar(month2), unsafe_allow_html=True)
