@@ -39,7 +39,7 @@ def fetch_vacancy_count(date: dt.date) -> int:
         "adultNum": 1,
         "largeClassCode":  "japan",
         "middleClassCode": "osaka"
-        # smallClassCode は除外（osaka_minami等は存在しないケースが多い）
+        "smallClassCode": "D"
     }
 
     # デバッグ出力
