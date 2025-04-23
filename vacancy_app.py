@@ -30,17 +30,16 @@ def fetch_vacancy_count(date: dt.date) -> int:
     if date < dt.date.today():
         return 0
 
-    params = {
-        "applicationId": APP_ID,
-        "format": "json",
-        "checkinDate": date.strftime("%Y-%m-%d"),
-        "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
-        "adultNum": 1,
-        "largeClassCode": "japan",
-        "middleClassCode": "osaka",
-        "smallClassCode": "D"  # ← detailClassCode: なんば・心斎橋・天王寺・阿倍野・長居
-    }
+params = {
+    "applicationId": APP_ID,
+    "format": "json",
+    "checkinDate": date.strftime("%Y-%m-%d"),
+    "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
+    "adultNum": 1,
+    "largeClassCode": "japan",
+    "middleClassCode": "osaka"
 
+}
     st.sidebar.write(f"▶ fetch_vacancy_count({date}): {params}")
 
     url = (
