@@ -90,4 +90,26 @@ def draw_calendar(month_date: dt.date) -> str:
                     bg = '#fff'
 
                 count = fetch_vacancy_count(current)
-                count_html = f'<div>{count} 件</div>' if count >_
+                count_html = f'<div>{count} 件</div>' if count > 0 else ''
+                html += (
+                    f'<td style="border:1px solid #aaa;padding:8px;background:{bg};">'
+                    f'<div><strong>{day}</strong></div>'
+                    f'{count_html}</td>'
+                )
+        html += '</tr>'
+    html += '</tbody></table>'
+    return html
+
+# --- メイン処理 ---
+today = dt.date.today()
+baseline = st.sidebar.date_input("基準月を選択", today.replace(day=1))
+month1 = baseline.replace(day=1)
+month2 = (month1 + relativedelta(months=1)).replace(day=1)
+
+col1, col2 = st.columns(2)
+with col1:
+    st.subheader(f"{month1.year}年 {month1.month}月")
+    st.markdown(draw_calendar(month1), unsafe_allow_html=True)
+with col2:
+    st.subheader(f"{month2.year}年 {month2.month}月")
+    st.markdown(draw_calendar(month2), unsafe_allow_html=True)
