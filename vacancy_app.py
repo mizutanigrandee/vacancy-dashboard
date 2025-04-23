@@ -37,8 +37,8 @@ def fetch_vacancy_count(date: dt.date) -> int:
         "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
         "adultNum": 1,
         "largeClassCode": "japan",
-        "middleClassCode": "osaka"
-        # smallClassCode は指定しない（404回避のため）
+        "middleClassCode": "osaka",
+        "smallClassCode": "D"
     }
 
     st.sidebar.write(f"▶ fetch_vacancy_count({date}): {params}")
