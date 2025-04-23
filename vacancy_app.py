@@ -38,7 +38,7 @@ def fetch_vacancy_count(date: dt.date) -> int:
         "format": "json",
         "checkinDate": date.strftime("%Y-%m-%d"),
         "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
-        "adultNum": 1,
+        "adultNum": 2,
         "largeClassCode":  "japan",
         "middleClassCode": "osaka",
         "smallClassCode":  "shi",
