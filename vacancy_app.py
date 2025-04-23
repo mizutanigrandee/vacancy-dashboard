@@ -28,11 +28,9 @@ HOLIDAYS = {
 # --- VacantHotelSearch API 呼び出し（デバッグ付き） ---
 @st.cache_data(ttl=24*60*60)
 def fetch_vacancy_count(date: dt.date) -> int:
-    # 過去日は API 呼び出しせず 0 件
     if date < dt.date.today():
         return 0
 
-    # パラメータを組み立て
     params = {
         "applicationId": APP_ID,
         "format": "json",
@@ -41,18 +39,16 @@ def fetch_vacancy_count(date: dt.date) -> int:
         "adultNum": 1,
         "largeClassCode":  "japan",
         "middleClassCode": "osaka",
-        "smallClassCode":  "osaka_namba_shinsaibashi"
+        "smallClassCode":  "osaka_minami"  # ← 修正された部分
     }
-    # デバッグ出力: 日付とパラメータ
+
     st.sidebar.write(f"▶ fetch_vacancy_count({date}): {params}")
 
     url = (
         "https://app.rakuten.co.jp/services/api/"
         "Travel/VacantHotelSearch/20170426"
     )
-    # リクエスト実行
     r = requests.get(url, params=params, timeout=10)
-    # デバッグ出力: ステータスコード
     st.sidebar.write(f"  status: {r.status_code}")
     try:
         data = r.json()
@@ -61,15 +57,12 @@ def fetch_vacancy_count(date: dt.date) -> int:
         st.sidebar.write("  response not JSON")
         return 0
 
-    # 404はデータ無しとみなす
     if r.status_code == 404:
         return 0
-    # 200以外はエラー扱い
     if r.status_code != 200:
         st.sidebar.write(f"  API ERROR status {r.status_code}")
         return 0
 
-    # 成功時はrecordCountを返却
     return data.get("pagingInfo", {}).get("recordCount", 0)
 
 # --- カレンダー描画関数 ---
@@ -88,17 +81,15 @@ def draw_calendar(month_date: dt.date) -> str:
         html += '<tr>'
         for day in week:
             if day == 0:
-                # 当月外
                 html += '<td style="border:1px solid #aaa;padding:8px;background:#fff;"></td>'
             else:
                 current = dt.date(month_date.year, month_date.month, day)
-                # 背景色判定
                 if current < today:
-                    bg = '#ddd'  # 過去日
+                    bg = '#ddd'
                 elif current in HOLIDAYS or current.weekday() == 6:
-                    bg = '#ffecec'  # 日祝
+                    bg = '#ffecec'
                 elif current.weekday() == 5:
-                    bg = '#e0f7ff'  # 土曜
+                    bg = '#e0f7ff'
                 else:
                     bg = '#fff'
 
