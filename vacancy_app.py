@@ -30,16 +30,17 @@ def fetch_vacancy_count(date: dt.date) -> int:
     if date < dt.date.today():
         return 0
 
-    params = {
-        "applicationId": APP_ID,
-        "format": "json",
-        "checkinDate": date.strftime("%Y-%m-%d"),
-        "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
-        "adultNum": 1,
-        "largeClassCode": "japan",
-        "middleClassCode": "osaka",
-        "smallClassCode": "shi"  # 大阪市内（なんば・心斎橋等を含む）
-    }
+params = {
+    "applicationId": APP_ID,
+    "format": "json",
+    "checkinDate": date.strftime("%Y-%m-%d"),
+    "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
+    "adultNum": 1,
+    "largeClassCode": "japan",
+    "middleClassCode": "osaka",
+    "smallClassCode": "shi",
+    "detailClassCode": "D",  # ← 追加ポイント
+}
 
     st.sidebar.write(f"\u25b6 fetch_vacancy_count({date}): {params}")
     url = "https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
