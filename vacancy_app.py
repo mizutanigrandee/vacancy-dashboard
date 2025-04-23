@@ -6,7 +6,7 @@ import calendar
 
 # --- ページ設定 ---
 st.set_page_config(
-    page_title="楽天トラベル 空室カレンダー（2か月表示）",
+    page_title="空室カレンダー（2か月表示）",
     layout="wide"
 )
 
@@ -24,46 +24,48 @@ HOLIDAYS = {
     dt.date(2025, 5, 5),   # こどもの日
 }
 
-# --- API 呼び出し関数 ---
+# --- VacantHotelSearch API 呼び出し（デバッグ付き） ---
 @st.cache_data(ttl=24*60*60)
 def fetch_vacancy_count(date: dt.date) -> int:
     if date < dt.date.today():
         return 0
 
-params = {
-    "applicationId": APP_ID,
-    "format": "json",
-    "checkinDate": date.strftime("%Y-%m-%d"),
-    "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
-    "adultNum": 1,
-    "largeClassCode": "japan",
-    "middleClassCode": "osaka",
-    "smallClassCode": "shi",
-    "detailClassCode": "D"
-}
+    params = {
+        "applicationId": APP_ID,
+        "format": "json",
+        "checkinDate": date.strftime("%Y-%m-%d"),
+        "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
+        "adultNum": 1,
+        "largeClassCode": "japan",
+        "middleClassCode": "osaka",
+        "smallClassCode": "shi",
+        "detailClassCode": "D"
+    }
 
-    st.sidebar.write(f"\u25b6 fetch_vacancy_count({date}): {params}")
-    url = "https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
+    st.sidebar.write(f"▶ fetch_vacancy_count({date}): {params}")
 
+    url = (
+        "https://app.rakuten.co.jp/services/api/"
+        "Travel/VacantHotelSearch/20170426"
+    )
+    r = requests.get(url, params=params, timeout=10)
+    st.sidebar.write(f"  status: {r.status_code}")
     try:
-        r = requests.get(url, params=params, timeout=10)
-        st.sidebar.write(f"  status: {r.status_code}")
         data = r.json()
         st.sidebar.write(f"  resp: {data}")
-
-        if r.status_code == 404:
-            return 0
-        if r.status_code != 200:
-            st.sidebar.write(f"API ERROR status {r.status_code}")
-            return 0
-
-        return data.get("pagingInfo", {}).get("recordCount", 0)
-
-    except Exception as e:
-        st.sidebar.write("  ERROR:", str(e))
+    except ValueError:
+        st.sidebar.write("  response not JSON")
         return 0
 
-# --- カレンダー描画 ---
+    if r.status_code == 404:
+        return 0
+    if r.status_code != 200:
+        st.sidebar.write(f"API ERROR status {r.status_code}")
+        return 0
+
+    return data.get("pagingInfo", {}).get("recordCount", 0)
+
+# --- カレンダー描画関数 ---
 def draw_calendar(month_date: dt.date) -> str:
     cal = calendar.Calendar(firstweekday=calendar.SUNDAY)
     weeks = cal.monthdayscalendar(month_date.year, month_date.month)
@@ -103,7 +105,7 @@ def draw_calendar(month_date: dt.date) -> str:
     html += '</tbody></table>'
     return html
 
-# --- メイン処理 ---
+# --- メイン: 2か月表示 ---
 today = dt.date.today()
 baseline = st.sidebar.date_input("基準月を選択", today.replace(day=1))
 month1 = baseline.replace(day=1)
