@@ -1,77 +1,154 @@
 import streamlit as st
-import datetime
-from dateutil.relativedelta import relativedelta
 import requests
-from bs4 import BeautifulSoup
-import pandas as pd
+import datetime as dt
+from dateutil.relativedelta import relativedelta
 import calendar
-import statistics
+import pandas as pd
+import os
+import json
+import pytz
 
-calendar.setfirstweekday(calendar.SUNDAY)
+# --- ページ設定 ---
+st.set_page_config(
+    page_title="空室カレンダー（2か月表示）",
+    layout="wide"
+)
 
-# --- 1. データ取得ロジック（空室数と平均価格の取得） ---
-def fetch_vacancy_data(checkin_date: str) -> (int, float):
-    url = f"https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
+# --- シークレット情報 ---
+APP_ID = st.secrets["RAKUTEN_APP_ID"]
+
+# --- キャッシュ用ファイル ---
+CACHE_FILE = "vacancy_cache.json"
+
+# --- 祝日リスト（jpholidayが使えない場合、固定登録） ---
+HOLIDAYS = {
+    dt.date(2025, 4, 29),  # 昭和の日
+    dt.date(2025, 5, 3),   # 憲法記念日
+    dt.date(2025, 5, 4),   # みどりの日
+    dt.date(2025, 5, 5),   # こどもの日
+}
+
+# --- VacantHotelSearch API 呼び出し ---
+def fetch_vacancy_count(date: dt.date) -> int:
+    if date < dt.date.today():
+        return 0
+
     params = {
-        "applicationId": "1080095124292517179",  # ← 本番用には自分のApp IDを使用してください
+        "applicationId": APP_ID,
         "format": "json",
-        "checkinDate": checkin_date,
-        "checkoutDate": (datetime.datetime.strptime(checkin_date, "%Y-%m-%d") + datetime.timedelta(days=1)).strftime("%Y-%m-%d"),
-        "latitude": 34.653229,
-        "longitude": 135.506882,
-        "searchRadius": 3,
-        "datumType": 1,
-        "hotelThumbnailSize": 3,
-        "responseType": "large"
+        "checkinDate": date.strftime("%Y-%m-%d"),
+        "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
+        "adultNum": 1,
+        "largeClassCode":  "japan",
+        "middleClassCode": "osaka",
+        "smallClassCode":  "shi",
+        "detailClassCode": "D",
     }
 
+    url = "https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
     try:
-        res = requests.get(url, params=params)
-        data = res.json()
-        hotels = data.get("hotels", [])
-        prices = []
+        r = requests.get(url, params=params, timeout=10)
+        if r.status_code != 200:
+            return 0
+        data = r.json()
+        return data.get("pagingInfo", {}).get("recordCount", 0)
+    except:
+        return 0
 
-        for hotel in hotels:
-            try:
-                total = hotel["hotel"][1]["roomInfo"][0]["dailyCharge"]["total"]
-                prices.append(total)
-            except (KeyError, IndexError, TypeError):
-                continue
+# --- バッチ保存 ---
+def save_cache(data):
+    with open(CACHE_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
-        vacancy_count = len(prices)
-        avg_price = round(statistics.mean(prices), 0) if prices else None
-        return vacancy_count, avg_price
+# --- バッチ読込 ---
+def load_cache():
+    if os.path.exists(CACHE_FILE):
+        with open(CACHE_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
 
-    except Exception as e:
-        print("Error:", e)
-        return 0, None
+# --- バッチ更新 ---
+def update_batch(start_date: dt.date, months: int = 2):
+    result = {}
+    for m in range(months):
+        month = (start_date + relativedelta(months=m)).replace(day=1)
+        for week in calendar.Calendar(firstweekday=calendar.SUNDAY).monthdatescalendar(month.year, month.month):
+            for day in week:
+                if day.month == month.month and day >= dt.date.today():
+                    result[day.isoformat()] = fetch_vacancy_count(day)
+    save_cache(result)
+    return result
 
-# --- 2. カレンダー生成 ---
-def generate_vacancy_calendar(month_offset=0):
-    base_date = datetime.date.today().replace(day=1) + relativedelta(months=month_offset)
-    last_day = calendar.monthrange(base_date.year, base_date.month)[1]
+# --- UI操作：基準月と「最新情報を取得」ボタン ---
+today = dt.date.today()
+baseline = today.replace(day=1)
 
-    records = []
-    for day in range(1, last_day + 1):
-        checkin = base_date.replace(day=day).strftime("%Y-%m-%d")
-        vacancy_count, avg_price = fetch_vacancy_data(checkin)
-        records.append({
-            "日付": base_date.replace(day=day),
-            "空室数": vacancy_count,
-            "平均価格": avg_price
-        })
+if "refresh" not in st.session_state:
+    st.session_state.refresh = False
 
-    df = pd.DataFrame(records)
-    return df
+if st.button("🔄 最新情報を取得する"):
+    st.session_state.refresh = True
 
-# --- 3. Streamlit UI ---
-st.title("楽天トラベル 空室カレンダー（平均価格付き）")
+if st.session_state.refresh:
+    cache_data = update_batch(baseline)
+    st.session_state.refresh = False
+else:
+    cache_data = load_cache()
 
-selected_month = st.selectbox("表示月を選択", ("今月", "来月"))
-offset = 0 if selected_month == "今月" else 1
+# --- カレンダー描画関数 ---
+def draw_calendar(month_date: dt.date) -> str:
+    cal = calendar.Calendar(firstweekday=calendar.SUNDAY)
+    weeks = cal.monthdayscalendar(month_date.year, month_date.month)
+    today = dt.date.today()
 
-with st.spinner("データ取得中..."):
-    calendar_df = generate_vacancy_calendar(month_offset=offset)
+    html = '<table style="border-collapse:collapse;width:100%;text-align:center;">'
+    html += '<thead><tr>' + ''.join(
+        f'<th style="border:1px solid #aaa;padding:4px;background:#f0f0f0;">{d}</th>'
+        for d in ["日","月","火","水","木","金","土"]
+    ) + '</tr></thead><tbody>'
 
-calendar_df["日付"] = calendar_df["日付"].dt.strftime("%Y-%m-%d")
-st.dataframe(calendar_df.style.format({"平均価格": "¥{:.0f}"}))
+    for week in weeks:
+        html += '<tr>'
+        for day in week:
+            if day == 0:
+                html += '<td style="border:1px solid #aaa;padding:8px;background:#fff;"></td>'
+            else:
+                current = dt.date(month_date.year, month_date.month, day)
+                if current < today:
+                    bg = '#ddd'
+                elif current in HOLIDAYS or current.weekday() == 6:
+                    bg = '#ffecec'
+                elif current.weekday() == 5:
+                    bg = '#e0f7ff'
+                else:
+                    bg = '#fff'
+
+                count = cache_data.get(current.isoformat(), 0)
+                count_html = f'<div>{count} 件</div>' if count > 0 else ''
+                html += (
+                    f'<td style="border:1px solid #aaa;padding:8px;background:{bg};">'
+                    f'<div><strong>{day}</strong></div>'
+                    f'{count_html}'
+                    '</td>'
+                )
+        html += '</tr>'
+    html += '</tbody></table>'
+    return html
+
+# --- メイン表示 ---
+month1 = baseline
+month2 = (baseline + relativedelta(months=1)).replace(day=1)
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader(f"{month1.year}年 {month1.month}月")
+    st.markdown(draw_calendar(month1), unsafe_allow_html=True)
+
+with col2:
+    st.subheader(f"{month2.year}年 {month2.month}月")
+    st.markdown(draw_calendar(month2), unsafe_allow_html=True)
+
+# --- 日本時間で最終更新時刻を表示 ---
+jst = pytz.timezone('Asia/Tokyo')
+now_jst = dt.datetime.now(jst)
+st.caption(f"最終更新時刻：{now_jst.strftime('%Y-%m-%d %H:%M:%S')}")
