@@ -22,13 +22,22 @@ APP_ID = st.secrets["RAKUTEN_APP_ID"]
 # --- キャッシュ用ファイル ---
 CACHE_FILE = "vacancy_price_cache.json"
 
-# --- 祝日リスト ---
-HOLIDAYS = {
-    dt.date(2025, 4, 29),
-    dt.date(2025, 5, 3),
-    dt.date(2025, 5, 4),
-    dt.date(2025, 5, 5),
-}
+# --- 祝日リスト（jpholidayを使って半年先まで自動取得） ---
+import jpholiday
+
+def generate_holidays(months: int = 6) -> set:
+    today = dt.date.today()
+    future = today + relativedelta(months=months)
+    holidays = set()
+    d = today
+    while d <= future:
+        if jpholiday.is_holiday(d):
+            holidays.add(d)
+        d += dt.timedelta(days=1)
+    return holidays
+
+HOLIDAYS = generate_holidays()
+
 
 # --- API呼び出し ---
 def fetch_vacancy_and_price(date: dt.date) -> dict:
