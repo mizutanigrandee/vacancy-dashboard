@@ -107,10 +107,10 @@ if "month_offset" not in st.session_state:
 
 col_prev, col_center, col_next = st.columns([1, 5, 1])
 with col_prev:
-    if st.button("◀ 前月"):
+    if st.markdown("<button style='font-size:20px;padding:10px 20px;' onclick=\"window.location.reload()\">◀ 前月</button>", unsafe_allow_html=True):
         st.session_state.month_offset -= 1
 with col_next:
-    if st.button("▶ 次月"):
+    if st.markdown("<button style='font-size:20px;padding:10px 20px;' onclick=\"window.location.reload()\">▶ 次月</button>", unsafe_allow_html=True):
         st.session_state.month_offset += 1
 
 base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
@@ -199,7 +199,18 @@ with col2:
     st.subheader(f"{month2.year}年 {month2.month}月")
     st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
-# --- 更新時刻 ---
+# --- 更新時刻と注釈 ---
 jst = pytz.timezone('Asia/Tokyo')
 now_jst = dt.datetime.now(jst)
 st.caption(f"最終更新時刻：{now_jst.strftime('%Y-%m-%d %H:%M:%S')}")
+
+st.markdown("""
+**《注釈》**  
+- 表示される「平均価格」は、楽天トラベル上位90施設の平均最低価格です  
+- 炎マーク（需要シンボル）は以下のルールで表示されます：  
+  - 🔥1：残室数 ≤250 または 平均価格 ≥25,000円  
+  - 🔥2：残室数 ≤200 または 平均価格 ≥30,000円  
+  - 🔥3：残室数 ≤150 または 平均価格 ≥35,000円  
+  - 🔥4：残室数 ≤100 または 平均価格 ≥40,000円  
+  - 🔥5：残室数 ≤70 または 平均価格 ≥50,000円
+""")
