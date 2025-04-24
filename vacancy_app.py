@@ -152,30 +152,42 @@ def get_demand_icon(vacancy, price):
         level = 1
     return f"🔥{level}" if level > 0 else ""
 
-# --- スタイル追加（モバイル対応） ---
+# --- モバイル対応CSS（フォントサイズ調整版） ---
 st.markdown("""
-    <style>
-        .calendar-wrapper {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        table {
-            min-width: 650px;
-            font-size: 14px;
-        }
-
-        @media screen and (max-width: 768px) {
-            table {
-                font-size: 11px;
-                min-width: 520px;
-            }
-            th, td {
-                padding: 4px;
-            }
-        }
-    </style>
+<style>
+table {
+    width: 100%;
+    table-layout: fixed;
+    word-wrap: break-word;
+}
+td {
+    font-size: 13px;
+}
+th {
+    font-size: 14px;
+}
+td div {
+    line-height: 1.2;
+}
+@media screen and (max-width: 768px) {
+    td {
+        font-size: 11px;
+    }
+    th {
+        font-size: 12px;
+    }
+    td div {
+        line-height: 1.2;
+    }
+    td div:nth-child(2),  /* 件数 */
+    td div:nth-child(3) {  /* 平均価格 */
+        font-size: 12px;
+        font-weight: bold;
+    }
+}
+</style>
 """, unsafe_allow_html=True)
+
 
 # --- カレンダー描画 ---
 def draw_calendar(month_date: dt.date) -> str:
