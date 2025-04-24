@@ -55,8 +55,8 @@ def fetch_vacancy_and_price(date: dt.date) -> dict:
         prices = []
         for hotel in data.get("hotels", []):
             try:
-                rooms = hotel[1].get("roomInfo", [])
-                for plan in rooms:
+                room_info_list = hotel[1].get("roomInfo", [])
+                for plan in room_info_list:
                     daily = plan.get("dailyCharge", {})
                     total = daily.get("total", None)
                     if total:
