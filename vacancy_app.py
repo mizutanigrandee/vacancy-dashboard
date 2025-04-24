@@ -33,42 +33,47 @@ def fetch_vacancy_and_price(date: dt.date) -> dict:
     if date < dt.date.today():
         return {"vacancy": 0, "avg_price": 0.0}
 
-    params = {
-        "applicationId": APP_ID,
-        "format": "json",
-        "checkinDate": date.strftime("%Y-%m-%d"),
-        "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
-        "adultNum": 1,
-        "largeClassCode":  "japan",
-        "middleClassCode": "osaka",
-        "smallClassCode":  "shi",
-        "detailClassCode": "D",
-    }
+    prices = []
+    vacancy_total = 0
+    for page in range(1, 4):  # 最大3ページ巡回（最大90ホテル）
+        params = {
+            "applicationId": APP_ID,
+            "format": "json",
+            "checkinDate": date.strftime("%Y-%m-%d"),
+            "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
+            "adultNum": 1,
+            "largeClassCode":  "japan",
+            "middleClassCode": "osaka",
+            "smallClassCode":  "shi",
+            "detailClassCode": "D",
+            "page": page
+        }
 
-    url = "https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
-    try:
-        r = requests.get(url, params=params, timeout=10)
-        if r.status_code != 200:
-            return {"vacancy": 0, "avg_price": 0.0}
-        data = r.json()
-        vacancy = data.get("pagingInfo", {}).get("recordCount", 0)
-        prices = []
-        for hotel in data.get("hotels", []):
-            try:
-                hotel_parts = hotel.get("hotel", [])
-                if len(hotel_parts) >= 2:
-                    room_info_list = hotel_parts[1].get("roomInfo", [])
-                    for plan in room_info_list:
-                        daily = plan.get("dailyCharge", {})
-                        total = daily.get("total", None)
-                        if total:
-                            prices.append(total)
-            except Exception as e:
-                st.write("例外:", e)
-        avg_price = round(sum(prices) / len(prices), 0) if prices else 0.0
-        return {"vacancy": vacancy, "avg_price": avg_price}
-    except:
-        return {"vacancy": 0, "avg_price": 0.0}
+        url = "https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
+        try:
+            r = requests.get(url, params=params, timeout=10)
+            if r.status_code != 200:
+                continue
+            data = r.json()
+            if page == 1:
+                vacancy_total = data.get("pagingInfo", {}).get("recordCount", 0)
+            for hotel in data.get("hotels", []):
+                try:
+                    hotel_parts = hotel.get("hotel", [])
+                    if len(hotel_parts) >= 2:
+                        room_info_list = hotel_parts[1].get("roomInfo", [])
+                        for plan in room_info_list:
+                            daily = plan.get("dailyCharge", {})
+                            total = daily.get("total", None)
+                            if total:
+                                prices.append(total)
+                except Exception as e:
+                    st.write("例外:", e)
+        except:
+            continue
+
+    avg_price = round(sum(prices) / len(prices), 0) if prices else 0.0
+    return {"vacancy": vacancy_total, "avg_price": avg_price}
 
 # --- バッチ保存／読込 ---
 def save_cache(data):
