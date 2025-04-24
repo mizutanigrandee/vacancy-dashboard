@@ -128,14 +128,8 @@ base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_
 month1 = base_month
 month2 = base_month + relativedelta(months=1)
 
-if st.button("🔄 最新情報を取得する"):
-    st.session_state.refresh = True
-
-if st.session_state.refresh:
-    cache_data = update_batch(base_month)
-    st.session_state.refresh = False
-else:
-    cache_data = load_cache()
+# 最新情報はGitHub Actionsで自動更新されるため、ボタンは不要
+cache_data = load_cache()
 
 # --- 需要シンボルロジック ---
 def get_demand_icon(vacancy, price):
