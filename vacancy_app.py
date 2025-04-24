@@ -152,7 +152,7 @@ def get_demand_icon(vacancy, price):
         level = 1
     return f"🔥{level}" if level > 0 else ""
 
-# --- モバイル対応CSS（フォントサイズ調整版） ---
+# --- スタイル追加（モバイル対応） ---
 st.markdown("""
 <style>
 table {
@@ -161,14 +161,25 @@ table {
     word-wrap: break-word;
 }
 td {
-    font-size: 13px;
+    font-size: 14px;
 }
 th {
-    font-size: 14px;
+    font-size: 15px;
 }
 td div {
     line-height: 1.2;
 }
+
+/* 👇 PCサイズ向けのフォント拡大（スマホは無視） */
+@media screen and (min-width: 769px) {
+    td div:nth-child(2),  /* 件数 */
+    td div:nth-child(3) {  /* 平均価格 */
+        font-size: 16px;
+        font-weight: bold;
+    }
+}
+
+/* 👇 モバイルは従来どおり */
 @media screen and (max-width: 768px) {
     td {
         font-size: 11px;
@@ -178,11 +189,6 @@ td div {
     }
     td div {
         line-height: 1.2;
-    }
-    td div:nth-child(2),  /* 件数 */
-    td div:nth-child(3) {  /* 平均価格 */
-        font-size: 12px;
-        font-weight: bold;
     }
 }
 </style>
