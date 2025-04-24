@@ -161,7 +161,11 @@ def draw_calendar(month_date: dt.date) -> str:
                 record = cache_data.get(iso, {"vacancy": 0, "avg_price": 0.0})
                 count_html = f'<div>{record["vacancy"]}件</div>'
                 price_html = f'<div>￥{int(record["avg_price"]):,}</div>'
-                icon = get_demand_icon(record["vacancy"], record["avg_price"])
+
+                if current >= today:
+                    icon = get_demand_icon(record["vacancy"], record["avg_price"])
+                else:
+                    icon = ""
                 icon_html = f'<div style="font-size: 16px; white-space: nowrap;">{icon}</div>'
 
                 html += (
