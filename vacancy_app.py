@@ -152,13 +152,39 @@ def get_demand_icon(vacancy, price):
         level = 1
     return f"🔥{level}" if level > 0 else ""
 
+# --- スタイル追加（モバイル対応） ---
+st.markdown("""
+    <style>
+        .calendar-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+            min-width: 650px;
+            font-size: 14px;
+        }
+
+        @media screen and (max-width: 768px) {
+            table {
+                font-size: 11px;
+                min-width: 520px;
+            }
+            th, td {
+                padding: 4px;
+            }
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 # --- カレンダー描画 ---
 def draw_calendar(month_date: dt.date) -> str:
     cal = calendar.Calendar(firstweekday=calendar.SUNDAY)
     weeks = cal.monthdayscalendar(month_date.year, month_date.month)
     today = dt.date.today()
 
-    html = '<table style="border-collapse:collapse;width:100%;text-align:center;">'
+    html = '<div class="calendar-wrapper">'
+    html += '<table style="border-collapse:collapse;width:100%;text-align:center;">'
     html += '<thead><tr>' + ''.join(
         f'<th style="border:1px solid #aaa;padding:4px;background:#f0f0f0;">{d}</th>'
         for d in ["日","月","火","水","木","金","土"]
@@ -199,6 +225,7 @@ def draw_calendar(month_date: dt.date) -> str:
                 )
         html += '</tr>'
     html += '</tbody></table>'
+    html += '</div>'
     return html
 
 # --- 表示 ---
@@ -209,7 +236,7 @@ with col1:
 with col2:
     st.subheader(f"{month2.year}年 {month2.month}月")
     st.markdown(draw_calendar(month2), unsafe_allow_html=True)
-
+    
 # --- 更新時刻と注釈 ---
 jst = pytz.timezone('Asia/Tokyo')
 now_jst = dt.datetime.now(jst)
