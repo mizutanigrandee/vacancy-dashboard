@@ -107,12 +107,12 @@ if "refresh" not in st.session_state:
 if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
 
-col_prev, col_center, col_next = st.columns([1, 5, 1])
-with col_prev:
-    if st.markdown("<button style='font-size:20px;padding:10px 20px;' onclick=\"window.location.reload()\">◀ 前月</button>", unsafe_allow_html=True):
+nav1, nav_spacer, nav2 = st.columns([2, 6, 2])
+with nav1:
+    if st.button("◀ 前月", key="prev"):
         st.session_state.month_offset -= 1
-with col_next:
-    if st.markdown("<button style='font-size:20px;padding:10px 20px;' onclick=\"window.location.reload()\">▶ 次月</button>", unsafe_allow_html=True):
+with nav2:
+    if st.button("▶ 次月", key="next"):
         st.session_state.month_offset += 1
 
 base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
