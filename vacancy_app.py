@@ -55,9 +55,13 @@ def fetch_vacancy_and_price(date: dt.date) -> dict:
         prices = []
         for hotel in data.get("hotels", []):
             try:
-                price = hotel[0]["hotelBasicInfo"]["hotelMinCharge"]
-                prices.append(price)
-            except:
+                rooms = hotel[1].get("roomInfo", [])
+                for plan in rooms:
+                    daily = plan.get("dailyCharge", {})
+                    total = daily.get("total", None)
+                    if total:
+                        prices.append(total)
+            except Exception:
                 continue
         avg_price = round(sum(prices) / len(prices), 0) if prices else 0.0
         return {"vacancy": vacancy, "avg_price": avg_price}
@@ -103,9 +107,6 @@ if st.session_state.refresh:
 else:
     cache_data = load_cache()
 
-# --- デバッグ用出力 ---
-st.write("デバッグ：", cache_data)
-
 # --- カレンダー描画 ---
 def draw_calendar(month_date: dt.date) -> str:
     cal = calendar.Calendar(firstweekday=calendar.SUNDAY)
@@ -137,7 +138,7 @@ def draw_calendar(month_date: dt.date) -> str:
                 iso = current.isoformat()
                 record = cache_data.get(iso, {"vacancy": 0, "avg_price": 0.0})
                 count_html = f'<div>{record["vacancy"]}件</div>'
-                price_html = f'<div>￥{int(record["avg_price"]):,}</div>'  # 平均価格は0円でも出力
+                price_html = f'<div>￥{int(record["avg_price"]):,}</div>'
 
                 html += (
                     f'<td style="border:1px solid #aaa;padding:8px;background:{bg};">'
