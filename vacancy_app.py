@@ -20,7 +20,7 @@ APP_ID = st.secrets["RAKUTEN_APP_ID"]
 # --- キャッシュ用ファイル ---
 CACHE_FILE = "vacancy_price_cache.json"
 
-# --- 祝日リスト（必要に応じて追加） ---
+# --- 祝日リスト ---
 HOLIDAYS = {
     dt.date(2025, 4, 29),
     dt.date(2025, 5, 3),
@@ -28,14 +28,14 @@ HOLIDAYS = {
     dt.date(2025, 5, 5),
 }
 
-# --- API呼び出し関数（空室数と平均価格） ---
+# --- API呼び出し ---
 def fetch_vacancy_and_price(date: dt.date) -> dict:
     if date < dt.date.today():
         return {"vacancy": 0, "avg_price": 0.0}
 
     prices = []
     vacancy_total = 0
-    for page in range(1, 4):  # 最大3ページ巡回（最大90ホテル）
+    for page in range(1, 4):
         params = {
             "applicationId": APP_ID,
             "format": "json",
@@ -67,15 +67,15 @@ def fetch_vacancy_and_price(date: dt.date) -> dict:
                             total = daily.get("total", None)
                             if total:
                                 prices.append(total)
-                except Exception as e:
-                    st.write("例外:", e)
+                except:
+                    continue
         except:
             continue
 
     avg_price = round(sum(prices) / len(prices), 0) if prices else 0.0
     return {"vacancy": vacancy_total, "avg_price": avg_price}
 
-# --- バッチ保存／読込 ---
+# --- キャッシュ処理 ---
 def save_cache(data):
     with open(CACHE_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
@@ -98,7 +98,7 @@ def update_batch(start_date: dt.date, months: int = 2):
     save_cache(result)
     return result
 
-# --- UI操作 ---
+# --- UI制御 ---
 today = dt.date.today()
 baseline = today.replace(day=1)
 
@@ -113,6 +113,21 @@ if st.session_state.refresh:
     st.session_state.refresh = False
 else:
     cache_data = load_cache()
+
+# --- 需要シンボルロジック ---
+def get_demand_icon(vacancy, price):
+    icon = ""
+    if (vacancy <= 70 or price >= 50000):
+        icon = "🔥5"
+    elif (vacancy <= 100 or price >= 40000):
+        icon = "🔥4"
+    elif (vacancy <= 150 or price >= 35000):
+        icon = "🔥3"
+    elif (vacancy <= 200 or price >= 30000):
+        icon = "🔥2"
+    elif (vacancy <= 250 or price >= 25000):
+        icon = "🔥1"
+    return icon
 
 # --- カレンダー描画 ---
 def draw_calendar(month_date: dt.date) -> str:
@@ -146,11 +161,12 @@ def draw_calendar(month_date: dt.date) -> str:
                 record = cache_data.get(iso, {"vacancy": 0, "avg_price": 0.0})
                 count_html = f'<div>{record["vacancy"]}件</div>'
                 price_html = f'<div>￥{int(record["avg_price"]):,}</div>'
+                icon_html = f'<div style="font-size: 16px;">{get_demand_icon(record["vacancy"], record["avg_price"])}️</div>'
 
                 html += (
                     f'<td style="border:1px solid #aaa;padding:8px;background:{bg};">'
                     f'<div><strong>{day}</strong></div>'
-                    f'{count_html}{price_html}'
+                    f'{count_html}{price_html}{icon_html}'
                     '</td>'
                 )
         html += '</tr>'
@@ -170,7 +186,7 @@ with col2:
     st.subheader(f"{month2.year}年 {month2.month}月")
     st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
-# --- 更新時刻表示 ---
+# --- 更新時刻 ---
 jst = pytz.timezone('Asia/Tokyo')
 now_jst = dt.datetime.now(jst)
 st.caption(f"最終更新時刻：{now_jst.strftime('%Y-%m-%d %H:%M:%S')}")
