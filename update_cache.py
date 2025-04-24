@@ -51,7 +51,7 @@ def fetch_vacancy_and_price(date: dt.date) -> dict:
     avg_price = round(sum(prices) / len(prices), 0) if prices else 0.0
     return {"vacancy": vacancy_total, "avg_price": avg_price}
 
-def update_batch(start_date: dt.date, months: int = 2):
+def update_batch(start_date: dt.date, months: int = 6):
     result = {}
     for m in range(months):
         month = (start_date + relativedelta(months=m)).replace(day=1)
