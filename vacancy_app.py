@@ -1,108 +1,77 @@
 import streamlit as st
+import datetime
+from dateutil.relativedelta import relativedelta
 import requests
+from bs4 import BeautifulSoup
 import pandas as pd
-from datetime import datetime, timedelta
-import pytz
 import calendar
+import statistics
 
-# --- 設定 ---
-APPLICATION_ID = "1080095124292517179"
-AREA_PARAMS = {
-    "largeClassCode": "japan",
-    "middleClassCode": "osaka",
-    "smallClassCode": "shi",
-    "detailClassCode": "D",
-}
-ADULT_NUM = 2
+calendar.setfirstweekday(calendar.SUNDAY)
 
-# --- 関数：在庫と平均価格を取得 ---
-def fetch_vacancy_and_price(date):
-    url = "https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
+# --- 1. データ取得ロジック（空室数と平均価格の取得） ---
+def fetch_vacancy_data(checkin_date: str) -> (int, float):
+    url = f"https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
     params = {
-        "applicationId": APPLICATION_ID,
+        "applicationId": "1080095124292517179",  # ← 本番用には自分のApp IDを使用してください
         "format": "json",
-        "checkinDate": date.strftime("%Y-%m-%d"),
-        "checkoutDate": (date + timedelta(days=1)).strftime("%Y-%m-%d"),
-        "adultNum": ADULT_NUM,
-        **AREA_PARAMS,
-        "page": 1,
+        "checkinDate": checkin_date,
+        "checkoutDate": (datetime.datetime.strptime(checkin_date, "%Y-%m-%d") + datetime.timedelta(days=1)).strftime("%Y-%m-%d"),
+        "latitude": 34.653229,
+        "longitude": 135.506882,
+        "searchRadius": 3,
+        "datumType": 1,
+        "hotelThumbnailSize": 3,
+        "responseType": "large"
     }
 
-    hotel_counts = 0
-    total_min_charge = 0
-    total_hotels = 0
-
-    while True:
+    try:
         res = requests.get(url, params=params)
-        if res.status_code != 200:
-            break
-
         data = res.json()
         hotels = data.get("hotels", [])
-        if not hotels:
-            break
+        prices = []
 
-        for hotel_data in hotels:
+        for hotel in hotels:
             try:
-                info = hotel_data['hotel'][0]['hotelBasicInfo']
-                charge = int(info.get("hotelMinCharge", 0))
-                total_min_charge += charge
-                total_hotels += 1
-            except:
+                total = hotel["hotel"][1]["roomInfo"][0]["dailyCharge"]["total"]
+                prices.append(total)
+            except (KeyError, IndexError, TypeError):
                 continue
 
-        if data['pagingInfo']['last'] <= params['page']:
-            break
-        else:
-            params['page'] += 1
+        vacancy_count = len(prices)
+        avg_price = round(statistics.mean(prices), 0) if prices else None
+        return vacancy_count, avg_price
 
-    avg_price = int(total_min_charge / total_hotels) if total_hotels > 0 else None
-    return total_hotels, avg_price
+    except Exception as e:
+        print("Error:", e)
+        return 0, None
 
-# --- 現在の月を設定 ---
-tz = pytz.timezone("Asia/Tokyo")
-today = datetime.now(tz)
-base_date = datetime(today.year, today.month, 1, tzinfo=tz)
-st.session_state.setdefault("base_date", base_date)
+# --- 2. カレンダー生成 ---
+def generate_vacancy_calendar(month_offset=0):
+    base_date = datetime.date.today().replace(day=1) + relativedelta(months=month_offset)
+    last_day = calendar.monthrange(base_date.year, base_date.month)[1]
 
-# --- UI：前月／翌月ボタン ---
-col1, col2 = st.columns([1, 5])
-with col1:
-    if st.button("\u2190 前月"):
-        st.session_state.base_date -= timedelta(days=1)
-        st.session_state.base_date = st.session_state.base_date.replace(day=1)
-with col2:
-    if st.button("\u2192 翌月"):
-        year = st.session_state.base_date.year + (st.session_state.base_date.month // 12)
-        month = st.session_state.base_date.month % 12 + 1
-        st.session_state.base_date = datetime(year, month, 1, tzinfo=tz)
+    records = []
+    for day in range(1, last_day + 1):
+        checkin = base_date.replace(day=day).strftime("%Y-%m-%d")
+        vacancy_count, avg_price = fetch_vacancy_data(checkin)
+        records.append({
+            "日付": base_date.replace(day=day),
+            "空室数": vacancy_count,
+            "平均価格": avg_price
+        })
 
-# --- タイトルと更新時刻 ---
-st.title("楽天トラベル 空室カレンダー（平均価格表示付き）")
-st.markdown(f"**最終更新時刻：** {today.strftime('%Y-%m-%d %H:%M:%S')}")
+    df = pd.DataFrame(records)
+    return df
 
-# --- カレンダー表示 ---
-def show_calendar(year, month):
-    st.subheader(f"{year}年 {month}月")
-    cal = calendar.Calendar(firstweekday=6)
-    dates = [d for d in cal.itermonthdates(year, month) if d.month == month]
-    week_rows = [dates[i:i+7] for i in range(0, len(dates), 7)]
+# --- 3. Streamlit UI ---
+st.title("楽天トラベル 空室カレンダー（平均価格付き）")
 
-    for week in week_rows:
-        cols = st.columns(7)
-        for i, day in enumerate(week):
-            with cols[i]:
-                hotels, avg_price = fetch_vacancy_and_price(day)
-                label = f"{day.day}"
-                if hotels:
-                    label += f"\n{hotels}件\n平均\u00a5{avg_price:,}"
-                st.button(label, key=f"{day}")
+selected_month = st.selectbox("表示月を選択", ("今月", "来月"))
+offset = 0 if selected_month == "今月" else 1
 
-# --- 表示処理 ---
-base_date = st.session_state.base_date
-year, month = base_date.year, base_date.month
-show_calendar(year, month)
+with st.spinner("データ取得中..."):
+    calendar_df = generate_vacancy_calendar(month_offset=offset)
 
-# 翌月のカレンダーも表示
-next_month = (base_date + timedelta(days=32)).replace(day=1)
-show_calendar(next_month.year, next_month.month)
+calendar_df["日付"] = calendar_df["日付"].dt.strftime("%Y-%m-%d")
+st.dataframe(calendar_df.style.format({"平均価格": "¥{:.0f}"}))
