@@ -100,16 +100,28 @@ def update_batch(start_date: dt.date, months: int = 2):
 
 # --- UI制御 ---
 today = dt.date.today()
-baseline = today.replace(day=1)
-
 if "refresh" not in st.session_state:
     st.session_state.refresh = False
+if "month_offset" not in st.session_state:
+    st.session_state.month_offset = 0
+
+col_prev, col_center, col_next = st.columns([1, 5, 1])
+with col_prev:
+    if st.button("◀ 前月"):
+        st.session_state.month_offset -= 1
+with col_next:
+    if st.button("▶ 次月"):
+        st.session_state.month_offset += 1
+
+base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
+month1 = base_month
+month2 = base_month + relativedelta(months=1)
 
 if st.button("🔄 最新情報を取得する"):
     st.session_state.refresh = True
 
 if st.session_state.refresh:
-    cache_data = update_batch(baseline)
+    cache_data = update_batch(base_month)
     st.session_state.refresh = False
 else:
     cache_data = load_cache()
@@ -179,14 +191,10 @@ def draw_calendar(month_date: dt.date) -> str:
     return html
 
 # --- 表示 ---
-month1 = baseline
-month2 = (baseline + relativedelta(months=1)).replace(day=1)
 col1, col2 = st.columns(2)
-
 with col1:
     st.subheader(f"{month1.year}年 {month1.month}月")
     st.markdown(draw_calendar(month1), unsafe_allow_html=True)
-
 with col2:
     st.subheader(f"{month2.year}年 {month2.month}月")
     st.markdown(draw_calendar(month2), unsafe_allow_html=True)
