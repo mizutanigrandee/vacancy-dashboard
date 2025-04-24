@@ -116,18 +116,18 @@ else:
 
 # --- 需要シンボルロジック ---
 def get_demand_icon(vacancy, price):
-    icon = ""
+    level = 0
     if (vacancy <= 70 or price >= 50000):
-        icon = "🔥5"
+        level = 5
     elif (vacancy <= 100 or price >= 40000):
-        icon = "🔥4"
+        level = 4
     elif (vacancy <= 150 or price >= 35000):
-        icon = "🔥3"
+        level = 3
     elif (vacancy <= 200 or price >= 30000):
-        icon = "🔥2"
+        level = 2
     elif (vacancy <= 250 or price >= 25000):
-        icon = "🔥1"
-    return icon
+        level = 1
+    return f"🔥{level}" if level > 0 else ""
 
 # --- カレンダー描画 ---
 def draw_calendar(month_date: dt.date) -> str:
@@ -161,7 +161,8 @@ def draw_calendar(month_date: dt.date) -> str:
                 record = cache_data.get(iso, {"vacancy": 0, "avg_price": 0.0})
                 count_html = f'<div>{record["vacancy"]}件</div>'
                 price_html = f'<div>￥{int(record["avg_price"]):,}</div>'
-                icon_html = f'<div style="font-size: 16px;">{get_demand_icon(record["vacancy"], record["avg_price"])}️</div>'
+                icon = get_demand_icon(record["vacancy"], record["avg_price"])
+                icon_html = f'<div style="font-size: 16px; white-space: nowrap;">{icon}</div>'
 
                 html += (
                     f'<td style="border:1px solid #aaa;padding:8px;background:{bg};">'
