@@ -55,14 +55,16 @@ def fetch_vacancy_and_price(date: dt.date) -> dict:
         prices = []
         for hotel in data.get("hotels", []):
             try:
-                room_info_list = hotel[1].get("roomInfo", [])
-                for plan in room_info_list:
-                    daily = plan.get("dailyCharge", {})
-                    total = daily.get("total", None)
-                    if total:
-                        prices.append(total)
-            except Exception:
-                continue
+                hotel_parts = hotel.get("hotel", [])
+                if len(hotel_parts) >= 2:
+                    room_info_list = hotel_parts[1].get("roomInfo", [])
+                    for plan in room_info_list:
+                        daily = plan.get("dailyCharge", {})
+                        total = daily.get("total", None)
+                        if total:
+                            prices.append(total)
+            except Exception as e:
+                st.write("例外:", e)
         avg_price = round(sum(prices) / len(prices), 0) if prices else 0.0
         return {"vacancy": vacancy, "avg_price": avg_price}
     except:
