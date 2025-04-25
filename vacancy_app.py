@@ -109,7 +109,7 @@ def draw_calendar(month_date: dt.date) -> str:
                 price_html = f'<div style="font-size:18px;font-weight:bold;">￥{int(record["avg_price"]):,}</div>'
                 
                 icon = get_demand_icon(record["vacancy"], record["avg_price"]) if current >= today else ""
-                icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:14px;">{icon}</div>'
+                icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:18px;">{icon}</div>'
 
                 # イベント情報（1行ずつ改行）
                 event_html = ""
