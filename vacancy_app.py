@@ -160,22 +160,30 @@ def draw_calendar(month_date: dt.date) -> str:
     html += '</div>'
     return html
 
-# --- 表示 ---
+# --- UI制御 ---
 today = dt.date.today()
+if "refresh" not in st.session_state:
+    st.session_state.refresh = False
 if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
 
-nav1, nav_spacer, nav2 = st.columns([2, 6, 2])
+# 🔁 ナビゲーションボタン（中央に当月）
+nav1, nav2, nav3 = st.columns([2, 2, 2])
 with nav1:
     if st.button("◀ 前月", key="prev"):
         st.session_state.month_offset -= 1
 with nav2:
+    if st.button("📅 当月", key="today"):
+        st.session_state.month_offset = 0
+with nav3:
     if st.button("▶ 次月", key="next"):
         st.session_state.month_offset += 1
 
+# 🔁 表示対象月の計算
 base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
 month1 = base_month
 month2 = base_month + relativedelta(months=1)
+
 
 col1, col2 = st.columns(2)
 with col1:
