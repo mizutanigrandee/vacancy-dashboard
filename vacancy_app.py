@@ -120,12 +120,11 @@ def draw_calendar(month_date: dt.date) -> str:
                 icon = get_demand_icon(record["vacancy"], record["avg_price"]) if current >= today else ""
                 icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:14px;">{icon}</div>'
 
-                # ▼ イベント情報（縦に改行）
+                # ▼ 改行されるイベント表示
                 event_html = ""
                 if iso in event_data:
                     for ev in event_data[iso]:
-                        event_html += f'<div>{ev["icon"]} {ev["name"]}</div>'
-                    event_html = f'<div style="font-size: 12px; text-align:left; white-space:normal; line-height: 1.2;">{event_html}</div>'
+                        event_html += f'<div style="display:block;text-align:left;font-size:12px;white-space:normal;">{ev["icon"]} {ev["name"]}</div>'
 
                 html += (
                     f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;">'
