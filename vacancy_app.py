@@ -90,9 +90,9 @@ def draw_calendar(month_date: dt.date) -> str:
     today = dt.date.today()
 
     html = '<div class="calendar-wrapper">'
-    html += '<table style="border-collapse:collapse;width:100%;text-align:center;">'
+    html += '<table style="border-collapse:collapse;width:100%;table-layout:fixed;text-align:center;">'
     html += '<thead><tr>' + ''.join(
-        f'<th style="border:1px solid #aaa;padding:4px;background:#f0f0f0;">{d}</th>'
+        f'<th style="border:1px solid #aaa;padding:4px;background:#f0f0f0;width:14.2%;">{d}</th>'
         for d in ["日","月","火","水","木","金","土"]
     ) + '</tr></thead><tbody>'
 
@@ -100,7 +100,7 @@ def draw_calendar(month_date: dt.date) -> str:
         html += '<tr>'
         for day in week:
             if day == 0:
-                html += '<td style="border:1px solid #aaa;padding:8px;background:#fff;"></td>'
+                html += '<td style="border:1px solid #aaa;padding:8px;background:#fff;width:14.2%;"></td>'
             else:
                 current = dt.date(month_date.year, month_date.month, day)
                 if current < today:
@@ -120,14 +120,18 @@ def draw_calendar(month_date: dt.date) -> str:
                 icon = get_demand_icon(record["vacancy"], record["avg_price"]) if current >= today else ""
                 icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:14px;">{icon}</div>'
 
-                # ▼ 改行されるイベント表示
                 event_html = ""
                 if iso in event_data:
                     for ev in event_data[iso]:
-                        event_html += f'<div style="display:block;text-align:left;font-size:12px;white-space:normal;">{ev["icon"]} {ev["name"]}</div>'
+                        event_html += (
+                            f'<div style="display:block;text-align:left;font-size:12px;'
+                            f'white-space:normal;word-break:break-word;line-height:1.1;">'
+                            f'{ev["icon"]} {ev["name"]}</div>'
+                        )
 
                 html += (
-                    f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;">'
+                    f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;'
+                    f'width:14.2%;max-width:14.2%;">'
                     f'{icon_html}'
                     f'<div><strong>{day}</strong></div>'
                     f'{count_html}{price_html}{event_html}'
