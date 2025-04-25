@@ -105,9 +105,9 @@ def draw_calendar(month_date: dt.date) -> str:
 
                 iso = current.isoformat()
                 record = cache_data.get(iso, {"vacancy": 0, "avg_price": 0.0})
-                count_html = f'<div>{record["vacancy"]}件</div>'
-                price_html = f'<div>￥{int(record["avg_price"]):,}</div>'
-
+                count_html = f'<div style="font-size:13px;font-weight:bold;">{record["vacancy"]}件</div>'
+                price_html = f'<div style="font-size:13px;font-weight:bold;">￥{int(record["avg_price"]):,}</div>'
+                
                 icon = get_demand_icon(record["vacancy"], record["avg_price"]) if current >= today else ""
                 icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:14px;">{icon}</div>'
 
@@ -152,5 +152,5 @@ st.markdown("""
   - 🔥5：残室数 ≤70 または 平均価格 ≥50,000円  
 - 🔴：京セラドーム  
 - 🔵：ヤンマースタジアム  
-- ⚫：その他会場
+- ★：その他会場
 """)
