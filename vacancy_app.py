@@ -79,7 +79,10 @@ def get_demand_icon(vacancy, price):
 def draw_calendar(month_date: dt.date) -> str:
     cal = calendar.Calendar(firstweekday=calendar.SUNDAY)
     weeks = cal.monthdayscalendar(month_date.year, month_date.month)
-    html = '<table style="border-collapse:collapse;width:100%;text-align:center;">'
+    today = dt.date.today()
+
+    html = '<div class="calendar-wrapper">'
+    html += '<table style="border-collapse:collapse;width:100%;table-layout:fixed;text-align:center;">'
     html += '<thead><tr>' + ''.join(
         f'<th style="border:1px solid #aaa;padding:4px;background:#f0f0f0;">{d}</th>'
         for d in ["日","月","火","水","木","金","土"]
@@ -92,36 +95,38 @@ def draw_calendar(month_date: dt.date) -> str:
                 html += '<td style="border:1px solid #aaa;padding:8px;background:#fff;"></td>'
             else:
                 current = dt.date(month_date.year, month_date.month, day)
+                bg = '#fff'
+                if current < today:
+                    bg = '#ddd'
+                elif current in HOLIDAYS or current.weekday() == 6:
+                    bg = '#ffecec'
+                elif current.weekday() == 5:
+                    bg = '#e0f7ff'
+
                 iso = current.isoformat()
-                bg = (
-                    '#ddd' if current < today else
-                    '#ffecec' if current in HOLIDAYS or current.weekday() == 6 else
-                    '#e0f7ff' if current.weekday() == 5 else
-                    '#fff'
-                )
-                rec = cache_data.get(iso, {"vacancy": 0, "avg_price": 0.0})
-                demand = get_demand_icon(rec["vacancy"], rec["avg_price"])
-                icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:14px;">{demand}</div>' if demand else ""
+                record = cache_data.get(iso, {"vacancy": 0, "avg_price": 0.0})
+                count_html = f'<div>{record["vacancy"]}件</div>'
+                price_html = f'<div>￥{int(record["avg_price"]):,}</div>'
 
-                event_lines = ""
+                icon = get_demand_icon(record["vacancy"], record["avg_price"]) if current >= today else ""
+                icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:14px;">{icon}</div>'
+
+                # イベント情報（1行ずつ改行）
+                event_html = ""
                 if iso in event_data:
-                    event_lines = "".join([
-                        f'<div style="margin-bottom:2px;">{e["icon"]} {e["name"]}</div>'
-                        for e in event_data[iso]
-                    ])
-                    event_lines = f'<div style="font-size:11px;line-height:1.1;text-align:left;">{event_lines}</div>'
+                    lines = [f'{ev["icon"]} {ev["name"]}' for ev in event_data[iso]]
+                    joined = "<br>".join(lines)
+                    event_html = f'<div style="font-size: 11px; margin-top: 4px;">{joined}</div>'
 
-                html += f'''
-                    <td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;width:14%;">
-                        {icon_html}
-                        <div><strong>{day}</strong></div>
-                        <div>{rec["vacancy"]}件</div>
-                        <div>￥{int(rec["avg_price"]):,}</div>
-                        {event_lines}
-                    </td>
-                '''
+                html += (
+                    f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
+                    f'{icon_html}'
+                    f'<div><strong>{day}</strong></div>'
+                    f'{count_html}{price_html}{event_html}'
+                    '</td>'
+                )
         html += '</tr>'
-    html += '</tbody></table>'
+    html += '</tbody></table></div>'
     return html
 
 col1, col2 = st.columns(2)
