@@ -92,7 +92,7 @@ def draw_calendar(month_date: dt.date) -> str:
         padding: 4px !important;
       }
       .calendar-wrapper td div {
-        font-size: 11px !important;
+        font-size: 10px !important;
       }
       .calendar-wrapper td {
         word-wrap: break-word;
