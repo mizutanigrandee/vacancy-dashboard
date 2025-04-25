@@ -147,10 +147,14 @@ def draw_calendar(month_date: dt.date) -> str:
                 icon_html = ""
                 if current >= today:
                     icon = get_demand_icon(vac, price)
-                    icon_html = f'<div style="font-size: 16px; white-space: nowrap;">{icon}</div>'
+                    icon_html = (
+    f'<div style="position: absolute; top: 4px; right: 6px; font-size: 16px;">{icon}</div>'
+)
+
 
                 html += (
-                    f'<td style="border:1px solid #aaa;padding:8px;background:{bg};">'
+    f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;">'
+
                     f'<div><strong>{day}</strong></div>'
                     f'{count_html}{price_html}{icon_html}'
                     '</td>'
