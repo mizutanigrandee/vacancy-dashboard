@@ -123,9 +123,9 @@ def draw_calendar(month_date: dt.date) -> str:
             event_html = ""
             events = event_data.get(iso, [])
             if isinstance(events, list):
-                for ev in events:
-                    event_html += f'<span style="display:inline-block;margin-right:4px;">{ev["icon"]} {ev["name"]}</span>'
-                event_html = f'<div style="font-size: 12px; white-space: normal; word-wrap: break-word; text-align: left;">{event_html}</div>'
+           for ev in event_data[iso]:
+    event_html += f'<div style="margin-top:2px;">{ev["icon"]} {ev["name"]}</div>'
+event_html = f'<div style="font-size: 12px; word-wrap: break-word; text-align: left;">{event_html}</div>'
 
             html += (
                 f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;">'
