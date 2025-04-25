@@ -1,62 +1,54 @@
-import os
-import json
-import calendar
-import datetime as dt
-import pandas as pd
-from dateutil.relativedelta import relativedelta
 import streamlit as st
+import requests
+import datetime as dt
+from dateutil.relativedelta import relativedelta
+import calendar
+import pandas as pd
+import os
 import pytz
+import json
 import jpholiday
 
-# --- ページ設定 ---
-st.set_page_config(
-    page_title="ミナミエリア 空室＆平均価格カレンダー",
-    layout="wide"
-)
+st.set_page_config(page_title="ミナミエリア 空室＆平均価格カレンダー", layout="wide")
 st.title("ミナミエリア 空室＆平均価格カレンダー")
 
-# --- 定数 ---
+APP_ID = st.secrets["RAKUTEN_APP_ID"]
 CACHE_FILE = "vacancy_price_cache.json"
-EXCEL_EVENT_FILE = "event_data.xlsx"
+EVENT_EXCEL = "event_data.xlsx"
 
-# --- 日本の祝日を取得 ---
-def generate_holidays(months: int = 6) -> set:
+def generate_holidays(months=6):
     today = dt.date.today()
-    future = today + relativedelta(months=months)
     holidays = set()
-    d = today
-    while d <= future:
+    for i in range(months * 31):
+        d = today + dt.timedelta(days=i)
         if jpholiday.is_holiday(d):
             holidays.add(d)
-        d += dt.timedelta(days=1)
     return holidays
 
 HOLIDAYS = generate_holidays()
 
-# --- JSONキャッシュ読込 ---
 def load_json(path):
     if os.path.exists(path):
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
     return {}
 
-cache_data = load_json(CACHE_FILE)
-
-# --- イベントExcel読込 ---
-def load_event_data_from_excel(filepath=EXCEL_EVENT_FILE):
+def load_event_data_from_excel(filepath=EVENT_EXCEL):
     if not os.path.exists(filepath):
         return {}
     df = pd.read_excel(filepath)
+    df = df.dropna(subset=["date", "icon", "name"])
     event_dict = {}
     for _, row in df.iterrows():
-        iso = pd.to_datetime(row["date"]).date().isoformat()
+        date = pd.to_datetime(row["date"]).date().isoformat()
         entry = {"icon": row["icon"], "name": row["name"]}
-        event_dict.setdefault(iso, []).append(entry)
+        event_dict.setdefault(date, []).append(entry)
     return event_dict
 
+cache_data = load_json(CACHE_FILE)
 event_data = load_event_data_from_excel()
 
-# --- 月移動ボタン ---
+# ナビゲーション
 today = dt.date.today()
 if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
@@ -76,29 +68,18 @@ base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_
 month1 = base_month
 month2 = base_month + relativedelta(months=1)
 
-# --- 需要アイコン定義 ---
 def get_demand_icon(vacancy, price):
-    level = 0
-    if (vacancy <= 70 or price >= 50000):
-        level = 5
-    elif (vacancy <= 100 or price >= 40000):
-        level = 4
-    elif (vacancy <= 150 or price >= 35000):
-        level = 3
-    elif (vacancy <= 200 or price >= 30000):
-        level = 2
-    elif (vacancy <= 250 or price >= 25000):
-        level = 1
-    return f"🔥{level}" if level > 0 else ""
+    if vacancy <= 70 or price >= 50000: return "🔥5"
+    if vacancy <= 100 or price >= 40000: return "🔥4"
+    if vacancy <= 150 or price >= 35000: return "🔥3"
+    if vacancy <= 200 or price >= 30000: return "🔥2"
+    if vacancy <= 250 or price >= 25000: return "🔥1"
+    return ""
 
-# --- カレンダー描画 ---
 def draw_calendar(month_date: dt.date) -> str:
     cal = calendar.Calendar(firstweekday=calendar.SUNDAY)
     weeks = cal.monthdayscalendar(month_date.year, month_date.month)
-    today = dt.date.today()
-
-    html = '<div class="calendar-wrapper">'
-    html += '<table style="border-collapse:collapse;width:100%;text-align:center;table-layout:fixed;">'
+    html = '<table style="border-collapse:collapse;width:100%;text-align:center;">'
     html += '<thead><tr>' + ''.join(
         f'<th style="border:1px solid #aaa;padding:4px;background:#f0f0f0;">{d}</th>'
         for d in ["日","月","火","水","木","金","土"]
@@ -111,42 +92,38 @@ def draw_calendar(month_date: dt.date) -> str:
                 html += '<td style="border:1px solid #aaa;padding:8px;background:#fff;"></td>'
             else:
                 current = dt.date(month_date.year, month_date.month, day)
-                if current < today:
-                    bg = '#ddd'
-                elif current in HOLIDAYS or current.weekday() == 6:
-                    bg = '#ffecec'
-                elif current.weekday() == 5:
-                    bg = '#e0f7ff'
-                else:
-                    bg = '#fff'
-
                 iso = current.isoformat()
-                record = cache_data.get(iso, {"vacancy": 0, "avg_price": 0.0})
-                count_html = f'<div>{record["vacancy"]}件</div>'
-                price_html = f'<div>￥{int(record["avg_price"]):,}</div>'
-
-                icon = get_demand_icon(record["vacancy"], record["avg_price"]) if current >= today else ""
-                icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:14px;">{icon}</div>'
-
-                event_html = ""
-                if iso in event_data:
-                    event_lines = [f'{ev["icon"]} {ev["name"]}' for ev in event_data[iso]]
-                    event_html = '<div style="font-size:12px;white-space:normal;line-height:1.2;text-align:left;">' + "<br>".join(event_lines) + '</div>'
-
-                html += (
-                    f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;'
-                    f'word-wrap:break-word;white-space:normal;">'
-                    f'{icon_html}'
-                    f'<div><strong>{day}</strong></div>'
-                    f'{count_html}{price_html}{event_html}'
-                    '</td>'
+                bg = (
+                    '#ddd' if current < today else
+                    '#ffecec' if current in HOLIDAYS or current.weekday() == 6 else
+                    '#e0f7ff' if current.weekday() == 5 else
+                    '#fff'
                 )
+                rec = cache_data.get(iso, {"vacancy": 0, "avg_price": 0.0})
+                demand = get_demand_icon(rec["vacancy"], rec["avg_price"])
+                icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:14px;">{demand}</div>' if demand else ""
+
+                event_lines = ""
+                if iso in event_data:
+                    event_lines = "".join([
+                        f'<div style="margin-bottom:2px;">{e["icon"]} {e["name"]}</div>'
+                        for e in event_data[iso]
+                    ])
+                    event_lines = f'<div style="font-size:11px;line-height:1.1;text-align:left;">{event_lines}</div>'
+
+                html += f'''
+                    <td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;width:14%;">
+                        {icon_html}
+                        <div><strong>{day}</strong></div>
+                        <div>{rec["vacancy"]}件</div>
+                        <div>￥{int(rec["avg_price"]):,}</div>
+                        {event_lines}
+                    </td>
+                '''
         html += '</tr>'
     html += '</tbody></table>'
-    html += '</div>'
     return html
 
-# --- 表示 ---
 col1, col2 = st.columns(2)
 with col1:
     st.subheader(f"{month1.year}年 {month1.month}月")
@@ -155,9 +132,7 @@ with col2:
     st.subheader(f"{month2.year}年 {month2.month}月")
     st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
-# --- 更新時刻と注釈 ---
-jst = pytz.timezone('Asia/Tokyo')
-now_jst = dt.datetime.now(jst)
+now_jst = dt.datetime.now(pytz.timezone('Asia/Tokyo'))
 st.caption(f"最終更新時刻：{now_jst.strftime('%Y-%m-%d %H:%M:%S')}")
 
 st.markdown("""
@@ -169,5 +144,8 @@ st.markdown("""
   - 🔥2：残室数 ≤200 または 平均価格 ≥30,000円  
   - 🔥3：残室数 ≤150 または 平均価格 ≥35,000円  
   - 🔥4：残室数 ≤100 または 平均価格 ≥40,000円  
-  - 🔥5：残室数 ≤70 または 平均価格 ≥50,000円
+  - 🔥5：残室数 ≤70 または 平均価格 ≥50,000円  
+- 🔴：京セラドーム  
+- 🔵：ヤンマースタジアム  
+- ⚫：その他会場
 """)
