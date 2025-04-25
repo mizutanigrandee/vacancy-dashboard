@@ -4,6 +4,7 @@ from dateutil.relativedelta import relativedelta
 import calendar
 import json
 import requests
+from pathlib import Path
 
 APP_ID = os.environ["RAKUTEN_APP_ID"]
 CACHE_FILE = "vacancy_price_cache.json"
@@ -52,17 +53,33 @@ def fetch_vacancy_and_price(date: dt.date) -> dict:
     return {"vacancy": vacancy_total, "avg_price": avg_price}
 
 def update_batch(start_date: dt.date, months: int = 6):
+    today = dt.date.today()
+    three_months_ago = today - relativedelta(months=3)
+
+    # ① 既存データを読み込む
     result = {}
+    if Path(CACHE_FILE).exists():
+        with open(CACHE_FILE, "r", encoding="utf-8") as f:
+            result = json.load(f)
+
+        # ② 3か月より前のデータを削除
+        result = {
+            k: v for k, v in result.items()
+            if dt.date.fromisoformat(k) >= three_months_ago
+        }
+
+    # ③ 本日〜半年先の未来データを取得して上書き
     for m in range(months):
         month = (start_date + relativedelta(months=m)).replace(day=1)
         for week in calendar.Calendar(firstweekday=calendar.SUNDAY).monthdatescalendar(month.year, month.month):
             for day in week:
-                if day.month == month.month and day >= dt.date.today():
+                if day.month == month.month and day >= today:
                     result[day.isoformat()] = fetch_vacancy_and_price(day)
+
+    # ④ 保存
     with open(CACHE_FILE, "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
 
 if __name__ == "__main__":
     baseline = dt.date.today().replace(day=1)
     update_batch(baseline)
-
