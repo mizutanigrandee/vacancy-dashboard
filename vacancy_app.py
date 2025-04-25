@@ -16,15 +16,11 @@ st.set_page_config(
 
 st.title("ミナミエリア 空室＆平均価格カレンダー")
 
-# --- シークレット情報 ---
 APP_ID = st.secrets["RAKUTEN_APP_ID"]
-
-# --- キャッシュ用ファイル ---
 CACHE_FILE = "vacancy_price_cache.json"
 
-# --- 祝日リスト（jpholidayを使って半年先まで自動取得） ---
+# --- 祝日生成 ---
 import jpholiday
-
 def generate_holidays(months: int = 6) -> set:
     today = dt.date.today()
     future = today + relativedelta(months=months)
@@ -35,103 +31,17 @@ def generate_holidays(months: int = 6) -> set:
             holidays.add(d)
         d += dt.timedelta(days=1)
     return holidays
-
 HOLIDAYS = generate_holidays()
 
-
-# --- API呼び出し ---
-def fetch_vacancy_and_price(date: dt.date) -> dict:
-    if date < dt.date.today():
-        return {"vacancy": 0, "avg_price": 0.0}
-
-    prices = []
-    vacancy_total = 0
-    for page in range(1, 4):
-        params = {
-            "applicationId": APP_ID,
-            "format": "json",
-            "checkinDate": date.strftime("%Y-%m-%d"),
-            "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
-            "adultNum": 1,
-            "largeClassCode":  "japan",
-            "middleClassCode": "osaka",
-            "smallClassCode":  "shi",
-            "detailClassCode": "D",
-            "page": page
-        }
-
-        url = "https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
-        try:
-            r = requests.get(url, params=params, timeout=10)
-            if r.status_code != 200:
-                continue
-            data = r.json()
-            if page == 1:
-                vacancy_total = data.get("pagingInfo", {}).get("recordCount", 0)
-            for hotel in data.get("hotels", []):
-                try:
-                    hotel_parts = hotel.get("hotel", [])
-                    if len(hotel_parts) >= 2:
-                        room_info_list = hotel_parts[1].get("roomInfo", [])
-                        for plan in room_info_list:
-                            daily = plan.get("dailyCharge", {})
-                            total = daily.get("total", None)
-                            if total:
-                                prices.append(total)
-                except:
-                    continue
-        except:
-            continue
-
-    avg_price = round(sum(prices) / len(prices), 0) if prices else 0.0
-    return {"vacancy": vacancy_total, "avg_price": avg_price}
-
-# --- キャッシュ処理 ---
-def save_cache(data):
-    with open(CACHE_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
+# --- キャッシュ読込 ---
 def load_cache():
     if os.path.exists(CACHE_FILE):
         with open(CACHE_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     return {}
 
-# --- バッチ更新 ---
-def update_batch(start_date: dt.date, months: int = 2):
-    result = {}
-    for m in range(months):
-        month = (start_date + relativedelta(months=m)).replace(day=1)
-        for week in calendar.Calendar(firstweekday=calendar.SUNDAY).monthdatescalendar(month.year, month.month):
-            for day in week:
-                if day.month == month.month and day >= dt.date.today():
-                    result[day.isoformat()] = fetch_vacancy_and_price(day)
-    save_cache(result)
-    return result
-
-# --- UI制御 ---
-today = dt.date.today()
-if "refresh" not in st.session_state:
-    st.session_state.refresh = False
-if "month_offset" not in st.session_state:
-    st.session_state.month_offset = 0
-
-nav1, nav_spacer, nav2 = st.columns([2, 6, 2])
-with nav1:
-    if st.button("◀ 前月", key="prev"):
-        st.session_state.month_offset -= 1
-with nav2:
-    if st.button("▶ 次月", key="next"):
-        st.session_state.month_offset += 1
-
-base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
-month1 = base_month
-month2 = base_month + relativedelta(months=1)
-
-# 最新情報はGitHub Actionsで自動更新されるため、ボタンは不要
 cache_data = load_cache()
 
-# --- 需要シンボルロジック ---
 def get_demand_icon(vacancy, price):
     level = 0
     if (vacancy <= 70 or price >= 50000):
@@ -163,17 +73,12 @@ th {
 td div {
     line-height: 1.2;
 }
-
-/* 👇 PCサイズ向けのフォント拡大（スマホは無視） */
 @media screen and (min-width: 769px) {
-    td div:nth-child(2),  /* 件数 */
-    td div:nth-child(3) {  /* 平均価格 */
+    td div:nth-child(2), td div:nth-child(3) {
         font-size: 16px;
         font-weight: bold;
     }
 }
-
-/* 👇 モバイルは従来どおり */
 @media screen and (max-width: 768px) {
     td {
         font-size: 11px;
@@ -187,7 +92,6 @@ td div {
 }
 </style>
 """, unsafe_allow_html=True)
-
 
 # --- カレンダー描画 ---
 def draw_calendar(month_date: dt.date) -> str:
@@ -219,15 +123,31 @@ def draw_calendar(month_date: dt.date) -> str:
                     bg = '#fff'
 
                 iso = current.isoformat()
-                record = cache_data.get(iso, {"vacancy": 0, "avg_price": 0.0})
-                count_html = f'<div>{record["vacancy"]}件</div>'
-                price_html = f'<div>￥{int(record["avg_price"]):,}</div>'
+                record = cache_data.get(iso, {})
+                vac = record.get("vacancy", 0)
+                pre_vac = record.get("previous_vacancy")
+                price = record.get("avg_price", 0)
+                pre_price = record.get("previous_avg_price")
 
+                # 差分表示
+                vac_diff = vac - pre_vac if pre_vac is not None else None
+                vac_diff_html = f'<span style="color:blue;">＋{vac_diff}</span>' if vac_diff and vac_diff > 0 else \
+                                 f'<span style="color:red;">{vac_diff}</span>' if vac_diff and vac_diff < 0 else ""
+
+                price_diff_html = ""
+                if pre_price is not None:
+                    if price > pre_price:
+                        price_diff_html = '<span style="color:red;font-size:13px;"> ↑</span>'
+                    elif price < pre_price:
+                        price_diff_html = '<span style="color:blue;font-size:13px;"> ↓</span>'
+
+                count_html = f'<div>{vac}件 {vac_diff_html}</div>'
+                price_html = f'<div>￥{int(price):,}{price_diff_html}</div>'
+
+                icon_html = ""
                 if current >= today:
-                    icon = get_demand_icon(record["vacancy"], record["avg_price"])
-                else:
-                    icon = ""
-                icon_html = f'<div style="font-size: 16px; white-space: nowrap;">{icon}</div>'
+                    icon = get_demand_icon(vac, price)
+                    icon_html = f'<div style="font-size: 16px; white-space: nowrap;">{icon}</div>'
 
                 html += (
                     f'<td style="border:1px solid #aaa;padding:8px;background:{bg};">'
@@ -241,6 +161,22 @@ def draw_calendar(month_date: dt.date) -> str:
     return html
 
 # --- 表示 ---
+today = dt.date.today()
+if "month_offset" not in st.session_state:
+    st.session_state.month_offset = 0
+
+nav1, nav_spacer, nav2 = st.columns([2, 6, 2])
+with nav1:
+    if st.button("◀ 前月", key="prev"):
+        st.session_state.month_offset -= 1
+with nav2:
+    if st.button("▶ 次月", key="next"):
+        st.session_state.month_offset += 1
+
+base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
+month1 = base_month
+month2 = base_month + relativedelta(months=1)
+
 col1, col2 = st.columns(2)
 with col1:
     st.subheader(f"{month1.year}年 {month1.month}月")
@@ -248,7 +184,7 @@ with col1:
 with col2:
     st.subheader(f"{month2.year}年 {month2.month}月")
     st.markdown(draw_calendar(month2), unsafe_allow_html=True)
-    
+
 # --- 更新時刻と注釈 ---
 jst = pytz.timezone('Asia/Tokyo')
 now_jst = dt.datetime.now(jst)
