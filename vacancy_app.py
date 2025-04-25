@@ -101,7 +101,7 @@ def draw_calendar(month_date: dt.date) -> str:
     html += '<table style="border-collapse:collapse;width:100%;text-align:center;">'
     html += '<thead><tr>' + ''.join(
         f'<th style="border:1px solid #aaa;padding:4px;background:#f0f0f0;">{d}</th>'
-        for d in ["日","月","火","水","木","金","土"]
+        for d in ["日", "月", "火", "水", "木", "金", "土"]
     ) + '</tr></thead><tbody>'
 
     for week in weeks:
@@ -128,12 +128,12 @@ def draw_calendar(month_date: dt.date) -> str:
                 icon = get_demand_icon(record["vacancy"], record["avg_price"]) if current >= today else ""
                 icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:14px;">{icon}</div>'
 
-　　　　　　　　　event_html = ""
-　　　　　　　　　if iso in event_data:
- 　　　　　　　　　   event_lines = [f'{ev["icon"]} {ev["name"]}' for ev in event_data[iso]]
-  　　　　　　　　　  event_html = "<br>".join(event_lines)  # 改行で結合
- 　　　　　　　　　   event_html = f'<div style="font-size: 12px;">{event_html}</div>'
-
+                # 🔽 イベント改行対応（ここが重要）
+                event_html = ""
+                if iso in event_data:
+                    event_lines = [f'{ev["icon"]} {ev["name"]}' for ev in event_data[iso]]
+                    event_html = "<br>".join(event_lines)  # 改行で結合
+                    event_html = f'<div style="font-size: 12px;">{event_html}</div>'
 
                 html += (
                     f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;">'
