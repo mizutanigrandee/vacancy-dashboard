@@ -8,7 +8,6 @@ import os
 import json
 import pytz
 import jpholiday
-from pathlib import Path
 
 # --- ページ設定 ---
 st.set_page_config(
@@ -22,7 +21,6 @@ APP_ID = st.secrets["RAKUTEN_APP_ID"]
 CACHE_FILE = "vacancy_price_cache.json"
 EVENT_FILE = "event_data.json"
 
-# --- 祝日自動取得 ---
 def generate_holidays(months: int = 6) -> set:
     today = dt.date.today()
     future = today + relativedelta(months=months)
@@ -33,74 +31,44 @@ def generate_holidays(months: int = 6) -> set:
             holidays.add(d)
         d += dt.timedelta(days=1)
     return holidays
+
 HOLIDAYS = generate_holidays()
 
-# --- イベント情報の読み書き ---
-def load_events():
-    if Path(EVENT_FILE).exists():
-        with open(EVENT_FILE, "r", encoding="utf-8") as f:
+# --- データ読み書き ---
+def load_json(path):
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
     return {}
 
-def save_events(data):
-    with open(EVENT_FILE, "w", encoding="utf-8") as f:
+def save_json(path, data):
+    with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-# --- イベント入力UI ---
-st.sidebar.header("📅 イベント情報の登録")
-event_data = load_events()
-event_date = st.sidebar.date_input("日付を選択")
-venue_icon_map = {
-    "": "",
-    "🔴 京セラドーム": "🔴",
-    "🔵 ヤンマースタジアム": "🔵",
-    "● その他": "●"
-}
-venue_label = st.sidebar.selectbox("会場を選択", list(venue_icon_map.keys()))
-event_name = st.sidebar.text_input("イベント名を入力")
+cache_data = load_json(CACHE_FILE)
+event_data = load_json(EVENT_FILE)
 
-if st.sidebar.button("追加"):
-    icon = venue_icon_map.get(venue_label, "")
-    if event_date and icon and event_name:
-        iso_date = event_date.isoformat()
-        entry = f"{icon} {event_name}"
-        if iso_date not in event_data:
-            event_data[iso_date] = []
-        if entry not in event_data[iso_date]:
-            event_data[iso_date].append(entry)
-            save_events(event_data)
-            st.sidebar.success("イベントを追加しました")
-        else:
-            st.sidebar.info("このイベントはすでに登録されています")
-    else:
-        st.sidebar.warning("すべての項目を入力してください")
+# --- ナビゲーション ---
+today = dt.date.today()
+if "month_offset" not in st.session_state:
+    st.session_state.month_offset = 0
 
-# --- 削除UI ---
-st.sidebar.markdown("---")
-st.sidebar.subheader("🗑️ イベント削除")
-if event_data:
-    delete_date = st.sidebar.date_input("削除対象日を選択", key="delete")
-    iso_delete = delete_date.isoformat()
-    if iso_delete in event_data and event_data[iso_delete]:
-        delete_event = st.sidebar.selectbox("削除するイベントを選択", event_data[iso_delete])
-        if st.sidebar.button("このイベントを削除"):
-            event_data[iso_delete].remove(delete_event)
-            if not event_data[iso_delete]:
-                del event_data[iso_delete]
-            save_events(event_data)
-            st.sidebar.success("イベントを削除しました")
-else:
-    st.sidebar.caption("登録済みのイベントがありません")
+nav1, nav2, nav3 = st.columns([2, 2, 2])
+with nav1:
+    if st.button("◀ 前月"):
+        st.session_state.month_offset -= 1
+with nav2:
+    if st.button("🗓 当月"):
+        st.session_state.month_offset = 0
+with nav3:
+    if st.button("▶ 次月"):
+        st.session_state.month_offset += 1
 
-# --- キャッシュ読込 ---
-def load_cache():
-    if os.path.exists(CACHE_FILE):
-        with open(CACHE_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
+base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
+month1 = base_month
+month2 = base_month + relativedelta(months=1)
 
-cache_data = load_cache()
-
+# --- 需要シンボル ---
 def get_demand_icon(vacancy, price):
     level = 0
     if (vacancy <= 70 or price >= 50000):
@@ -114,42 +82,6 @@ def get_demand_icon(vacancy, price):
     elif (vacancy <= 250 or price >= 25000):
         level = 1
     return f"🔥{level}" if level > 0 else ""
-
-st.markdown("""
-<style>
-table {
-    width: 100%;
-    table-layout: fixed;
-    word-wrap: break-word;
-}
-td {
-    font-size: 14px;
-}
-th {
-    font-size: 15px;
-}
-td div {
-    line-height: 1.2;
-}
-@media screen and (min-width: 769px) {
-    td div:nth-child(2), td div:nth-child(3) {
-        font-size: 16px;
-        font-weight: bold;
-    }
-}
-@media screen and (max-width: 768px) {
-    td {
-        font-size: 11px;
-    }
-    th {
-        font-size: 12px;
-    }
-    td div {
-        line-height: 1.2;
-    }
-}
-</style>
-""", unsafe_allow_html=True)
 
 # --- カレンダー描画 ---
 def draw_calendar(month_date: dt.date) -> str:
@@ -181,35 +113,18 @@ def draw_calendar(month_date: dt.date) -> str:
                     bg = '#fff'
 
                 iso = current.isoformat()
-                record = cache_data.get(iso, {})
-                vac = record.get("vacancy", 0)
-                pre_vac = record.get("previous_vacancy")
-                price = record.get("avg_price", 0)
-                pre_price = record.get("previous_avg_price")
+                record = cache_data.get(iso, {"vacancy": 0, "avg_price": 0.0})
+                count_html = f'<div>{record["vacancy"]}件</div>'
+                price_html = f'<div>￥{int(record["avg_price"]):,}</div>'
 
-                vac_diff = vac - pre_vac if pre_vac is not None else None
-                vac_diff_html = f'<span style="color:blue;">＋{vac_diff}</span>' if vac_diff and vac_diff > 0 else \
-                                 f'<span style="color:red;">{vac_diff}</span>' if vac_diff and vac_diff < 0 else ""
-
-                price_diff_html = ""
-                if pre_price is not None:
-                    if price > pre_price:
-                        price_diff_html = '<span style="color:red;font-size:13px;"> ↑</span>'
-                    elif price < pre_price:
-                        price_diff_html = '<span style="color:blue;font-size:13px;"> ↓</span>'
-
-                count_html = f'<div>{vac}件 {vac_diff_html}</div>'
-                price_html = f'<div>￥{int(price):,}{price_diff_html}</div>'
-
-                icon_html = ""
-                if current >= today:
-                    icon = get_demand_icon(vac, price)
-                    icon_html = f'<div style="position: absolute; top: 4px; right: 6px; font-size: 16px;">{icon}</div>'
+                icon = get_demand_icon(record["vacancy"], record["avg_price"]) if current >= today else ""
+                icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:14px;">{icon}</div>'
 
                 event_html = ""
                 if iso in event_data:
-                    for ev in event_data[iso]:
-                        event_html += f'<div style="font-size: 11px; margin-top:2px;">{ev}</div>'
+                    for idx, ev in enumerate(event_data[iso]):
+                        event_html += f'<div style="font-size: 12px; white-space: nowrap;">{ev["icon"]} {ev["name"]}</div>'
+                    event_html = f'<div style="margin-top: 4px;">{event_html}</div>'
 
                 html += (
                     f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;">'
@@ -224,25 +139,6 @@ def draw_calendar(month_date: dt.date) -> str:
     return html
 
 # --- 表示 ---
-today = dt.date.today()
-if "month_offset" not in st.session_state:
-    st.session_state.month_offset = 0
-
-nav1, nav2, nav3 = st.columns([2, 2, 2])
-with nav1:
-    if st.button("◀ 前月", key="prev"):
-        st.session_state.month_offset -= 1
-with nav2:
-    if st.button("📅 当月", key="today"):
-        st.session_state.month_offset = 0
-with nav3:
-    if st.button("▶ 次月", key="next"):
-        st.session_state.month_offset += 1
-
-base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
-month1 = base_month
-month2 = base_month + relativedelta(months=1)
-
 col1, col2 = st.columns(2)
 with col1:
     st.subheader(f"{month1.year}年 {month1.month}月")
@@ -251,7 +147,41 @@ with col2:
     st.subheader(f"{month2.year}年 {month2.month}月")
     st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
-# --- 更新時刻と注釈 ---
+# --- イベント入力 ---
+st.markdown("---")
+st.subheader("📅 イベント情報の追加・更新")
+input_date = st.date_input("日付を選択")
+venue = st.selectbox("会場を選択", ["🔴 京セラドーム", "🔵 ヤンマースタジアム", "⚫ その他会場"])
+event_name = st.text_input("イベント名を入力")
+if st.button("追加"):
+    iso_date = input_date.isoformat()
+    entry = {"icon": venue.split()[0], "name": event_name}
+    event_data.setdefault(iso_date, []).append(entry)
+    save_json(EVENT_FILE, event_data)
+    st.success(f"{iso_date} にイベントを追加しました")
+
+# --- イベント削除・編集 ---
+st.subheader("🗑 登録済みイベントの削除")
+if st.checkbox("イベント削除モード"):
+    deletable = [
+        (d, i, f"{d} : {v[i]['icon']} {v[i]['name']}")
+        for d, v in event_data.items() for i in range(len(v))
+    ]
+    if deletable:
+        _, _, col_del = st.columns([1, 1, 2])
+        with col_del:
+            choice = st.selectbox("削除したいイベントを選択", deletable, format_func=lambda x: x[2])
+            if st.button("削除"):
+                d, i, _ = choice
+                del event_data[d][i]
+                if not event_data[d]:
+                    del event_data[d]
+                save_json(EVENT_FILE, event_data)
+                st.success("イベントを削除しました")
+    else:
+        st.info("現在削除可能なイベントはありません。")
+
+# --- 注釈 ---
 jst = pytz.timezone('Asia/Tokyo')
 now_jst = dt.datetime.now(jst)
 st.caption(f"最終更新時刻：{now_jst.strftime('%Y-%m-%d %H:%M:%S')}")
@@ -268,5 +198,5 @@ st.markdown("""
   - 🔥5：残室数 ≤70 または 平均価格 ≥50,000円  
 - 🔴：京セラドーム  
 - 🔵：ヤンマースタジアム  
-- ●：その他会場
+- ⚫：その他会場
 """)
