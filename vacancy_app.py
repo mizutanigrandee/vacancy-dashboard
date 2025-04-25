@@ -50,11 +50,18 @@ def save_events(data):
 st.sidebar.header("📅 イベント情報の登録")
 event_data = load_events()
 event_date = st.sidebar.date_input("日付を選択")
-venue_icon = st.sidebar.selectbox("会場を選択", ["", "🔴 京セラドーム", "🔵 ヤンマースタジアム"])
+venue_icon_map = {
+    "": "",
+    "🔴 京セラドーム": "🔴",
+    "🔵 ヤンマースタジアム": "🔵",
+    "● その他": "●"
+}
+venue_label = st.sidebar.selectbox("会場を選択", list(venue_icon_map.keys()))
 event_name = st.sidebar.text_input("イベント名を入力")
 if st.sidebar.button("保存"):
-    if event_date and venue_icon and event_name:
-        event_data[event_date.isoformat()] = f"{venue_icon} {event_name}"
+    icon = venue_icon_map.get(venue_label, "")
+    if event_date and icon and event_name:
+        event_data[event_date.isoformat()] = f"{icon} {event_name}"
         save_events(event_data)
         st.sidebar.success("イベントを保存しました")
     else:
@@ -234,5 +241,6 @@ st.markdown("""
   - 🔥4：残室数 ≤100 または 平均価格 ≥40,000円  
   - 🔥5：残室数 ≤70 または 平均価格 ≥50,000円  
 - 🔴：京セラドーム  
-- 🔵：ヤンマースタジアム
+- 🔵：ヤンマースタジアム  
+- ●：その他会場
 """)
