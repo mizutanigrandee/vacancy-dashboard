@@ -61,20 +61,30 @@ def update_batch(start_date: dt.date, months: int = 6):
     if Path(CACHE_FILE).exists():
         with open(CACHE_FILE, "r", encoding="utf-8") as f:
             result = json.load(f)
-
-        # ② 3か月より前のデータを削除
+        # ② 古すぎるデータは削除（過去3か月以前）
         result = {
             k: v for k, v in result.items()
             if dt.date.fromisoformat(k) >= three_months_ago
         }
 
-    # ③ 本日〜半年先の未来データを取得して上書き
+    # ③ 本日〜半年先の未来データを取得して前日比付きで保存
     for m in range(months):
         month = (start_date + relativedelta(months=m)).replace(day=1)
         for week in calendar.Calendar(firstweekday=calendar.SUNDAY).monthdatescalendar(month.year, month.month):
             for day in week:
                 if day.month == month.month and day >= today:
-                    result[day.isoformat()] = fetch_vacancy_and_price(day)
+                    iso = day.isoformat()
+                    prev_day = day - dt.timedelta(days=1)
+                    prev_data = result.get(prev_day.isoformat(), {})
+
+                    new_data = fetch_vacancy_and_price(day)
+                    record = {
+                        "vacancy": new_data["vacancy"],
+                        "avg_price": new_data["avg_price"],
+                        "previous_vacancy": prev_data.get("vacancy"),
+                        "previous_avg_price": prev_data.get("avg_price")
+                    }
+                    result[iso] = record
 
     # ④ 保存
     with open(CACHE_FILE, "w", encoding="utf-8") as f:
