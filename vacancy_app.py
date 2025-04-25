@@ -165,7 +165,7 @@ with st.sidebar:
         event_data.setdefault(iso_date, []).append(entry)
         save_json(EVENT_FILE, event_data)
         st.success(f"{iso_date} にイベントを追加しました")
-
+　　　　 st.rerun()
 # --- サイドバーでイベント削除モード ---
 with st.sidebar:
     st.markdown("---")
