@@ -7,6 +7,8 @@ import pandas as pd
 import os
 import json
 import pytz
+import jpholiday
+from pathlib import Path
 
 # --- ページ設定 ---
 st.set_page_config(
@@ -18,9 +20,9 @@ st.title("ミナミエリア 空室＆平均価格カレンダー")
 
 APP_ID = st.secrets["RAKUTEN_APP_ID"]
 CACHE_FILE = "vacancy_price_cache.json"
+EVENT_FILE = "event_data.json"
 
-# --- 祝日生成 ---
-import jpholiday
+# --- 祝日自動取得 ---
 def generate_holidays(months: int = 6) -> set:
     today = dt.date.today()
     future = today + relativedelta(months=months)
@@ -32,6 +34,31 @@ def generate_holidays(months: int = 6) -> set:
         d += dt.timedelta(days=1)
     return holidays
 HOLIDAYS = generate_holidays()
+
+# --- イベント情報の読み書き ---
+def load_events():
+    if Path(EVENT_FILE).exists():
+        with open(EVENT_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+def save_events(data):
+    with open(EVENT_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+# --- イベント入力UI ---
+st.sidebar.header("📅 イベント情報の登録")
+event_data = load_events()
+event_date = st.sidebar.date_input("日付を選択")
+venue_icon = st.sidebar.selectbox("会場を選択", ["", "🔴 京セラドーム", "🔵 ヤンマースタジアム"])
+event_name = st.sidebar.text_input("イベント名を入力")
+if st.sidebar.button("保存"):
+    if event_date and venue_icon and event_name:
+        event_data[event_date.isoformat()] = f"{venue_icon} {event_name}"
+        save_events(event_data)
+        st.sidebar.success("イベントを保存しました")
+    else:
+        st.sidebar.warning("すべての項目を入力してください")
 
 # --- キャッシュ読込 ---
 def load_cache():
@@ -56,7 +83,6 @@ def get_demand_icon(vacancy, price):
         level = 1
     return f"🔥{level}" if level > 0 else ""
 
-# --- スタイル追加（モバイル対応） ---
 st.markdown("""
 <style>
 table {
@@ -129,7 +155,6 @@ def draw_calendar(month_date: dt.date) -> str:
                 price = record.get("avg_price", 0)
                 pre_price = record.get("previous_avg_price")
 
-                # 差分表示
                 vac_diff = vac - pre_vac if pre_vac is not None else None
                 vac_diff_html = f'<span style="color:blue;">＋{vac_diff}</span>' if vac_diff and vac_diff > 0 else \
                                  f'<span style="color:red;">{vac_diff}</span>' if vac_diff and vac_diff < 0 else ""
@@ -147,16 +172,17 @@ def draw_calendar(month_date: dt.date) -> str:
                 icon_html = ""
                 if current >= today:
                     icon = get_demand_icon(vac, price)
-                    icon_html = (
-    f'<div style="position: absolute; top: 4px; right: 6px; font-size: 16px;">{icon}</div>'
-)
+                    icon_html = f'<div style="position: absolute; top: 4px; right: 6px; font-size: 16px;">{icon}</div>'
 
+                event_html = ""
+                if iso in event_data:
+                    event_html = f'<div style="font-size: 11px; margin-top:2px;">{event_data[iso]}</div>'
 
                 html += (
-    f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;">'
-
+                    f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;">'
+                    f'{icon_html}'
                     f'<div><strong>{day}</strong></div>'
-                    f'{count_html}{price_html}{icon_html}'
+                    f'{count_html}{price_html}{event_html}'
                     '</td>'
                 )
         html += '</tr>'
@@ -164,14 +190,11 @@ def draw_calendar(month_date: dt.date) -> str:
     html += '</div>'
     return html
 
-# --- UI制御 ---
+# --- 表示 ---
 today = dt.date.today()
-if "refresh" not in st.session_state:
-    st.session_state.refresh = False
 if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
 
-# 🔁 ナビゲーションボタン（中央に当月）
 nav1, nav2, nav3 = st.columns([2, 2, 2])
 with nav1:
     if st.button("◀ 前月", key="prev"):
@@ -183,11 +206,9 @@ with nav3:
     if st.button("▶ 次月", key="next"):
         st.session_state.month_offset += 1
 
-# 🔁 表示対象月の計算
 base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
 month1 = base_month
 month2 = base_month + relativedelta(months=1)
-
 
 col1, col2 = st.columns(2)
 with col1:
@@ -211,5 +232,7 @@ st.markdown("""
   - 🔥2：残室数 ≤200 または 平均価格 ≥30,000円  
   - 🔥3：残室数 ≤150 または 平均価格 ≥35,000円  
   - 🔥4：残室数 ≤100 または 平均価格 ≥40,000円  
-  - 🔥5：残室数 ≤70 または 平均価格 ≥50,000円
+  - 🔥5：残室数 ≤70 または 平均価格 ≥50,000円  
+- 🔴：京セラドーム  
+- 🔵：ヤンマースタジアム
 """)
