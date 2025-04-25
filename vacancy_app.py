@@ -175,16 +175,22 @@ with st.sidebar:
         if not events:
             st.info("選択した日付にはイベントが登録されていません。")
         else:
-            selected = st.selectbox("削除するイベントを選択", [f"{i+1}. {v['icon']} {v['name']}" for i, v in enumerate(events)], key="del_event_select")
-            index = int(selected.split(".")[0]) - 1
-            if st.button("🚫 削除する"):
-                events.pop(index)
-                if events:
-                    event_data[iso_date] = events
-                else:
-                    del event_data[iso_date]
-                save_json(EVENT_FILE, event_data)
-                st.success(f"{iso_date} のイベントを削除しました")
+            try:
+                # ドロップダウン表示用の選択肢（番号 + アイコン + 名称）
+                event_labels = [f"{i+1}. {ev.get('icon', '')} {ev.get('name', '')}" for i, ev in enumerate(events)]
+                selected = st.selectbox("削除するイベントを選択", event_labels, key="del_event_select")
+                index = int(selected.split(".")[0]) - 1
+
+                if st.button("🚫 削除する"):
+                    events.pop(index)
+                    if events:
+                        event_data[iso_date] = events
+                    else:
+                        del event_data[iso_date]
+                    save_json(EVENT_FILE, event_data)
+                    st.success(f"{iso_date} のイベントを削除しました")
+            except Exception as e:
+                st.error(f"イベントデータの読み込みで問題が発生しました: {e}")
 
 
 # --- 注釈 ---
