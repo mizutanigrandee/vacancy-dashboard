@@ -1,11 +1,10 @@
-import streamlit as st
-import requests
-import datetime as dt
-from dateutil.relativedelta import relativedelta
-import calendar
-import pandas as pd
 import os
 import json
+import calendar
+import datetime as dt
+import pandas as pd
+from dateutil.relativedelta import relativedelta
+import streamlit as st
 import pytz
 import jpholiday
 
@@ -14,12 +13,13 @@ st.set_page_config(
     page_title="ミナミエリア 空室＆平均価格カレンダー",
     layout="wide"
 )
-
 st.title("ミナミエリア 空室＆平均価格カレンダー")
 
-APP_ID = st.secrets["RAKUTEN_APP_ID"]
+# --- 定数 ---
 CACHE_FILE = "vacancy_price_cache.json"
+EXCEL_EVENT_FILE = "event_data.xlsx"
 
+# --- 日本の祝日を取得 ---
 def generate_holidays(months: int = 6) -> set:
     today = dt.date.today()
     future = today + relativedelta(months=months)
@@ -33,7 +33,7 @@ def generate_holidays(months: int = 6) -> set:
 
 HOLIDAYS = generate_holidays()
 
-# --- データ読み込み ---
+# --- JSONキャッシュ読込 ---
 def load_json(path):
     if os.path.exists(path):
         with open(path, "r", encoding="utf-8") as f:
@@ -42,7 +42,21 @@ def load_json(path):
 
 cache_data = load_json(CACHE_FILE)
 
-# --- ナビゲーション ---
+# --- イベントExcel読込 ---
+def load_event_data_from_excel(filepath=EXCEL_EVENT_FILE):
+    if not os.path.exists(filepath):
+        return {}
+    df = pd.read_excel(filepath)
+    event_dict = {}
+    for _, row in df.iterrows():
+        iso = pd.to_datetime(row["date"]).date().isoformat()
+        entry = {"icon": row["icon"], "name": row["name"]}
+        event_dict.setdefault(iso, []).append(entry)
+    return event_dict
+
+event_data = load_event_data_from_excel()
+
+# --- 月移動ボタン ---
 today = dt.date.today()
 if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
@@ -62,7 +76,7 @@ base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_
 month1 = base_month
 month2 = base_month + relativedelta(months=1)
 
-# --- 需要シンボル ---
+# --- 需要アイコン定義 ---
 def get_demand_icon(vacancy, price):
     level = 0
     if (vacancy <= 70 or price >= 50000):
@@ -84,9 +98,9 @@ def draw_calendar(month_date: dt.date) -> str:
     today = dt.date.today()
 
     html = '<div class="calendar-wrapper">'
-    html += '<table style="border-collapse:collapse;width:100%;table-layout:fixed;text-align:center;">'
+    html += '<table style="border-collapse:collapse;width:100%;text-align:center;">'
     html += '<thead><tr>' + ''.join(
-        f'<th style="border:1px solid #aaa;padding:4px;background:#f0f0f0;width:14.2%;">{d}</th>'
+        f'<th style="border:1px solid #aaa;padding:4px;background:#f0f0f0;">{d}</th>'
         for d in ["日","月","火","水","木","金","土"]
     ) + '</tr></thead><tbody>'
 
@@ -94,7 +108,7 @@ def draw_calendar(month_date: dt.date) -> str:
         html += '<tr>'
         for day in week:
             if day == 0:
-                html += '<td style="border:1px solid #aaa;padding:8px;background:#fff;width:14.2%;"></td>'
+                html += '<td style="border:1px solid #aaa;padding:8px;background:#fff;"></td>'
             else:
                 current = dt.date(month_date.year, month_date.month, day)
                 if current < today:
@@ -114,12 +128,17 @@ def draw_calendar(month_date: dt.date) -> str:
                 icon = get_demand_icon(record["vacancy"], record["avg_price"]) if current >= today else ""
                 icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:14px;">{icon}</div>'
 
+                event_html = ""
+                if iso in event_data:
+                    for ev in event_data[iso]:
+                        event_html += f'{ev["icon"]} {ev["name"]}<br>'
+                    event_html = f'<div style="font-size: 12px; line-height: 1.3;">{event_html}</div>'
+
                 html += (
-                    f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;'
-                    f'width:14.2%;max-width:14.2%;">'
+                    f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;">'
                     f'{icon_html}'
                     f'<div><strong>{day}</strong></div>'
-                    f'{count_html}{price_html}'
+                    f'{count_html}{price_html}{event_html}'
                     '</td>'
                 )
         html += '</tr>'
