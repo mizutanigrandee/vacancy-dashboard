@@ -81,7 +81,27 @@ def draw_calendar(month_date: dt.date) -> str:
     weeks = cal.monthdayscalendar(month_date.year, month_date.month)
     today = dt.date.today()
 
-    html = '<div class="calendar-wrapper">'
+    # スマホ対応CSSを最初に追加
+    html = '''
+    <style>
+    @media screen and (max-width: 768px) {
+      .calendar-wrapper table {
+        font-size: 12px;
+      }
+      .calendar-wrapper th, .calendar-wrapper td {
+        padding: 4px !important;
+      }
+      .calendar-wrapper td div {
+        font-size: 12px !important;
+      }
+      .calendar-wrapper td {
+        word-wrap: break-word;
+      }
+    }
+    </style>
+    '''
+
+    html += '<div class="calendar-wrapper">'
     html += '<table style="border-collapse:collapse;width:100%;table-layout:fixed;text-align:center;">'
     html += '<thead><tr>' + ''.join(
         f'<th style="border:1px solid #aaa;padding:4px;background:#f0f0f0;">{d}</th>'
