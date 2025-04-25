@@ -58,14 +58,39 @@ venue_icon_map = {
 }
 venue_label = st.sidebar.selectbox("会場を選択", list(venue_icon_map.keys()))
 event_name = st.sidebar.text_input("イベント名を入力")
-if st.sidebar.button("保存"):
+
+if st.sidebar.button("追加"):
     icon = venue_icon_map.get(venue_label, "")
     if event_date and icon and event_name:
-        event_data[event_date.isoformat()] = f"{icon} {event_name}"
-        save_events(event_data)
-        st.sidebar.success("イベントを保存しました")
+        iso_date = event_date.isoformat()
+        entry = f"{icon} {event_name}"
+        if iso_date not in event_data:
+            event_data[iso_date] = []
+        if entry not in event_data[iso_date]:
+            event_data[iso_date].append(entry)
+            save_events(event_data)
+            st.sidebar.success("イベントを追加しました")
+        else:
+            st.sidebar.info("このイベントはすでに登録されています")
     else:
         st.sidebar.warning("すべての項目を入力してください")
+
+# --- 削除UI ---
+st.sidebar.markdown("---")
+st.sidebar.subheader("🗑️ イベント削除")
+if event_data:
+    delete_date = st.sidebar.date_input("削除対象日を選択", key="delete")
+    iso_delete = delete_date.isoformat()
+    if iso_delete in event_data and event_data[iso_delete]:
+        delete_event = st.sidebar.selectbox("削除するイベントを選択", event_data[iso_delete])
+        if st.sidebar.button("このイベントを削除"):
+            event_data[iso_delete].remove(delete_event)
+            if not event_data[iso_delete]:
+                del event_data[iso_delete]
+            save_events(event_data)
+            st.sidebar.success("イベントを削除しました")
+else:
+    st.sidebar.caption("登録済みのイベントがありません")
 
 # --- キャッシュ読込 ---
 def load_cache():
@@ -183,7 +208,8 @@ def draw_calendar(month_date: dt.date) -> str:
 
                 event_html = ""
                 if iso in event_data:
-                    event_html = f'<div style="font-size: 11px; margin-top:2px;">{event_data[iso]}</div>'
+                    for ev in event_data[iso]:
+                        event_html += f'<div style="font-size: 11px; margin-top:2px;">{ev}</div>'
 
                 html += (
                     f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;">'
