@@ -147,39 +147,45 @@ with col2:
     st.subheader(f"{month2.year}年 {month2.month}月")
     st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
-# --- イベント入力 ---
-st.markdown("---")
-st.subheader("📅 イベント情報の追加・更新")
-input_date = st.date_input("日付を選択")
-venue = st.selectbox("会場を選択", ["🔴 京セラドーム", "🔵 ヤンマースタジアム", "⚫ その他会場"])
-event_name = st.text_input("イベント名を入力")
-if st.button("追加"):
-    iso_date = input_date.isoformat()
-    entry = {"icon": venue.split()[0], "name": event_name}
-    event_data.setdefault(iso_date, []).append(entry)
-    save_json(EVENT_FILE, event_data)
-    st.success(f"{iso_date} にイベントを追加しました")
+# --- サイドバーでイベント登録 ---
+with st.sidebar:
+    st.markdown("### 📅 イベント登録")
+    input_date = st.date_input("日付を選択", key="event_date_input")
+    venue = st.selectbox("会場を選択", ["🔴 京セラドーム", "🔵 ヤンマースタジアム", "⚫ その他会場"], key="event_venue")
+    event_name = st.text_input("イベント名", key="event_name_input")
 
-# --- イベント削除・編集 ---
-st.subheader("🗑 登録済みイベントの削除")
-if st.checkbox("イベント削除モード"):
-    deletable = [
-        (d, i, f"{d} : {v[i]['icon']} {v[i]['name']}")
-        for d, v in event_data.items() for i in range(len(v))
-    ]
-    if deletable:
-        _, _, col_del = st.columns([1, 1, 2])
-        with col_del:
-            choice = st.selectbox("削除したいイベントを選択", deletable, format_func=lambda x: x[2])
-            if st.button("削除"):
-                d, i, _ = choice
-                del event_data[d][i]
-                if not event_data[d]:
-                    del event_data[d]
+    if st.button("➕ イベント追加"):
+        iso_date = input_date.isoformat()
+        entry = {"icon": venue.split()[0], "name": event_name}
+        event_data.setdefault(iso_date, []).append(entry)
+        save_json(EVENT_FILE, event_data)
+        st.success(f"{iso_date} にイベントを追加しました")
+
+# --- サイドバーでイベント削除モード ---
+with st.sidebar:
+    st.markdown("---")
+    st.markdown("### 🗑 登録済みイベントの削除")
+    del_mode = st.checkbox("イベント削除モード", key="delete_mode")
+
+    if del_mode:
+        del_date = st.date_input("削除する日付を選択", key="del_event_date")
+        iso_date = del_date.isoformat()
+        events = event_data.get(iso_date, [])
+
+        if not events:
+            st.info("選択した日付にはイベントが登録されていません。")
+        else:
+            selected = st.selectbox("削除するイベントを選択", [f"{i+1}. {v['icon']} {v['name']}" for i, v in enumerate(events)], key="del_event_select")
+            index = int(selected.split(".")[0]) - 1
+            if st.button("🚫 削除する"):
+                events.pop(index)
+                if events:
+                    event_data[iso_date] = events
+                else:
+                    del event_data[iso_date]
                 save_json(EVENT_FILE, event_data)
-                st.success("イベントを削除しました")
-    else:
-        st.info("現在削除可能なイベントはありません。")
+                st.success(f"{iso_date} のイベントを削除しました")
+
 
 # --- 注釈 ---
 jst = pytz.timezone('Asia/Tokyo')
