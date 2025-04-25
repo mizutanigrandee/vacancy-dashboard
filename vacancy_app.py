@@ -125,7 +125,7 @@ def draw_calendar(month_date: dt.date) -> str:
             if isinstance(events, list):
                 for ev in events:
                     event_html += f'<span style="display:inline-block;margin-right:4px;">{ev["icon"]} {ev["name"]}</span>'
-                event_html = f'<div style="font-size: 12px; white-space: nowrap;">{event_html}</div>'
+                event_html = f'<div style="font-size: 12px; white-space: normal; word-wrap: break-word; text-align: left;">{event_html}</div>'
 
             html += (
                 f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;">'
