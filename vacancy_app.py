@@ -19,7 +19,6 @@ st.title("ミナミエリア 空室＆平均価格カレンダー")
 
 APP_ID = st.secrets["RAKUTEN_APP_ID"]
 CACHE_FILE = "vacancy_price_cache.json"
-EVENT_FILE = "event_data.json"
 
 def generate_holidays(months: int = 6) -> set:
     today = dt.date.today()
@@ -34,19 +33,14 @@ def generate_holidays(months: int = 6) -> set:
 
 HOLIDAYS = generate_holidays()
 
-# --- データ読み書き ---
+# --- データ読み込み ---
 def load_json(path):
     if os.path.exists(path):
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
     return {}
 
-def save_json(path, data):
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
 cache_data = load_json(CACHE_FILE)
-event_data = load_json(EVENT_FILE)
 
 # --- ナビゲーション ---
 today = dt.date.today()
@@ -120,28 +114,18 @@ def draw_calendar(month_date: dt.date) -> str:
                 icon = get_demand_icon(record["vacancy"], record["avg_price"]) if current >= today else ""
                 icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:14px;">{icon}</div>'
 
-                event_html = ""
-                if iso in event_data:
-                    for ev in event_data[iso]:
-                        event_html += (
-                            f'<div style="display:block;text-align:left;font-size:12px;'
-                            f'white-space:normal;word-break:break-word;line-height:1.1;">'
-                            f'{ev["icon"]} {ev["name"]}</div>'
-                        )
-
                 html += (
                     f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;'
                     f'width:14.2%;max-width:14.2%;">'
                     f'{icon_html}'
                     f'<div><strong>{day}</strong></div>'
-                    f'{count_html}{price_html}{event_html}'
+                    f'{count_html}{price_html}'
                     '</td>'
                 )
         html += '</tr>'
     html += '</tbody></table>'
     html += '</div>'
     return html
-
 
 # --- 表示 ---
 col1, col2 = st.columns(2)
@@ -152,53 +136,7 @@ with col2:
     st.subheader(f"{month2.year}年 {month2.month}月")
     st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
-# --- サイドバーでイベント登録 ---
-with st.sidebar:
-    st.markdown("### 📅 イベント登録")
-    input_date = st.date_input("日付を選択", key="event_date_input")
-    venue = st.selectbox("会場を選択", ["🔴 京セラドーム", "🔵 ヤンマースタジアム", "⚫ その他会場"], key="event_venue")
-    event_name = st.text_input("イベント名", key="event_name_input")
-
-    if st.button("➕ イベント追加"):
-        iso_date = input_date.isoformat()
-        entry = {"icon": venue.split()[0], "name": event_name}
-        event_data.setdefault(iso_date, []).append(entry)
-        save_json(EVENT_FILE, event_data)
-        st.success(f"{iso_date} にイベントを追加しました")
-　　　　 st.rerun()
-# --- サイドバーでイベント削除モード ---
-with st.sidebar:
-    st.markdown("---")
-    st.markdown("### 🗑 登録済みイベントの削除")
-    del_mode = st.checkbox("イベント削除モード", key="delete_mode")
-
-    if del_mode:
-        del_date = st.date_input("削除する日付を選択", key="del_event_date")
-        iso_date = del_date.isoformat()
-        events = event_data.get(iso_date, [])
-
-        if not events:
-            st.info("選択した日付にはイベントが登録されていません。")
-        else:
-            try:
-                # ドロップダウン表示用の選択肢（番号 + アイコン + 名称）
-                event_labels = [f"{i+1}. {ev.get('icon', '')} {ev.get('name', '')}" for i, ev in enumerate(events)]
-                selected = st.selectbox("削除するイベントを選択", event_labels, key="del_event_select")
-                index = int(selected.split(".")[0]) - 1
-
-                if st.button("🚫 削除する"):
-                    events.pop(index)
-                    if events:
-                        event_data[iso_date] = events
-                    else:
-                        del event_data[iso_date]
-                    save_json(EVENT_FILE, event_data)
-                    st.success(f"{iso_date} のイベントを削除しました")
-            except Exception as e:
-                st.error(f"イベントデータの読み込みで問題が発生しました: {e}")
-
-
-# --- 注釈 ---
+# --- 更新時刻と注釈 ---
 jst = pytz.timezone('Asia/Tokyo')
 now_jst = dt.datetime.now(jst)
 st.caption(f"最終更新時刻：{now_jst.strftime('%Y-%m-%d %H:%M:%S')}")
@@ -212,8 +150,5 @@ st.markdown("""
   - 🔥2：残室数 ≤200 または 平均価格 ≥30,000円  
   - 🔥3：残室数 ≤150 または 平均価格 ≥35,000円  
   - 🔥4：残室数 ≤100 または 平均価格 ≥40,000円  
-  - 🔥5：残室数 ≤70 または 平均価格 ≥50,000円  
-- 🔴：京セラドーム  
-- 🔵：ヤンマースタジアム  
-- ⚫：その他会場
+  - 🔥5：残室数 ≤70 または 平均価格 ≥50,000円
 """)
