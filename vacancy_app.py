@@ -131,7 +131,7 @@ def draw_calendar(month_date: dt.date) -> str:
                         arrow = '<span style="color:red;">↑</span>'
                     elif price < prev_price:
                         arrow = '<span style="color:blue;">↓</span>'
-                price_html = f'<div style="font-size:10px;font-weight:bold;">￥{price:,}{arrow}</div>'
+                price_html = f'<div style="font-size:18px;font-weight:bold;">￥{price:,}{arrow}</div>'
 
                 # --- 需要アイコン ---
                 icon = get_demand_icon(vacancy, price) if current >= today else ""
