@@ -25,6 +25,8 @@ jobs:
 
     - name: Run update_cache.py
       run: python update_cache.py
+      env:
+        RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}  # ✅ 環境変数として渡す
 
     - name: Pull latest changes to avoid conflicts
       run: git pull origin main --rebase
