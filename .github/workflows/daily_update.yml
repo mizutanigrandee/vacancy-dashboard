@@ -2,7 +2,7 @@ name: update
 
 on:
   schedule:
-    - cron: '0 3 * * *'  # 毎日12時(JST) = 3時(UTC)
+    - cron: '0 3 * * *'  # 毎日12時(JST)
   workflow_dispatch:
 
 jobs:
@@ -26,10 +26,7 @@ jobs:
     - name: Run update_cache.py
       run: python update_cache.py
       env:
-        RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}  # ✅ 環境変数として渡す
-
-    - name: Pull latest changes to avoid conflicts
-      run: git pull origin main --rebase
+        RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
 
     - name: Commit and push updated cache
       run: |
