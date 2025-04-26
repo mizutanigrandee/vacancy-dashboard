@@ -2,7 +2,7 @@ name: update
 
 on:
   schedule:
-    - cron: '0 3 * * *'  # 毎日12時(JST)
+    - cron: '0 3 * * *'  # 毎日12時(JST) = 3時(UTC)
   workflow_dispatch:
 
 jobs:
@@ -14,7 +14,6 @@ jobs:
       uses: actions/checkout@v3
       with:
         persist-credentials: true
-        fetch-depth: 0  # これを追加し、フル履歴を取得する
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -26,12 +25,17 @@ jobs:
 
     - name: Run update_cache.py
       run: python update_cache.py
+      env:
+        RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
 
-    - name: Commit and push updated cache
+    - name: Pull latest changes to avoid conflicts
       run: |
         git config --global user.name 'github-actions'
         git config --global user.email 'actions@github.com'
-        git pull origin main --rebase || echo "Rebase failed, continuing anyway"
+        git pull origin main --rebase || true
+
+    - name: Commit and push updated cache
+      run: |
         git add vacancy_price_cache.json
         git commit -m "Update cache file [auto]" || echo "No changes to commit"
-        git push origin main || echo "Push failed"
+        git push origin main
