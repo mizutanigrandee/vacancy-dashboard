@@ -156,6 +156,7 @@ def draw_calendar(month_date: dt.date) -> str:
     return html
 
 
+
 col1, col2 = st.columns(2)
 with col1:
     st.subheader(f"{month1.year}年 {month1.month}月")
