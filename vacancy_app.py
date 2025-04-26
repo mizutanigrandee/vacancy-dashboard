@@ -85,7 +85,7 @@ def draw_calendar(month_date: dt.date) -> str:
     html += '<table style="border-collapse:collapse;width:100%;table-layout:fixed;text-align:center;">'
     html += '<thead><tr>' + ''.join(
         f'<th style="border:1px solid #aaa;padding:4px;background:#f0f0f0;">{d}</th>'
-        for d in ["日", "月", "火", "水", "木", "金", "土"]
+        for d in ["日","月","火","水","木","金","土"]
     ) + '</tr></thead><tbody>'
 
     for week in weeks:
@@ -95,8 +95,6 @@ def draw_calendar(month_date: dt.date) -> str:
                 html += '<td style="border:1px solid #aaa;padding:8px;background:#fff;"></td>'
             else:
                 current = dt.date(month_date.year, month_date.month, day)
-                iso = current.isoformat()
-                prev_iso = (current - dt.timedelta(days=1)).isoformat()
                 bg = '#fff'
                 if current < today:
                     bg = '#ddd'
@@ -105,31 +103,39 @@ def draw_calendar(month_date: dt.date) -> str:
                 elif current.weekday() == 5:
                     bg = '#e0f7ff'
 
-                # データ取得
+                iso = current.isoformat()
                 record = cache_data.get(iso, {"vacancy": 0, "avg_price": 0.0})
-                prev = cache_data.get(prev_iso, {"vacancy": 0, "avg_price": 0.0})
 
-                # 前日比（在庫差）
-                diff_v = record["vacancy"] - prev["vacancy"]
-                diff_str = f'{diff_v:+d}' if prev["vacancy"] > 0 else ""
-                diff_color = "#d00" if diff_v < 0 else "#06c"
-                diff_html = f'<div style="font-size:10px;color:{diff_color};">{"▲" if diff_v < 0 else "▼"}{abs(diff_v)}</div>' if diff_str else ""
+                # 差分処理（在庫 & 価格）
+                prev_day = current - dt.timedelta(days=1)
+                prev = cache_data.get(prev_day.isoformat(), {"vacancy": 0, "avg_price": 0.0})
+                diff_vacancy = record["vacancy"] - prev["vacancy"]
+                diff_price = record["avg_price"] - prev["avg_price"]
 
-                # 前日比（価格変化）
-                price_dir = ""
+                # 在庫数（前日比を右に）
+                vacancy_html = f'{record["vacancy"]}件'
+                if prev["vacancy"] > 0:
+                    if diff_vacancy > 0:
+                        vacancy_html += f' <span style="color:blue;font-size:12px;">（+{diff_vacancy}件）</span>'
+                    elif diff_vacancy < 0:
+                        vacancy_html += f' <span style="color:red;font-size:12px;">（{diff_vacancy}件）</span>'
+
+                count_html = f'<div style="font-size:18px;font-weight:bold;">{vacancy_html}</div>'
+
+                # 平均価格と価格変動アイコン
+                price_arrow = ""
                 if prev["avg_price"] > 0:
-                    if record["avg_price"] > prev["avg_price"]:
-                        price_dir = '<span style="color:#d00;font-size:10px;">↑</span>'
-                    elif record["avg_price"] < prev["avg_price"]:
-                        price_dir = '<span style="color:#06c;font-size:10px;">↓</span>'
+                    if diff_price > 0:
+                        price_arrow = '<span style="color:red;">↑</span>'
+                    elif diff_price < 0:
+                        price_arrow = '<span style="color:blue;">↓</span>'
+                price_html = f'<div style="font-size:10px;font-weight:bold;">￥{int(record["avg_price"]):,}{price_arrow}</div>'
 
-                # データ描画
-                count_html = f'<div style="font-size:18px;font-weight:bold;">{record["vacancy"]}件</div>'
-                price_html = f'<div style="font-size:10px;">￥{int(record["avg_price"]):,}{price_dir}</div>'
+                # 需要アイコン
                 icon = get_demand_icon(record["vacancy"], record["avg_price"]) if current >= today else ""
-                icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:14px;">{icon}</div>'
+                icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:18px;">{icon}</div>'
 
-                # イベント
+                # イベント情報
                 event_html = ""
                 if iso in event_data:
                     lines = [f'{ev["icon"]} {ev["name"]}' for ev in event_data[iso]]
@@ -140,13 +146,12 @@ def draw_calendar(month_date: dt.date) -> str:
                     f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
                     f'{icon_html}'
                     f'<div><strong>{day}</strong></div>'
-                    f'{count_html}{diff_html}{price_html}{event_html}'
+                    f'{count_html}{price_html}{event_html}'
                     '</td>'
                 )
         html += '</tr>'
     html += '</tbody></table></div>'
     return html
-
 
 col1, col2 = st.columns(2)
 with col1:
