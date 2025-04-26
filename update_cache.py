@@ -56,41 +56,38 @@ def update_batch(start_date: dt.date, months: int = 6):
     today = dt.date.today()
     three_months_ago = today - relativedelta(months=3)
 
-    # ① 既存データを読み込む
-    result = {}
+    # ① 元のデータを保持
+    original_data = {}
     if Path(CACHE_FILE).exists():
         with open(CACHE_FILE, "r", encoding="utf-8") as f:
-            result = json.load(f)
+            original_data = json.load(f)
 
-    # ② 古すぎるデータは削除（過去3か月以前）
+    # ② 最新化したデータ格納先
     result = {
-        k: v for k, v in result.items()
+        k: v for k, v in original_data.items()
         if dt.date.fromisoformat(k) >= three_months_ago
     }
 
-    # ③ 本日〜半年先の未来データを取得して保存（vacancyとavg_priceのみ）
+    # ③ 半年分のデータ更新と前日比算出
     for m in range(months):
         month = (start_date + relativedelta(months=m)).replace(day=1)
         for week in calendar.Calendar(firstweekday=calendar.SUNDAY).monthdatescalendar(month.year, month.month):
             for day in week:
                 if day.month == month.month and day >= today:
                     iso = day.isoformat()
+                    prev_day = day - dt.timedelta(days=1)
+                    prev_data = original_data.get(prev_day.isoformat(), {})
+
                     new_data = fetch_vacancy_and_price(day)
-                    result[iso] = {
+                    record = {
                         "vacancy": new_data["vacancy"],
-                        "avg_price": new_data["avg_price"]
+                        "avg_price": new_data["avg_price"],
+                        "previous_vacancy": prev_data.get("vacancy"),
+                        "previous_avg_price": prev_data.get("avg_price")
                     }
+                    result[iso] = record
 
-    # ④ 前日分データをセット
-    for k in result.keys():
-        day = dt.date.fromisoformat(k)
-        prev_day = day - dt.timedelta(days=1)
-        prev_key = prev_day.isoformat()
-        if prev_key in result:
-            result[k]["previous_vacancy"] = result[prev_key]["vacancy"]
-            result[k]["previous_avg_price"] = result[prev_key]["avg_price"]
-
-    # ⑤ 保存
+    # ④ 保存
     with open(CACHE_FILE, "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
 
