@@ -91,4 +91,9 @@ def update_batch(start_date: dt.date, months: int = 6):
                     result[iso] = record
 
     # ④ 保存
-    with open(CACHE_FILE, "w",_
+    with open(CACHE_FILE, "w", encoding="utf-8") as f:
+        json.dump(result, f, ensure_ascii=False, indent=2)
+
+if __name__ == "__main__":
+    baseline = dt.date.today().replace(day=1)
+    update_batch(baseline)
