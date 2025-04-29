@@ -1,4 +1,4 @@
-import os
+import os 
 import datetime as dt
 from dateutil.relativedelta import relativedelta
 import calendar
@@ -12,10 +12,8 @@ CACHE_FILE = "vacancy_price_cache.json"
 def fetch_vacancy_and_price(date: dt.date) -> dict:
     if date < dt.date.today():
         return {"vacancy": 0, "avg_price": 0.0}
-
     prices = []
     vacancy_total = 0
-
     for page in range(1, 4):
         params = {
             "applicationId": APP_ID,
@@ -25,12 +23,11 @@ def fetch_vacancy_and_price(date: dt.date) -> dict:
             "adultNum": 1,
             "largeClassCode": "japan",
             "middleClassCode": "osaka",
-            # smallClassCode は削除！
+            "smallClassCode": "shi",
             "detailClassCode": "D",
             "page": page
         }
         url = "https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
-
         try:
             r = requests.get(url, params=params, timeout=10)
             if r.status_code != 200:
@@ -38,19 +35,20 @@ def fetch_vacancy_and_price(date: dt.date) -> dict:
             data = r.json()
             if page == 1:
                 vacancy_total = data.get("pagingInfo", {}).get("recordCount", 0)
-
             for hotel in data.get("hotels", []):
-                hotel_parts = hotel.get("hotel", [])
-                if len(hotel_parts) >= 2:
-                    room_info_list = hotel_parts[1].get("roomInfo", [])
-                    for plan in room_info_list:
-                        daily = plan.get("dailyCharge", {})
-                        total = daily.get("total", None)
-                        if total:
-                            prices.append(total)
-        except Exception:
+                try:
+                    hotel_parts = hotel.get("hotel", [])
+                    if len(hotel_parts) >= 2:
+                        room_info_list = hotel_parts[1].get("roomInfo", [])
+                        for plan in room_info_list:
+                            daily = plan.get("dailyCharge", {})
+                            total = daily.get("total", None)
+                            if total:
+                                prices.append(total)
+                except:
+                    continue
+        except:
             continue
-
     avg_price = round(sum(prices) / len(prices), 0) if prices else 0.0
     return {"vacancy": vacancy_total, "avg_price": avg_price}
 
@@ -84,9 +82,8 @@ def update_batch(start_date: dt.date, months: int = 6):
                     record = {
                         "vacancy": new_data["vacancy"],
                         "avg_price": new_data["avg_price"],
-                        "previous_vacancy": prev_data.get("vacancy", 0),
-                        "previous_avg_price": prev_data.get("avg_price", 0.0),
-                        "vacancy_diff": new_data["vacancy"] - prev_data.get("vacancy", 0)
+                        "previous_vacancy": prev_data.get("vacancy"),
+                        "previous_avg_price": prev_data.get("avg_price")
                     }
                     result[iso] = record
 
@@ -96,4 +93,4 @@ def update_batch(start_date: dt.date, months: int = 6):
 
 if __name__ == "__main__":
     baseline = dt.date.today().replace(day=1)
-    update_batch(baseline)
+    update_batch(baseline) 』
