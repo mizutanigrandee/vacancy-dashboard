@@ -29,7 +29,7 @@ def fetch_all_vacancy_and_price():
             "adultNum": 1,
             "largeClassCode": "japan",
             "middleClassCode": "osaka",
-            "detailClassCode": DETAIL_CLASS_CODE,
+            "detailClassCode": "D", 
             "page": 1,
         }
 
