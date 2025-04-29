@@ -1,4 +1,4 @@
-import os 
+import os
 import datetime as dt
 from dateutil.relativedelta import relativedelta
 import calendar
@@ -93,4 +93,4 @@ def update_batch(start_date: dt.date, months: int = 6):
 
 if __name__ == "__main__":
     baseline = dt.date.today().replace(day=1)
-    update_batch(baseline) 』
+    update_batch(baseline)
