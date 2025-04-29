@@ -7,7 +7,7 @@ from dateutil.relativedelta import relativedelta
 # --- 設定 ---
 CACHE_PATH = "vacancy_price_cache.json"
 APPLICATION_ID = os.environ["RAKUTEN_APP_ID"]
-DETAIL_CLASS_CODE = "D"  # なんば・心斎橋・天王寺・阿倍野・長居
+DETAIL_CLASS_CODE = "D"  # ミナミ（心斎橋・なんば・天王寺・阿倍野・長居）
 
 # --- 楽天APIから最新データ取得 ---
 def fetch_all_vacancy_and_price():
@@ -29,7 +29,7 @@ def fetch_all_vacancy_and_price():
             "adultNum": 1,
             "largeClassCode": "japan",
             "middleClassCode": "osaka",
-            "detailClassCode": "D", 
+            "detailClassCode": DETAIL_CLASS_CODE,
             "page": 1,
         }
 
@@ -37,7 +37,7 @@ def fetch_all_vacancy_and_price():
         total_price = 0
         price_count = 0
 
-        for page in range(1, 4):
+        for page in range(1, 4):  # 最大3ページ（念のため）
             params["page"] = page
             try:
                 response = requests.get(base_url, params=params, timeout=10)
@@ -55,7 +55,7 @@ def fetch_all_vacancy_and_price():
                         price_count += 1
                     except (KeyError, IndexError):
                         continue
-            except:
+            except Exception:
                 continue
 
         avg_price = round(total_price / price_count, 0) if price_count > 0 else 0.0
@@ -69,12 +69,19 @@ def fetch_all_vacancy_and_price():
 
     return all_data
 
-# --- 1. 既存キャッシュを読み込み ---
+# --- 1. 既存キャッシュを読み込み（過去3か月分だけ保持） ---
 try:
     with open(CACHE_PATH, "r", encoding="utf-8") as f:
         cache = json.load(f)
 except FileNotFoundError:
     cache = {}
+
+today = datetime.date.today()
+three_months_ago = today - relativedelta(months=3)
+cache = {
+    k: v for k, v in cache.items()
+    if datetime.date.fromisoformat(k) >= three_months_ago
+}
 
 # --- 2. 最新データを取得 ---
 latest_data = fetch_all_vacancy_and_price()
@@ -86,6 +93,7 @@ for date_str, new_info in latest_data.items():
 
     old_entry = cache.get(date_str, {})
     prev_vacancy = old_entry.get("vacancy", 0)
+    prev_avg_price = old_entry.get("avg_price", 0.0)
 
     vacancy_diff = new_vacancy - prev_vacancy
 
@@ -93,7 +101,7 @@ for date_str, new_info in latest_data.items():
         "vacancy": new_vacancy,
         "avg_price": new_price,
         "previous_vacancy": prev_vacancy,
-        "previous_avg_price": old_entry.get("avg_price", 0.0),
+        "previous_avg_price": prev_avg_price,
         "vacancy_diff": vacancy_diff
     }
 
