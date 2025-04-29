@@ -7,7 +7,7 @@ from dateutil.relativedelta import relativedelta
 # --- 設定 ---
 CACHE_PATH = "vacancy_price_cache.json"
 APPLICATION_ID = os.environ["RAKUTEN_APP_ID"]
-AREA_CODE = "D"  # なんば・心斎橋・天王寺・阿倍野・長居
+DETAIL_CLASS_CODE = "D"  # なんば・心斎橋・天王寺・阿倍野・長居
 
 # --- 楽天APIから最新データ取得 ---
 def fetch_all_vacancy_and_price():
@@ -25,29 +25,43 @@ def fetch_all_vacancy_and_price():
             "format": "json",
             "datumType": 1,
             "checkinDate": checkin_date,
-            "checkinDateAdjust": 0,
-            "areaCode": AREA_CODE,
+            "checkoutDate": (current_date + datetime.timedelta(days=1)).strftime("%Y-%m-%d"),
+            "adultNum": 1,
+            "largeClassCode": "japan",
+            "middleClassCode": "osaka",
+            "detailClassCode": DETAIL_CLASS_CODE,
+            "page": 1,
         }
-        response = requests.get(base_url, params=params)
-        result = response.json()
 
-        hotels = result.get("hotels", [])
-        vacancy_count = len(hotels)
+        total_vacancy = 0
         total_price = 0
         price_count = 0
 
-        for hotel in hotels:
+        for page in range(1, 4):
+            params["page"] = page
             try:
-                price = hotel["hotel"][0]["hotelBasicInfo"]["hotelMinCharge"]
-                total_price += price
-                price_count += 1
-            except (KeyError, IndexError):
+                response = requests.get(base_url, params=params, timeout=10)
+                if response.status_code != 200:
+                    continue
+                data = response.json()
+
+                if page == 1:
+                    total_vacancy = data.get("pagingInfo", {}).get("recordCount", 0)
+
+                for hotel in data.get("hotels", []):
+                    try:
+                        price = hotel["hotel"][0]["hotelBasicInfo"]["hotelMinCharge"]
+                        total_price += price
+                        price_count += 1
+                    except (KeyError, IndexError):
+                        continue
+            except:
                 continue
 
-        avg_price = total_price / price_count if price_count > 0 else 0.0
+        avg_price = round(total_price / price_count, 0) if price_count > 0 else 0.0
 
         all_data[checkin_date] = {
-            "vacancy": vacancy_count,
+            "vacancy": total_vacancy,
             "avg_price": avg_price,
         }
 
