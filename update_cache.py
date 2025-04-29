@@ -1,112 +1,94 @@
 import os
+import datetime as dt
+from dateutil.relativedelta import relativedelta
+import calendar
 import json
 import requests
-import datetime
-from dateutil.relativedelta import relativedelta
+from pathlib import Path
 
-# --- 設定 ---
-CACHE_PATH = "vacancy_price_cache.json"
-APPLICATION_ID = os.environ["RAKUTEN_APP_ID"]
-DETAIL_CLASS_CODE = "D"  # ミナミ（心斎橋・なんば・天王寺・阿倍野・長居）
+APP_ID = os.environ["RAKUTEN_APP_ID"]
+CACHE_FILE = "vacancy_price_cache.json"
 
-# --- 楽天APIから最新データ取得 ---
-def fetch_all_vacancy_and_price():
-    base_url = "https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
-    today = datetime.date.today()
-    two_months_later = today + relativedelta(months=2)
+def fetch_vacancy_and_price(date: dt.date) -> dict:
+    if date < dt.date.today():
+        return {"vacancy": 0, "avg_price": 0.0}
 
-    all_data = {}
-    current_date = today
-    while current_date <= two_months_later:
-        checkin_date = current_date.strftime("%Y-%m-%d")
+    prices = []
+    vacancy_total = 0
 
+    for page in range(1, 4):
         params = {
-            "applicationId": APPLICATION_ID,
+            "applicationId": APP_ID,
             "format": "json",
-            "datumType": 1,
-            "checkinDate": checkin_date,
-            "checkoutDate": (current_date + datetime.timedelta(days=1)).strftime("%Y-%m-%d"),
+            "checkinDate": date.strftime("%Y-%m-%d"),
+            "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
             "adultNum": 1,
             "largeClassCode": "japan",
             "middleClassCode": "osaka",
-            "detailClassCode": DETAIL_CLASS_CODE,
-            "page": 1,
+            # smallClassCode は削除！
+            "detailClassCode": "D",
+            "page": page
         }
+        url = "https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
 
-        total_vacancy = 0
-        total_price = 0
-        price_count = 0
-
-        for page in range(1, 4):  # 最大3ページ（念のため）
-            params["page"] = page
-            try:
-                response = requests.get(base_url, params=params, timeout=10)
-                if response.status_code != 200:
-                    continue
-                data = response.json()
-
-                if page == 1:
-                    total_vacancy = data.get("pagingInfo", {}).get("recordCount", 0)
-
-                for hotel in data.get("hotels", []):
-                    try:
-                        price = hotel["hotel"][0]["hotelBasicInfo"]["hotelMinCharge"]
-                        total_price += price
-                        price_count += 1
-                    except (KeyError, IndexError):
-                        continue
-            except Exception:
+        try:
+            r = requests.get(url, params=params, timeout=10)
+            if r.status_code != 200:
                 continue
+            data = r.json()
+            if page == 1:
+                vacancy_total = data.get("pagingInfo", {}).get("recordCount", 0)
 
-        avg_price = round(total_price / price_count, 0) if price_count > 0 else 0.0
+            for hotel in data.get("hotels", []):
+                hotel_parts = hotel.get("hotel", [])
+                if len(hotel_parts) >= 2:
+                    room_info_list = hotel_parts[1].get("roomInfo", [])
+                    for plan in room_info_list:
+                        daily = plan.get("dailyCharge", {})
+                        total = daily.get("total", None)
+                        if total:
+                            prices.append(total)
+        except Exception:
+            continue
 
-        all_data[checkin_date] = {
-            "vacancy": total_vacancy,
-            "avg_price": avg_price,
-        }
+    avg_price = round(sum(prices) / len(prices), 0) if prices else 0.0
+    return {"vacancy": vacancy_total, "avg_price": avg_price}
 
-        current_date += datetime.timedelta(days=1)
+def update_batch(start_date: dt.date, months: int = 6):
+    today = dt.date.today()
+    three_months_ago = today - relativedelta(months=3)
 
-    return all_data
+    # ① 元のデータを保持
+    original_data = {}
+    if Path(CACHE_FILE).exists():
+        with open(CACHE_FILE, "r", encoding="utf-8") as f:
+            original_data = json.load(f)
 
-# --- 1. 既存キャッシュを読み込み（過去3か月分だけ保持） ---
-try:
-    with open(CACHE_PATH, "r", encoding="utf-8") as f:
-        cache = json.load(f)
-except FileNotFoundError:
-    cache = {}
-
-today = datetime.date.today()
-three_months_ago = today - relativedelta(months=3)
-cache = {
-    k: v for k, v in cache.items()
-    if datetime.date.fromisoformat(k) >= three_months_ago
-}
-
-# --- 2. 最新データを取得 ---
-latest_data = fetch_all_vacancy_and_price()
-
-# --- 3. データ更新処理 ---
-for date_str, new_info in latest_data.items():
-    new_vacancy = new_info["vacancy"]
-    new_price = new_info["avg_price"]
-
-    old_entry = cache.get(date_str, {})
-    prev_vacancy = old_entry.get("vacancy", 0)
-    prev_avg_price = old_entry.get("avg_price", 0.0)
-
-    vacancy_diff = new_vacancy - prev_vacancy
-
-    cache[date_str] = {
-        "vacancy": new_vacancy,
-        "avg_price": new_price,
-        "previous_vacancy": prev_vacancy,
-        "previous_avg_price": prev_avg_price,
-        "vacancy_diff": vacancy_diff
+    # ② 最新化したデータ格納先
+    result = {
+        k: v for k, v in original_data.items()
+        if dt.date.fromisoformat(k) >= three_months_ago
     }
 
-# --- 4. 保存 ---
-with open(CACHE_PATH, "w", encoding="utf-8") as f:
-    json.dump(cache, f, ensure_ascii=False, indent=2)
+    # ③ 半年分のデータ更新と前日比算出
+    for m in range(months):
+        month = (start_date + relativedelta(months=m)).replace(day=1)
+        for week in calendar.Calendar(firstweekday=calendar.SUNDAY).monthdatescalendar(month.year, month.month):
+            for day in week:
+                if day.month == month.month and day >= today:
+                    iso = day.isoformat()
+                    prev_day = day - dt.timedelta(days=1)
+                    prev_data = original_data.get(prev_day.isoformat(), {})
 
-print(f"✅ 更新完了：{datetime.datetime.now().isoformat()}")
+                    new_data = fetch_vacancy_and_price(day)
+                    record = {
+                        "vacancy": new_data["vacancy"],
+                        "avg_price": new_data["avg_price"],
+                        "previous_vacancy": prev_data.get("vacancy", 0),
+                        "previous_avg_price": prev_data.get("avg_price", 0.0),
+                        "vacancy_diff": new_data["vacancy"] - prev_data.get("vacancy", 0)
+                    }
+                    result[iso] = record
+
+    # ④ 保存
+    with open(CACHE_FILE, "w",_
