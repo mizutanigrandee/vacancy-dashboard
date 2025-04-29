@@ -1,4 +1,148 @@
 {
+  "2025-04-01": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0
+  },
+  "2025-04-02": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
+  "2025-04-03": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
+  "2025-04-04": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
+  "2025-04-05": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
+  "2025-04-06": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
+  "2025-04-07": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
+  "2025-04-08": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
+  "2025-04-09": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
+  "2025-04-10": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
+  "2025-04-11": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
+  "2025-04-12": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
+  "2025-04-13": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
+  "2025-04-14": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
+  "2025-04-15": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
+  "2025-04-16": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
+  "2025-04-17": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
+  "2025-04-18": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
+  "2025-04-19": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
+  "2025-04-20": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
+  "2025-04-21": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
+  "2025-04-22": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
+  "2025-04-23": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
+  "2025-04-24": {
+    "vacancy": 0,
+    "avg_price": 0.0,
+    "previous_vacancy": 0,
+    "previous_avg_price": 0.0
+  },
   "2025-04-25": {
     "vacancy": 0,
     "avg_price": 0.0,
@@ -952,149 +1096,5 @@
     "avg_price": 15385.0,
     "previous_vacancy": 268,
     "previous_avg_price": 15067.0
-  },
-  "2025-04-01": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": null,
-    "previous_avg_price": null
-  },
-  "2025-04-02": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
-  },
-  "2025-04-03": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
-  },
-  "2025-04-04": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
-  },
-  "2025-04-05": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
-  },
-  "2025-04-06": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
-  },
-  "2025-04-07": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
-  },
-  "2025-04-08": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
-  },
-  "2025-04-09": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
-  },
-  "2025-04-10": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
-  },
-  "2025-04-11": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
-  },
-  "2025-04-12": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
-  },
-  "2025-04-13": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
-  },
-  "2025-04-14": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
-  },
-  "2025-04-15": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
-  },
-  "2025-04-16": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
-  },
-  "2025-04-17": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
-  },
-  "2025-04-18": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
-  },
-  "2025-04-19": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
-  },
-  "2025-04-20": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
-  },
-  "2025-04-21": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
-  },
-  "2025-04-22": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
-  },
-  "2025-04-23": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
-  },
-  "2025-04-24": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "previous_vacancy": 0,
-    "previous_avg_price": 0.0
   }
 }
