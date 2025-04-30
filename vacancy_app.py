@@ -101,12 +101,12 @@ def draw_calendar(month_date: dt.date) -> str:
             diff_v = rec.get("vacancy_diff", 0)
             diff_p = rec.get("avg_price_diff", 0)
 
-            vac_html  = f'<div style="font-size:18px;font-weight:bold;">{vac}件'
+            vac_html  = f'<div style="font-size:16px;font-weight:bold;">{vac}件'
             if diff_v>0:  vac_html += f'<span style="color:blue;font-size:12px;">（+{diff_v}件）</span>'
             elif diff_v<0:vac_html += f'<span style="color:red;font-size:12px;">（{diff_v}件）</span>'
             vac_html += '</div>'
 
-            price_html = f'<div style="font-size:18px;font-weight:bold;">￥{price:,}'
+            price_html = f'<div style="font-size:16px;font-weight:bold;">￥{price:,}'
             if diff_p>0:  price_html += '<span style="color:red;"> ↑</span>'
             elif diff_p<0:price_html += '<span style="color:blue;"> ↓</span>'
             price_html += '</div>'
@@ -122,7 +122,7 @@ def draw_calendar(month_date: dt.date) -> str:
             html += (
                 f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
                 f'{icon_html}'
-                f'<div style="position:absolute; top:4px; left:4px; font-size:18px; color:gray; font-weight:bold;">{current.day}</div>'
+                f'<div style="position:absolute; top:4px; left:4px; font-size:14px; color:gray; font-weight:bold;">{current.day}</div>'
                 f'{vac_html}{price_html}{event_html}'
                 '</td>'
             )
