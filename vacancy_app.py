@@ -145,7 +145,7 @@ try:
     mtime = os.path.getmtime(CACHE_FILE)
     last_run = dt.datetime.fromtimestamp(mtime, pytz.timezone('Asia/Tokyo'))
     st.markdown(
-        f"<p style='font-size:20px; color:gray;'>最終巡回時刻：{last_run:%Y-%m-%d %H:%M:%S}</p>",
+        f"<p style='font-size:16px; color:gray;'>最終巡回時刻：{last_run:%Y-%m-%d %H:%M:%S}</p>",
         unsafe_allow_html=True
     )
 except Exception:
