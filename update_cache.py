@@ -11,6 +11,7 @@ APP_ID     = os.environ.get("RAKUTEN_APP_ID", "")
 CACHE_FILE = "vacancy_price_cache.json"
 
 def fetch_vacancy_and_price(date: dt.date) -> dict:
+    """楽天APIから指定日のvacancyとavg_priceを取得"""
     print(f"🔍 fetching {date}", file=sys.stderr)
     if date < dt.date.today():
         return {"vacancy": 0, "avg_price": 0.0}
@@ -54,61 +55,62 @@ def fetch_vacancy_and_price(date: dt.date) -> dict:
     print(f"   → avg_price = {avg_price}  (vacancy={vacancy_total})", file=sys.stderr)
     return {"vacancy": vacancy_total, "avg_price": avg_price}
 
-def update_batch(start_date: dt.date, months: int = 6):
+def update_cache(start_date: dt.date, months: int = 6):
     today = dt.date.today()
     three_months_ago = today - relativedelta(months=3)
 
-    # ① 既存キャッシュ読み込み
-    existing = {}
+    # --- 既存キャッシュ読み込み ---
+    cache = {}
     if Path(CACHE_FILE).exists():
-        existing = json.loads(Path(CACHE_FILE).read_text(encoding="utf-8"))
-    # 過去3ヶ月だけ残す
-    existing = {
-        k: v for k, v in existing.items()
+        cache = json.loads(Path(CACHE_FILE).read_text(encoding="utf-8"))
+
+    # 古い(3ヶ月前以前)のキーは削除
+    cache = {
+        k: v for k, v in cache.items()
         if dt.date.fromisoformat(k) >= three_months_ago
     }
 
-    # ② 生データ収集
-    raw = {}
     cal = calendar.Calendar(firstweekday=calendar.SUNDAY)
+    # --- 各日付の更新処理 ---
     for m in range(months):
         month_start = (start_date + relativedelta(months=m)).replace(day=1)
         for week in cal.monthdatescalendar(month_start.year, month_start.month):
-            for d in week:
-                if d.month == month_start.month and d >= today:
-                    raw[d.isoformat()] = fetch_vacancy_and_price(d)
+            for day in week:
+                if day.month != month_start.month or day < today:
+                    continue
 
-    # ③ 差分付与
-    result = dict(existing)  # 過去3ヶ月分＋これまでの未来データ
-    for iso in sorted(raw.keys()):
-        d = dt.date.fromisoformat(iso)
-        prev_iso = (d - dt.timedelta(days=1)).isoformat()
-        prev = result.get(prev_iso, {"vacancy": 0, "avg_price": 0.0})
+                iso = day.isoformat()
+                # APIから取得
+                new = fetch_vacancy_and_price(day)
+                new_vac = new["vacancy"]
+                new_pri = new["avg_price"]
 
-        cur = raw[iso]
-        vac = cur["vacancy"]
-        pri = cur["avg_price"]
+                # キャッシュから前回実行値を取得
+                prev = cache.get(iso, {})
+                last_vac = prev.get("last_vacancy", prev.get("vacancy", 0))
+                last_pri = prev.get("last_avg_price", prev.get("avg_price", 0.0))
 
-        # --- ここで「初取得か？」を判定 ---
-        is_new = iso not in existing
+                # 差分計算
+                vac_diff = new_vac - last_vac
+                pri_diff = new_pri - last_pri
 
-        # ベースレコード
-        rec = {
-            "vacancy":            vac,
-            "avg_price":          pri,
-            "previous_vacancy":   prev["vacancy"],
-            "previous_avg_price": prev["avg_price"],
-        }
+                # 新レコード作成
+                record = {
+                    # 最新値
+                    "vacancy": new_vac,
+                    "avg_price": new_pri,
+                    # 直前取得値
+                    "last_vacancy": last_vac,
+                    "last_avg_price": last_pri,
+                    # 実行ごとの差分
+                    "vacancy_diff": vac_diff,
+                    "avg_price_diff": pri_diff,
+                }
+                cache[iso] = record
 
-        # diff は「初取得なら 0、そうでなければ計算結果」
-        rec["vacancy_diff"]   = 0 if is_new else vac - prev["vacancy"]
-        rec["avg_price_diff"] = 0 if is_new else pri - prev["avg_price"]
-
-        result[iso] = rec
-
-    # ④ 書き出し
+    # --- 保存 ---
     Path(CACHE_FILE).write_text(
-        json.dumps(result, ensure_ascii=False, indent=2),
+        json.dumps(cache, ensure_ascii=False, indent=2),
         encoding="utf-8"
     )
     print("✅ cache updated", file=sys.stderr)
@@ -116,4 +118,4 @@ def update_batch(start_date: dt.date, months: int = 6):
 if __name__ == "__main__":
     print("📡 Starting update_cache.py", file=sys.stderr)
     baseline = dt.date.today().replace(day=1)
-    update_batch(baseline)
+    update_cache(baseline)
