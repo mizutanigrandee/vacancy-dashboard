@@ -105,8 +105,8 @@ def draw_calendar(month_date: dt.date) -> str:
             vac_html += '</div>'
 
             price_html = f'<div style="font-size:20px;font-weight:bold;">￥{price:,}'
-            if diff_p>0:  price_html += '<span style="color:red;">↑</span>'
-            elif diff_p<0:price_html += '<span style="color:blue;">↓</span>'
+            if diff_p>0:  price_html += '<span style="color:red;"> ↑</span>'
+            elif diff_p<0:price_html += '<span style="color:blue;"> ↓</span>'
             price_html += '</div>'
 
             icon_html = ''
