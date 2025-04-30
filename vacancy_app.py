@@ -24,6 +24,7 @@ st.markdown(
 
 
 
+
 APP_ID      = st.secrets["RAKUTEN_APP_ID"]
 CACHE_FILE  = "vacancy_price_cache.json"
 EVENT_EXCEL = "event_data.xlsx"
