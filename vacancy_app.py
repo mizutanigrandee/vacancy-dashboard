@@ -119,7 +119,9 @@ def draw_calendar(month_date: dt.date) -> str:
 
             html += (
                 f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
-                f'{icon_html}<div><strong>{current.day}</strong></div>{vac_html}{price_html}{event_html}</td>'
+                  # 日付を左上に寄せる
+    f'<div style="position:absolute; top:4px; left:4px; font-size:14px; font-weight:bold;">{current.day}</div>'
+                {vac_html}{price_html}{event_html}</td>'
             )
         html += '</tr>'
     html += '</tbody></table></div>'
