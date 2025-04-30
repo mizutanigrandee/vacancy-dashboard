@@ -113,7 +113,7 @@ def draw_calendar(month_date: dt.date) -> str:
 
             icon_html = ''
             if current >= today:
-                icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:18px;">{get_demand_icon(vac, price)}</div>'
+                icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:16px;">{get_demand_icon(vac, price)}</div>'
 
             event_html = ''
             if iso in event_data:
