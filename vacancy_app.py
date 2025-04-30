@@ -158,7 +158,7 @@ except Exception:
 # ───────── 注釈 ─────────
 st.markdown(
     """
-    <div style='font-size:20px; color:#555;'>
+    <div style='font-size:16px; color:#555;'>
     <strong>《注釈》</strong><br>
     - 在庫数、平均価格は『なんば・心斎橋・天王寺・阿倍野・長居』エリアから抽出しています。<br>
     - 表示される「平均価格」は、楽天トラベル検索上位90施設の平均最低価格です。<br>
