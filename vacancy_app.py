@@ -162,7 +162,7 @@ st.markdown(
     <strong>《注釈》</strong><br>
     - 在庫数、平均価格は『なんば・心斎橋・天王寺・阿倍野・長居』エリアから抽出しています。<br>
     - 表示される「平均価格」は、楽天トラベル検索上位90施設の平均最低価格です。<br>
-    - 空室数の数字横にある<span style="color:blue;">（+N）</span>／<span style="color:red;">（−N）</span>は、前回巡回時点との在庫数の増減を示します。<br>
+    - 空室数の<span style="color:blue;">（+N）</span>／<span style="color:red;">（−N）</span>は、前回巡回時点との在庫数の増減を示します。<br>
     - 平均価格の<span style="color:red;">↑</span>／<span style="color:blue;">↓</span>は、前回巡回時点との平均価格の上昇／下降を示します。<br>
     - 会場アイコン：🔴京セラドーム / 🔵ヤンマースタジアム / ★その他会場<br>
     - 炎マーク（需要シンボル）の内訳：<br>
