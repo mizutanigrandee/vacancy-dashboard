@@ -122,17 +122,15 @@ def draw_calendar(month_date: dt.date) -> str:
     html += '</tbody></table></div>'
     return html
 
-# ───────── 表示 ─────────
-col1, col2 = st.columns(2)
-with col1:
-    st.subheader(f"{month1.year}年 {month1.month}月")
-    st.markdown(draw_calendar(month1), unsafe_allow_html=True)
-with col2:
-    st.subheader(f"{month2.year}年 {month2.month}月")
-    st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
-now = dt.datetime.now(pytz.timezone('Asia/Tokyo'))
-st.caption(f"最終更新時刻：{now:%Y-%m-%d %H:%M:%S}")
+# ───────── 最終巡回時刻表示 ─────────
+try:
+    mtime = os.path.getmtime(CACHE_FILE)
+    last_run = dt.datetime.fromtimestamp(mtime, pytz.timezone('Asia/Tokyo'))
+    st.caption(f"最終巡回時刻：{last_run:%Y-%m-%d %H:%M:%S}")
+except Exception:
+    st.caption("最終巡回時刻：取得できませんでした")
+
 
 # ───────── 注釈 ─────────
 st.markdown("""
@@ -148,10 +146,4 @@ st.markdown("""
 - 🔴：京セラドーム / 🔵：ヤンマースタジアム / ★：その他会場
 """, unsafe_allow_html=True)
 
-# ───────── 最終巡回時刻表示 ─────────
-try:
-    mtime = os.path.getmtime(CACHE_FILE)
-    last_run = dt.datetime.fromtimestamp(mtime, pytz.timezone('Asia/Tokyo'))
-    st.caption(f"最終巡回時刻：{last_run:%Y-%m-%d %H:%M:%S}")
-except Exception:
-    st.caption("最終巡回時刻：取得できませんでした")
+
