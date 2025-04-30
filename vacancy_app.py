@@ -50,9 +50,12 @@ if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
 
 nav1, nav2, nav3 = st.columns(3)
-with nav1:  st.button("◀ 前月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset-1))
-with nav2:  st.button("🗓 当月", on_click=lambda: st.session_state.__setitem__("month_offset", 0))
-with nav3:  st.button("▶ 次月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset+1))
+with nav1:
+    st.button("◀ 前月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset-1))
+with nav2:
+    st.button("🗓 当月", on_click=lambda: st.session_state.__setitem__("month_offset", 0))
+with nav3:
+    st.button("▶ 次月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset+1))
 
 base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
 month1     = base_month
@@ -92,7 +95,7 @@ def draw_calendar(month_date: dt.date) -> str:
             vac = rec["vacancy"]
             price = int(rec["avg_price"])
 
-            # ── 差分取得
+            # 差分値（キャッシュから取得）
             diff_v = rec.get("vacancy_diff", 0)
             diff_p = rec.get("avg_price_diff", 0)
 
@@ -122,8 +125,16 @@ def draw_calendar(month_date: dt.date) -> str:
     html += '</tbody></table></div>'
     return html
 
+# 表示
+col1, col2 = st.columns(2)
+with col1:
+    st.subheader(f"{month1.year}年 {month1.month}月")
+    st.markdown(draw_calendar(month1), unsafe_allow_html=True)
+with col2:
+    st.subheader(f"{month2.year}年 {month2.month}月")
+    st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
-# ───────── 最終巡回時刻表示 ─────────
+# 最終巡回時刻表示
 try:
     mtime = os.path.getmtime(CACHE_FILE)
     last_run = dt.datetime.fromtimestamp(mtime, pytz.timezone('Asia/Tokyo'))
@@ -131,8 +142,7 @@ try:
 except Exception:
     st.caption("最終巡回時刻：取得できませんでした")
 
-
-# ───────── 注釈 ─────────
+# 注釈
 st.markdown("""
 **《注釈》**  
 - 在庫数、平均価格は『なんば・心斎橋・天王寺・阿倍野・長居』エリアから抽出しています  
@@ -145,5 +155,3 @@ st.markdown("""
   - 🔥5：残室 ≤70 または 価格 ≥50,000円  
 - 🔴：京セラドーム / 🔵：ヤンマースタジアム / ★：その他会場
 """, unsafe_allow_html=True)
-
-
