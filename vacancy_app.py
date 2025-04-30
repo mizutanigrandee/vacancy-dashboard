@@ -121,6 +121,7 @@ def draw_calendar(month_date: dt.date) -> str:
 
             html += (
                 f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
+                f'{icon_html}'
                 f'<div style="position:absolute; top:4px; left:4px; font-size:18px; color:gray; font-weight:bold;">{current.day}</div>'
                 f'{vac_html}{price_html}{event_html}'
                 '</td>'
