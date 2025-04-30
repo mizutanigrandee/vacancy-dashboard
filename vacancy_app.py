@@ -117,7 +117,7 @@ def draw_calendar(month_date: dt.date) -> str:
 
             event_html = ''
             if iso in event_data:
-                event_html = '<div style="font-size:14px;margin-top:4px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data[iso]) + '</div>'
+                event_html = '<div style="font-size:12px;margin-top:4px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data[iso]) + '</div>'
 
             html += (
                 f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
