@@ -147,3 +147,11 @@ st.markdown("""
   - 🔥5：残室 ≤70 または 価格 ≥50,000円  
 - 🔴：京セラドーム / 🔵：ヤンマースタジアム / ★：その他会場
 """, unsafe_allow_html=True)
+
+# ───────── 最終巡回時刻表示 ─────────
+try:
+    mtime = os.path.getmtime(CACHE_FILE)
+    last_run = dt.datetime.fromtimestamp(mtime, pytz.timezone('Asia/Tokyo'))
+    st.caption(f"最終巡回時刻：{last_run:%Y-%m-%d %H:%M:%S}")
+except Exception:
+    st.caption("最終巡回時刻：取得できませんでした")
