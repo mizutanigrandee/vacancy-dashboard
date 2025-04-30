@@ -101,12 +101,12 @@ def draw_calendar(month_date: dt.date) -> str:
             diff_v = rec.get("vacancy_diff", 0)
             diff_p = rec.get("avg_price_diff", 0)
 
-            vac_html  = f'<div style="font-size:20px;font-weight:bold;">{vac}件'
-            if diff_v>0:  vac_html += f'<span style="color:blue;font-size:14px;">（+{diff_v}件）</span>'
-            elif diff_v<0:vac_html += f'<span style="color:red;font-size:14px;">（{diff_v}件）</span>'
+            vac_html  = f'<div style="font-size:18px;font-weight:bold;">{vac}件'
+            if diff_v>0:  vac_html += f'<span style="color:blue;font-size:12px;">（+{diff_v}件）</span>'
+            elif diff_v<0:vac_html += f'<span style="color:red;font-size:12px;">（{diff_v}件）</span>'
             vac_html += '</div>'
 
-            price_html = f'<div style="font-size:20px;font-weight:bold;">￥{price:,}'
+            price_html = f'<div style="font-size:18px;font-weight:bold;">￥{price:,}'
             if diff_p>0:  price_html += '<span style="color:red;"> ↑</span>'
             elif diff_p<0:price_html += '<span style="color:blue;"> ↓</span>'
             price_html += '</div>'
