@@ -40,8 +40,8 @@ def load_event_data_from_excel(filepath=EVENT_EXCEL):
         ev.setdefault(key, []).append({"icon": row["icon"], "name": row["name"]})
     return ev
 
-cache_data  = load_json(CACHE_FILE)
-event_data  = load_event_data_from_excel()
+cache_data = load_json(CACHE_FILE)
+event_data = load_event_data_from_excel()
 
 # ───────── ナビゲーション ─────────
 today = dt.date.today()
@@ -101,11 +101,11 @@ def draw_calendar(month_date: dt.date) -> str:
             iso = current.isoformat()
             rec = cache_data.get(iso, {"vacancy": 0, "avg_price": 0.0})
 
-            # ▲ 差分はキャッシュの値をそのまま使う
-            vac      = rec.get("vacancy", 0)
-            diff_v   = rec.get("vacancy_diff", 0)
-            price    = int(rec.get("avg_price", 0))
-            diff_p   = rec.get("avg_price_diff", 0)
+            # ▲ キャッシュに保存された差分をそのまま使う
+            vac    = rec.get("vacancy", 0)
+            diff_v = rec.get("vacancy_diff", 0)
+            price  = int(rec.get("avg_price", 0))
+            diff_p = rec.get("avg_price_diff", 0)
 
             # 在庫表示
             vac_html = f'<div style="font-size:18px;font-weight:bold;">{vac}件'
@@ -131,8 +131,9 @@ def draw_calendar(month_date: dt.date) -> str:
             # イベント表示
             event_html = ''
             if iso in event_data:
-                lines = [f'{ev["icon"]} {ev["name"]}' for ev in event_data[iso]]
-                event_html = f'<div style="font-size:14px;margin-top:4px;">' + "<br>".join(lines) + '</div>'
+                event_html = '<div style="font-size:14px;margin-top:4px;">' + "<br>".join(
+                    f'{ev["icon"]} {ev["name"]}' for ev in event_data[iso]
+                ) + '</div>'
 
             html += (
                 f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
