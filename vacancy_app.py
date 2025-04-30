@@ -1,5 +1,4 @@
 import streamlit as st
-import requests
 import datetime as dt
 from dateutil.relativedelta import relativedelta
 import calendar
@@ -9,7 +8,6 @@ import os, json, pytz, jpholiday
 st.set_page_config(page_title="ミナミエリア 空室＆平均価格カレンダー", layout="wide")
 st.title("ミナミエリア 空室＆平均価格カレンダー")
 
-APP_ID      = st.secrets["RAKUTEN_APP_ID"]
 CACHE_FILE  = "vacancy_price_cache.json"
 EVENT_EXCEL = "event_data.xlsx"
 
@@ -22,6 +20,7 @@ def generate_holidays(months=6):
         if jpholiday.is_holiday(d):
             hol.add(d)
     return hol
+
 HOLIDAYS = generate_holidays()
 
 # ───────── データ読み込み ─────────
@@ -41,8 +40,8 @@ def load_event_data_from_excel(filepath=EVENT_EXCEL):
         ev.setdefault(key, []).append({"icon": row["icon"], "name": row["name"]})
     return ev
 
-cache_data = load_json(CACHE_FILE)
-event_data = load_event_data_from_excel()
+cache_data  = load_json(CACHE_FILE)
+event_data  = load_event_data_from_excel()
 
 # ───────── ナビゲーション ─────────
 today = dt.date.today()
@@ -50,9 +49,12 @@ if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
 
 nav1, nav2, nav3 = st.columns(3)
-with nav1:  st.button("◀ 前月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset-1))
-with nav2:  st.button("🗓 当月", on_click=lambda: st.session_state.__setitem__("month_offset", 0))
-with nav3:  st.button("▶ 次月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset+1))
+with nav1:
+    st.button("◀ 前月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset-1))
+with nav2:
+    st.button("🗓 当月", on_click=lambda: st.session_state.__setitem__("month_offset", 0))
+with nav3:
+    st.button("▶ 次月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset+1))
 
 base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
 month1     = base_month
@@ -60,11 +62,11 @@ month2     = base_month + relativedelta(months=1)
 
 # ───────── 需要アイコン ─────────
 def get_demand_icon(vac, price):
-    if vac<=70 or price>=50000:   return "🔥5"
-    if vac<=100 or price>=40000:  return "🔥4"
-    if vac<=150 or price>=35000:  return "🔥3"
-    if vac<=200 or price>=30000:  return "🔥2"
-    if vac<=250 or price>=25000:  return "🔥1"
+    if vac <= 70 or price >= 50000:   return "🔥5"
+    if vac <= 100 or price >= 40000:  return "🔥4"
+    if vac <= 150 or price >= 35000:  return "🔥3"
+    if vac <= 200 or price >= 30000:  return "🔥2"
+    if vac <= 250 or price >= 25000:  return "🔥1"
     return ""
 
 # ───────── カレンダー描画 ─────────
@@ -74,7 +76,10 @@ def draw_calendar(month_date: dt.date) -> str:
     today = dt.date.today()
 
     html  = '<div class="calendar-wrapper"><table style="border-collapse:collapse;width:100%;table-layout:fixed;text-align:center;">'
-    html += '<thead><tr>' + ''.join(f'<th style="border:1px solid #aaa;padding:4px;background:#f0f0f0;">{d}</th>' for d in "日月火水木金土") + '</tr></thead><tbody>'
+    html += '<thead><tr>' + ''.join(
+        f'<th style="border:1px solid #aaa;padding:4px;background:#f0f0f0;">{d}</th>'
+        for d in "日月火水木金土"
+    ) + '</tr></thead><tbody>'
 
     for week in weeks:
         html += '<tr>'
@@ -84,49 +89,56 @@ def draw_calendar(month_date: dt.date) -> str:
                 continue
 
             # 背景色
-            bg = '#ddd' if current < today else (
-                 '#ffecec' if (current in HOLIDAYS or current.weekday()==6) else (
-                 '#e0f7ff' if current.weekday()==5 else '#fff'))
+            if current < today:
+                bg = '#ddd'
+            elif current in HOLIDAYS or current.weekday() == 6:
+                bg = '#ffecec'
+            elif current.weekday() == 5:
+                bg = '#e0f7ff'
+            else:
+                bg = '#fff'
 
             iso = current.isoformat()
-            rec = cache_data.get(iso, {"vacancy":0, "avg_price":0})
-            vac = rec["vacancy"]
-            price = int(rec["avg_price"])
+            rec = cache_data.get(iso, {"vacancy": 0, "avg_price": 0.0})
 
-            # ── 差分計算（cache に diff があれば優先）
-            if "vacancy_diff" in rec:
-                diff_v = rec["vacancy_diff"]
-            else:
-                prev = cache_data.get((current-dt.timedelta(days=1)).isoformat(), {"vacancy":0})
-                diff_v = vac - prev.get("vacancy",0)
+            # ▲ 差分はキャッシュの値をそのまま使う
+            vac      = rec.get("vacancy", 0)
+            diff_v   = rec.get("vacancy_diff", 0)
+            price    = int(rec.get("avg_price", 0))
+            diff_p   = rec.get("avg_price_diff", 0)
 
-            if "avg_price_diff" in rec:
-                diff_p = rec["avg_price_diff"]
-            else:
-                prev = cache_data.get((current-dt.timedelta(days=1)).isoformat(), {"avg_price":0})
-                diff_p = price - int(prev.get("avg_price",0))
-
-            vac_html  = f'<div style="font-size:18px;font-weight:bold;">{vac}件'
-            if diff_v>0:  vac_html += f'<span style="color:blue;font-size:12px;">（+{diff_v}件）</span>'
-            elif diff_v<0:vac_html += f'<span style="color:red;font-size:12px;">（{diff_v}件）</span>'
+            # 在庫表示
+            vac_html = f'<div style="font-size:18px;font-weight:bold;">{vac}件'
+            if diff_v > 0:
+                vac_html += f'<span style="color:blue;font-size:12px;">（+{diff_v}件）</span>'
+            elif diff_v < 0:
+                vac_html += f'<span style="color:red;font-size:12px;">（{diff_v}件）</span>'
             vac_html += '</div>'
 
+            # 価格表示
             price_html = f'<div style="font-size:18px;font-weight:bold;">￥{price:,}'
-            if diff_p>0:  price_html += '<span style="color:red;">↑</span>'
-            elif diff_p<0:price_html += '<span style="color:blue;">↓</span>'
+            if diff_p > 0:
+                price_html += '<span style="color:red;">↑</span>'
+            elif diff_p < 0:
+                price_html += '<span style="color:blue;">↓</span>'
             price_html += '</div>'
 
+            # 需要アイコン
             icon_html = ''
             if current >= today:
                 icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:18px;">{get_demand_icon(vac, price)}</div>'
 
+            # イベント表示
             event_html = ''
             if iso in event_data:
-                event_html = '<div style="font-size:14px;margin-top:4px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data[iso]) + '</div>'
+                lines = [f'{ev["icon"]} {ev["name"]}' for ev in event_data[iso]]
+                event_html = f'<div style="font-size:14px;margin-top:4px;">' + "<br>".join(lines) + '</div>'
 
             html += (
                 f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
-                f'{icon_html}<div><strong>{current.day}</strong></div>{vac_html}{price_html}{event_html}</td>'
+                f'{icon_html}<div><strong>{current.day}</strong></div>'
+                f'{vac_html}{price_html}{event_html}'
+                f'</td>'
             )
         html += '</tr>'
     html += '</tbody></table></div>'
@@ -141,18 +153,6 @@ with col2:
     st.subheader(f"{month2.year}年 {month2.month}月")
     st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
+# 最終更新時刻
 now = dt.datetime.now(pytz.timezone('Asia/Tokyo'))
 st.caption(f"最終更新時刻：{now:%Y-%m-%d %H:%M:%S}")
-
-st.markdown("""
-**《注釈》**  
-- 在庫数、平均価格は『なんば・心斎橋・天王寺・阿倍野・長居』エリアから抽出しています  
-- 表示される「平均価格」は、楽天トラベル上位90施設の平均最低価格です  
-- 炎マーク（需要シンボル）の意味：  
-  - 🔥1：残室 ≤250 または 価格 ≥25,000円  
-  - 🔥2：残室 ≤200 または 価格 ≥30,000円  
-  - 🔥3：残室 ≤150 または 価格 ≥35,000円  
-  - 🔥4：残室 ≤100 または 価格 ≥40,000円  
-  - 🔥5：残室 ≤70 または 価格 ≥50,000円  
-- 🔴：京セラドーム / 🔵：ヤンマースタジアム / ★：その他会場
-""")
