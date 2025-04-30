@@ -135,12 +135,20 @@ with col2:
     st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
 # 最終巡回時刻表示
+
 try:
     mtime = os.path.getmtime(CACHE_FILE)
     last_run = dt.datetime.fromtimestamp(mtime, pytz.timezone('Asia/Tokyo'))
-    st.caption(f"最終巡回時刻：{last_run:%Y-%m-%d %H:%M:%S}")
+    st.markdown(
+        f"<p style='font-size:16px; color:gray;'>最終巡回時刻：{last_run:%Y-%m-%d %H:%M:%S}</p>",
+        unsafe_allow_html=True
+    )
 except Exception:
-    st.caption("最終巡回時刻：取得できませんでした")
+    st.markdown(
+        "<p style='font-size:16px; color:gray;'>最終巡回時刻：取得できませんでした</p>",
+        unsafe_allow_html=True
+    )
+
 
 # 注釈
 st.markdown("""
