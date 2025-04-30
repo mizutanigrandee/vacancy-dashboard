@@ -2,7 +2,7 @@ name: update
 
 on:
   schedule:
-    - cron: '0 3 * * *'  # 毎日12時(JST) = 3時(UTC)
+    - cron: '0 23 * * *'  # 毎日8時(JST) = 23時(UTC)
   workflow_dispatch:
 
 jobs:
