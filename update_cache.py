@@ -11,9 +11,7 @@ APP_ID     = os.environ.get("RAKUTEN_APP_ID", "")
 CACHE_FILE = "vacancy_price_cache.json"
 
 def fetch_vacancy_and_price(date: dt.date) -> dict:
-    # デバッグログ
     print(f"🔍 fetching {date}", file=sys.stderr)
-
     if date < dt.date.today():
         return {"vacancy": 0, "avg_price": 0.0}
 
@@ -60,16 +58,17 @@ def update_batch(start_date: dt.date, months: int = 6):
     today = dt.date.today()
     three_months_ago = today - relativedelta(months=3)
 
-    # --- ① 既存キャッシュ読み込み（過去3ヶ月保持） ---
+    # ① 既存キャッシュ読み込み
     existing = {}
     if Path(CACHE_FILE).exists():
         existing = json.loads(Path(CACHE_FILE).read_text(encoding="utf-8"))
+    # 過去3ヶ月だけ残す
     existing = {
         k: v for k, v in existing.items()
         if dt.date.fromisoformat(k) >= three_months_ago
     }
 
-    # --- ② 生データ収集 ---
+    # ② 生データ収集
     raw = {}
     cal = calendar.Calendar(firstweekday=calendar.SUNDAY)
     for m in range(months):
@@ -79,8 +78,8 @@ def update_batch(start_date: dt.date, months: int = 6):
                 if d.month == month_start.month and d >= today:
                     raw[d.isoformat()] = fetch_vacancy_and_price(d)
 
-    # --- ③ 差分を日付順に後付け ---
-    result = dict(existing)
+    # ③ 差分付与
+    result = dict(existing)  # 過去3ヶ月分＋これまでの未来データ
     for iso in sorted(raw.keys()):
         d = dt.date.fromisoformat(iso)
         prev_iso = (d - dt.timedelta(days=1)).isoformat()
@@ -90,18 +89,28 @@ def update_batch(start_date: dt.date, months: int = 6):
         vac = cur["vacancy"]
         pri = cur["avg_price"]
 
+        # --- ここで「初取得か？」を判定 ---
+        is_new = iso not in existing
+
+        # ベースレコード
         rec = {
             "vacancy":            vac,
             "avg_price":          pri,
             "previous_vacancy":   prev["vacancy"],
             "previous_avg_price": prev["avg_price"],
         }
-        rec["vacancy_diff"]   = vac - prev["vacancy"]
-        rec["avg_price_diff"] = pri - prev["avg_price"]
+
+        # diff は「初取得なら 0、そうでなければ計算結果」
+        rec["vacancy_diff"]   = 0 if is_new else vac - prev["vacancy"]
+        rec["avg_price_diff"] = 0 if is_new else pri - prev["avg_price"]
+
         result[iso] = rec
 
-    # --- ④ JSON 保存 ---
-    Path(CACHE_FILE).write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    # ④ 書き出し
+    Path(CACHE_FILE).write_text(
+        json.dumps(result, ensure_ascii=False, indent=2),
+        encoding="utf-8"
+    )
     print("✅ cache updated", file=sys.stderr)
 
 if __name__ == "__main__":
