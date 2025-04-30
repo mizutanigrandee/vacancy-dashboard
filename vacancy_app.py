@@ -13,7 +13,14 @@ import os, json, pytz, jpholiday
 
 st.set_page_config(page_title="【超いいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
 banner = Image.open("バナー画像.png")
-st.image("バナー画像.png", width=600)
+st.markdown(
+    """
+    <div style="text-align: center;">
+        <img src="バナー画像.png" width="600">
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 
 
