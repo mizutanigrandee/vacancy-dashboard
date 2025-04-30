@@ -77,6 +77,8 @@ def draw_calendar(month_date: dt.date) -> str:
     today = dt.date.today()
 
     html  = '<div class="calendar-wrapper"><table style="border-collapse:collapse;width:100%;table-layout:fixed;text-align:center;">'
+    html += '<style> .calendar-wrapper td { padding-top: 30px !important; } </style>'
+
     html += '<thead><tr>' + ''.join(f'<th style="border:1px solid #aaa;padding:4px;background:#f0f0f0;">{d}</th>' for d in "日月火水木金土") + '</tr></thead><tbody>'
 
     for week in weeks:
