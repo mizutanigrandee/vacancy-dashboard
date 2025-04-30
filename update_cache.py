@@ -1,22 +1,31 @@
-import os, json, calendar, requests, datetime as dt
+import os
+import sys
+import json
+import calendar
+import requests
+import datetime as dt
 from dateutil.relativedelta import relativedelta
 from pathlib import Path
 
-APP_ID     = os.environ["RAKUTEN_APP_ID"]
+APP_ID     = os.environ.get("RAKUTEN_APP_ID", "")
 CACHE_FILE = "vacancy_price_cache.json"
 
-# ---------------- 楽天API -----------------
 def fetch_vacancy_and_price(date: dt.date) -> dict:
+    # デバッグログ
+    print(f"🔍 fetching {date}", file=sys.stderr)
+
     if date < dt.date.today():
         return {"vacancy": 0, "avg_price": 0.0}
-    prices, vacancy_total = [], 0
+
+    prices = []
+    vacancy_total = 0
     url = "https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
     for page in range(1, 4):
         params = {
             "applicationId": APP_ID,
             "format": "json",
             "checkinDate": date.strftime("%Y-%m-%d"),
-            "checkoutDate": (date+dt.timedelta(days=1)).strftime("%Y-%m-%d"),
+            "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
             "adultNum": 1,
             "largeClassCode": "japan",
             "middleClassCode": "osaka",
@@ -26,69 +35,76 @@ def fetch_vacancy_and_price(date: dt.date) -> dict:
         }
         try:
             r = requests.get(url, params=params, timeout=10)
-            if r.status_code != 200:
-                continue
+            r.raise_for_status()
             data = r.json()
-            if page == 1:
-                vacancy_total = data.get("pagingInfo", {}).get("recordCount", 0)
-            for hotel in data.get("hotels", []):
-                try:
-                    room_info = hotel["hotel"][1]["roomInfo"]
-                    for plan in room_info:
-                        total = plan["dailyCharge"].get("total")
-                        if total:
-                            prices.append(total)
-                except Exception:
-                    continue
-        except Exception:
+        except Exception as e:
+            print(f"  ⚠️ fetch error on {date} page {page}: {e}", file=sys.stderr)
             continue
-    avg = round(sum(prices)/len(prices), 0) if prices else 0.0
-    return {"vacancy": vacancy_total, "avg_price": avg}
 
-# ---------------- 更新バッチ -----------------
+        if page == 1:
+            vacancy_total = data.get("pagingInfo", {}).get("recordCount", 0)
+
+        for hotel in data.get("hotels", []):
+            parts = hotel.get("hotel", [])
+            if len(parts) >= 2:
+                for plan in parts[1].get("roomInfo", []):
+                    total = plan.get("dailyCharge", {}).get("total")
+                    if total is not None:
+                        prices.append(total)
+
+    avg_price = round(sum(prices) / len(prices), 0) if prices else 0.0
+    print(f"   → avg_price = {avg_price}  (vacancy={vacancy_total})", file=sys.stderr)
+    return {"vacancy": vacancy_total, "avg_price": avg_price}
+
 def update_batch(start_date: dt.date, months: int = 6):
     today = dt.date.today()
-    keep_from = today - relativedelta(months=3)
+    three_months_ago = today - relativedelta(months=3)
 
-    # ① 既存キャッシュ読込
-    old = {}
+    # --- ① 既存キャッシュ読み込み（過去3ヶ月保持） ---
+    existing = {}
     if Path(CACHE_FILE).exists():
-        with open(CACHE_FILE, "r", encoding="utf-8") as f:
-            old = json.load(f)
+        existing = json.loads(Path(CACHE_FILE).read_text(encoding="utf-8"))
+    existing = {
+        k: v for k, v in existing.items()
+        if dt.date.fromisoformat(k) >= three_months_ago
+    }
 
-    # ② 半年分の“生データ”を raw に収集
-    raw = {}           # iso -> {"vacancy":..,"avg_price":..}
-    cal = calendar.Calendar(calendar.SUNDAY)
+    # --- ② 生データ収集 ---
+    raw = {}
+    cal = calendar.Calendar(firstweekday=calendar.SUNDAY)
     for m in range(months):
-        month = (start_date + relativedelta(months=m)).replace(day=1)
-        for week in cal.monthdatescalendar(month.year, month.month):
-            for day in week:
-                if day.month == month.month and day >= today:
-                    raw[day.isoformat()] = fetch_vacancy_and_price(day)
+        month_start = (start_date + relativedelta(months=m)).replace(day=1)
+        for week in cal.monthdatescalendar(month_start.year, month_start.month):
+            for d in week:
+                if d.month == month_start.month and d >= today:
+                    raw[d.isoformat()] = fetch_vacancy_and_price(d)
 
-    # ③ 差分を後付けで作成
-    result = {k: v for k, v in old.items() if dt.date.fromisoformat(k) >= keep_from}
-    all_dates = sorted(raw.keys())              # 今回取得した未来日付だけ
-    for iso in all_dates:
-        day = dt.date.fromisoformat(iso)
-        prev_iso = (day - dt.timedelta(days=1)).isoformat()
-        prev_rec = result.get(prev_iso, {})     # ← ここは result から見る
+    # --- ③ 差分を日付順に後付け ---
+    result = dict(existing)
+    for iso in sorted(raw.keys()):
+        d = dt.date.fromisoformat(iso)
+        prev_iso = (d - dt.timedelta(days=1)).isoformat()
+        prev = result.get(prev_iso, {"vacancy": 0, "avg_price": 0.0})
 
         cur = raw[iso]
-        record = {
-            "vacancy":            cur["vacancy"],
-            "avg_price":          cur["avg_price"],
-            "previous_vacancy":   prev_rec.get("vacancy", 0),
-            "previous_avg_price": prev_rec.get("avg_price", 0.0),
-        }
-        record["vacancy_diff"]   = record["vacancy"] - record["previous_vacancy"]
-        record["avg_price_diff"] = record["avg_price"] - record["previous_avg_price"]
-        result[iso] = record      # ← ここで初めて書き込むので次の日に正しく参照される
+        vac = cur["vacancy"]
+        pri = cur["avg_price"]
 
-    # ④ 保存
-    with open(CACHE_FILE, "w", encoding="utf-8") as f:
-        json.dump(result, f, ensure_ascii=False, indent=2)
+        rec = {
+            "vacancy":            vac,
+            "avg_price":          pri,
+            "previous_vacancy":   prev["vacancy"],
+            "previous_avg_price": prev["avg_price"],
+        }
+        rec["vacancy_diff"]   = vac - prev["vacancy"]
+        rec["avg_price_diff"] = pri - prev["avg_price"]
+        result[iso] = rec
+
+    # --- ④ JSON 保存 ---
+    Path(CACHE_FILE).write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    print("✅ cache updated", file=sys.stderr)
 
 if __name__ == "__main__":
+    print("📡 Starting update_cache.py", file=sys.stderr)
     baseline = dt.date.today().replace(day=1)
     update_batch(baseline)
