@@ -13,9 +13,6 @@ CACHE_FILE = "vacancy_price_cache.json"
 def fetch_vacancy_and_price(date: dt.date) -> dict:
     """楽天APIから指定日のvacancyとavg_priceを取得"""
     print(f"🔍 fetching {date}", file=sys.stderr)
-    if date < dt.date.today():
-        return {"vacancy": 0, "avg_price": 0.0}
-
     prices = []
     vacancy_total = 0
     url = "https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
@@ -96,13 +93,10 @@ def update_cache(start_date: dt.date, months: int = 6):
 
                 # 新レコード作成
                 record = {
-                    # 最新値
                     "vacancy": new_vac,
                     "avg_price": new_pri,
-                    # 直前取得値
                     "last_vacancy": last_vac,
                     "last_avg_price": last_pri,
-                    # 実行ごとの差分
                     "vacancy_diff": vac_diff,
                     "avg_price_diff": pri_diff,
                 }
@@ -117,5 +111,5 @@ def update_cache(start_date: dt.date, months: int = 6):
 
 if __name__ == "__main__":
     print("📡 Starting update_cache.py", file=sys.stderr)
-    baseline = dt.date.today().replace(day=1)
-    update_cache(baseline)
+    today = dt.date.today()
+    update_cache(today)
