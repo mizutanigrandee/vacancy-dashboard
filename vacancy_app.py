@@ -7,7 +7,7 @@ import calendar
 import pandas as pd
 import os, json, pytz, jpholiday
 
-st.set_page_config(page_title="【超いいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
+st.set_page_config(page_title="【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
 
 # ヘッダー画像（バナー）
 if os.path.exists("バナー画像.png"):
