@@ -61,7 +61,6 @@ with nav2:
 with nav3:
     st.button("➡️", help="次月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset+1))
 
-
 base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
 month1     = base_month
 month2     = base_month + relativedelta(months=1)
@@ -82,17 +81,18 @@ def draw_calendar(month_date: dt.date) -> str:
     today = dt.date.today()
 
     html  = '<div class="calendar-wrapper"><table style="border-collapse:collapse;width:100%;table-layout:fixed;text-align:center;">'
-html += """
-<style>
-.calendar-wrapper td {
-    padding-top: 30px !important;
-}
-.calendar-wrapper td:hover {
-    background-color: #f5faff !important;
-    cursor: pointer;
-}
-</style>
-"""
+    html += """
+    <style>
+    .calendar-wrapper td {
+        padding-top: 30px !important;
+        transition: background-color 0.2s ease;
+    }
+    .calendar-wrapper td:hover {
+        background-color: #f5faff !important;
+        cursor: pointer;
+    }
+    </style>
+    """
 
     html += '<thead style="background:#f4f4f4;color:#333;font-weight:bold;"><tr>'
     html += ''.join(f'<th style="border:1px solid #aaa;padding:4px;">{d}</th>' for d in "日月火水木金土")
