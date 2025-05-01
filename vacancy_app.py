@@ -55,11 +55,12 @@ if "month_offset" not in st.session_state:
 
 nav1, nav2, nav3 = st.columns(3)
 with nav1:
-    st.button("⬅️", help="前月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset-1))
+    st.button("⬅️ 前月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset-1))
 with nav2:
-    st.button("📅", help="当月", on_click=lambda: st.session_state.__setitem__("month_offset", 0))
+    st.button("📅 当月", on_click=lambda: st.session_state.__setitem__("month_offset", 0))
 with nav3:
-    st.button("➡️", help="次月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset+1))
+    st.button("➡️ 次月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset+1))
+
 
 base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
 month1     = base_month
