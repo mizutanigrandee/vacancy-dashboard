@@ -81,7 +81,18 @@ def draw_calendar(month_date: dt.date) -> str:
     today = dt.date.today()
 
     html  = '<div class="calendar-wrapper"><table style="border-collapse:collapse;width:100%;table-layout:fixed;text-align:center;">'
-    html += '<style> .calendar-wrapper td { padding-top: 30px !important; } </style>'
+html += """
+<style>
+.calendar-wrapper td {
+    padding-top: 30px !important;
+}
+.calendar-wrapper td:hover {
+    background-color: #f5faff !important;
+    cursor: pointer;
+}
+</style>
+"""
+
     html += '<thead style="background:#f4f4f4;color:#333;font-weight:bold;"><tr>'
     html += ''.join(f'<th style="border:1px solid #aaa;padding:4px;">{d}</th>' for d in "日月火水木金土")
     html += '</tr></thead><tbody>'
