@@ -7,17 +7,11 @@ import calendar
 import pandas as pd
 import os, json, pytz, jpholiday
 
-
-
-
-
 st.set_page_config(page_title="【超いいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
-banner = Image.open("バナー画像.png")
-st.image("バナー画像.png", width=600)
 
-
-
-
+# ヘッダー画像（バナー）
+if os.path.exists("バナー画像.png"):
+    st.image("バナー画像.png", width=600)
 
 APP_ID      = st.secrets["RAKUTEN_APP_ID"]
 CACHE_FILE  = "vacancy_price_cache.json"
@@ -59,13 +53,13 @@ today = dt.date.today()
 if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
 
-nav1, nav2, nav3 = st.columns(3)
+nav1, nav2, nav3 = st.columns([1, 1, 1])
 with nav1:
-    st.button("◀ 前月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset-1))
+    st.button("⬅ 前月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset-1))
 with nav2:
-    st.button("🗓 当月", on_click=lambda: st.session_state.__setitem__("month_offset", 0))
+    st.button("📅 当月", on_click=lambda: st.session_state.__setitem__("month_offset", 0))
 with nav3:
-    st.button("▶ 次月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset+1))
+    st.button("➡ 次月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset+1))
 
 base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
 month1     = base_month
@@ -88,8 +82,9 @@ def draw_calendar(month_date: dt.date) -> str:
 
     html  = '<div class="calendar-wrapper"><table style="border-collapse:collapse;width:100%;table-layout:fixed;text-align:center;">'
     html += '<style> .calendar-wrapper td { padding-top: 30px !important; } </style>'
-
-    html += '<thead><tr>' + ''.join(f'<th style="border:1px solid #aaa;padding:4px;background:#f0f0f0;">{d}</th>' for d in "日月火水木金土") + '</tr></thead><tbody>'
+    html += '<thead style="background:#f4f4f4;color:#333;font-weight:bold;"><tr>'
+    html += ''.join(f'<th style="border:1px solid #aaa;padding:4px;">{d}</th>' for d in "日月火水木金土")
+    html += '</tr></thead><tbody>'
 
     for week in weeks:
         html += '<tr>'
@@ -107,7 +102,6 @@ def draw_calendar(month_date: dt.date) -> str:
             vac = rec["vacancy"]
             price = int(rec["avg_price"])
 
-            # 差分値（キャッシュから取得）
             diff_v = rec.get("vacancy_diff", 0)
             diff_p = rec.get("avg_price_diff", 0)
 
@@ -150,7 +144,6 @@ with col2:
     st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
 # 最終巡回時刻表示
-
 try:
     mtime = os.path.getmtime(CACHE_FILE)
     last_run = dt.datetime.fromtimestamp(mtime, pytz.timezone('Asia/Tokyo'))
@@ -159,13 +152,9 @@ try:
         unsafe_allow_html=True
     )
 except Exception:
-    st.markdown(
-        "<p style='font-size:20px; color:gray;'>最終巡回時刻：取得できませんでした</p>",
-        unsafe_allow_html=True
-    )
+    st.markdown("<p style='font-size:20px; color:gray;'>最終巡回時刻：取得できませんでした</p>", unsafe_allow_html=True)
 
-
-# ───────── 注釈 ─────────
+# 注釈
 st.markdown(
     """
     <div style='font-size:16px; color:#555;'>
@@ -181,7 +170,6 @@ st.markdown(
       &nbsp;&nbsp;・🔥3：残室 ≤150 または 価格 ≥35,000円<br>
       &nbsp;&nbsp;・🔥4：残室 ≤100 または 価格 ≥40,000円<br>
       &nbsp;&nbsp;・🔥5：残室 ≤70 または 価格 ≥50,000円<br>
-
     </div>
     """,
     unsafe_allow_html=True
