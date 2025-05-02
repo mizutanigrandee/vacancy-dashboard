@@ -66,13 +66,16 @@ today = dt.date.today()
 if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
 
-nav1, nav2, nav3 = st.columns(3)
-with nav1:
+# ───────── ナビゲーション（右上に整列） ─────────
+nav_col1, nav_col2, nav_col3, nav_col4, nav_col5 = st.columns([6, 1, 1, 1, 1])  # 合計10の比率
+
+with nav_col2:
     st.button("⬅️ 前月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset-1))
-with nav2:
+with nav_col3:
     st.button("📅 当月", on_click=lambda: st.session_state.__setitem__("month_offset", 0))
-with nav3:
+with nav_col4:
     st.button("➡️ 次月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset+1))
+
 
 
 base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
