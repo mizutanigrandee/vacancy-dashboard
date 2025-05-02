@@ -10,7 +10,8 @@ import os, json, pytz, jpholiday
 
 st.set_page_config(page_title="【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
 
-# 🔻 ヘッダー画像をbase64で埋め込み表示
+
+# 🔻 base64埋め込みバナー（すでに成功済）
 if os.path.exists("バナー画像3.png"):
     with open("バナー画像3.png", "rb") as f:
         img_bytes = f.read()
@@ -22,10 +23,7 @@ if os.path.exists("バナー画像3.png"):
         </div>
     """
     st.markdown(banner_html, unsafe_allow_html=True)
-
-
-# ヘッダー画像（バナー）
-if os.path.exists("バナー画像.png"):
+    
 
 APP_ID      = st.secrets["RAKUTEN_APP_ID"]
 CACHE_FILE  = "vacancy_price_cache.json"
