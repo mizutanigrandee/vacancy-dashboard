@@ -8,6 +8,14 @@ import pandas as pd
 import os, json, pytz, jpholiday
 
 st.set_page_config(page_title="【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
+st.markdown("""
+    <style>
+    body {
+        zoom: 85%;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 
 # ヘッダー画像（バナー）
 if os.path.exists("バナー画像.png"):
