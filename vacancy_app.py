@@ -66,15 +66,17 @@ today = dt.date.today()
 if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
 
-# ───────── ナビゲーション（右上に整列） ─────────
-nav_col1, nav_col2, nav_col3, nav_col4, nav_col5 = st.columns([6, 1, 1, 1, 1])  # 合計10の比率
+# ───────── ナビゲーション（中央寄せ） ─────────
+nav_left, nav_center, nav_right = st.columns([3, 4, 3])
 
-with nav_col2:
-    st.button("⬅️ 前月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset-1))
-with nav_col3:
-    st.button("📅 当月", on_click=lambda: st.session_state.__setitem__("month_offset", 0))
-with nav_col4:
-    st.button("➡️ 次月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset+1))
+with nav_center:
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col1:
+        st.button("⬅️ 前月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset-1))
+    with col2:
+        st.button("📅 当月", on_click=lambda: st.session_state.__setitem__("month_offset", 0))
+    with col3:
+        st.button("➡️ 次月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset+1))
 
 
 
