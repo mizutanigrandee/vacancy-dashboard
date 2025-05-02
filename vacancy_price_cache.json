@@ -176,20 +176,20 @@
     "avg_price_diff": -760.0
   },
   "2025-04-30": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "last_vacancy": 242,
-    "last_avg_price": 11509.0,
-    "vacancy_diff": -242,
-    "avg_price_diff": -11509.0
+    "vacancy": 242,
+    "avg_price": 11509.0,
+    "last_vacancy": 0,
+    "last_avg_price": 0,
+    "vacancy_diff": 0,
+    "avg_price_diff": 0.0
   },
   "2025-05-01": {
-    "vacancy": 0,
-    "avg_price": 0.0,
-    "last_vacancy": 265,
+    "vacancy": 265,
+    "avg_price": 12549.0,
+    "last_vacancy": 0,
     "last_avg_price": 12549.0,
-    "vacancy_diff": -265,
-    "avg_price_diff": -12549.0
+    "vacancy_diff": 0,
+    "avg_price_diff": 0.0
   },
   "2025-05-02": {
     "vacancy": 209,
