@@ -6,16 +6,25 @@ from dateutil.relativedelta import relativedelta
 import calendar
 import pandas as pd
 import os, json, pytz, jpholiday
+import base64  # ← これがなければimport文に追加
 
+# ページ設定（あなたの既存コードを残す）
 st.set_page_config(page_title="【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
-st.markdown("""
-    <style>
-    body {
-        zoom: 85%;
-    }
-    </style>
-""", unsafe_allow_html=True)
 
+# ヘッダーバナーの埋め込み表示
+if os.path.exists("バナー画像3.png"):
+    with open("バナー画像3.png", "rb") as f:
+        img_bytes = f.read()
+        img_base64 = base64.b64encode(img_bytes).decode()
+
+    st.markdown(
+        f"""
+        <div style="width: 100%; background-color: #f0f2f6; padding: 10px 0; text-align: center;">
+            <img src="data:image/png;base64,{img_base64}" style="max-width: 1000px; height: auto;">
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # ヘッダー画像（バナー）
 if os.path.exists("バナー画像.png"):
