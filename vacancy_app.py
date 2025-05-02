@@ -67,7 +67,7 @@ if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
 
 # ───────── ナビゲーション（中央寄せ） ─────────
-nav_left, nav_center, nav_right = st.columns([3, 4, 3])
+nav_left, nav_center, nav_right = st.columns([3, 2, 3])
 
 with nav_center:
     col1, col2, col3 = st.columns([1, 1, 1])
