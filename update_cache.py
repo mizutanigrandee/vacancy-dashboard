@@ -68,6 +68,7 @@ def update_cache(start_date: dt.date, months: int = 6):
     }
 
     cal = calendar.Calendar(firstweekday=calendar.SUNDAY)
+
     # --- 各日付の更新処理 ---
     for m in range(months):
         month_start = (start_date + relativedelta(months=m)).replace(day=1)
@@ -77,21 +78,23 @@ def update_cache(start_date: dt.date, months: int = 6):
                     continue
 
                 iso = day.isoformat()
-                # APIから取得
                 new = fetch_vacancy_and_price(day)
+
+                # 0件データはスキップ（過去日またはエラーの可能性あり）
+                if new["vacancy"] == 0 and new["avg_price"] == 0.0:
+                    print(f"⏩ skipping {iso} due to empty data", file=sys.stderr)
+                    continue
+
                 new_vac = new["vacancy"]
                 new_pri = new["avg_price"]
 
-                # キャッシュから前回実行値を取得
                 prev = cache.get(iso, {})
                 last_vac = prev.get("last_vacancy", prev.get("vacancy", 0))
                 last_pri = prev.get("last_avg_price", prev.get("avg_price", 0.0))
 
-                # 差分計算
                 vac_diff = new_vac - last_vac
                 pri_diff = new_pri - last_pri
 
-                # 新レコード作成
                 record = {
                     "vacancy": new_vac,
                     "avg_price": new_pri,
