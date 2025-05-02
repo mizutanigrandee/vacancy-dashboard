@@ -23,7 +23,8 @@ if os.path.exists("バナー画像3.png"):
         </div>
     """
     st.markdown(banner_html, unsafe_allow_html=True)
-    
+    st.markdown("<br>", unsafe_allow_html=True)
+
 
 APP_ID      = st.secrets["RAKUTEN_APP_ID"]
 CACHE_FILE  = "vacancy_price_cache.json"
