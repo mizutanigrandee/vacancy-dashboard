@@ -52,7 +52,7 @@ def fetch_vacancy_and_price(date: dt.date) -> dict:
     print(f"   → avg_price = {avg_price}  (vacancy={vacancy_total})", file=sys.stderr)
     return {"vacancy": vacancy_total, "avg_price": avg_price}
 
-def update_cache(start_date: dt.date, months: int = 6):
+def update_cache(start_date: dt.date, months: int = 9):  # ← ← ← 修正ポイント
     today = dt.date.today()
     three_months_ago = today - relativedelta(months=3)
 
@@ -115,4 +115,4 @@ def update_cache(start_date: dt.date, months: int = 6):
 if __name__ == "__main__":
     print("📡 Starting update_cache.py", file=sys.stderr)
     today = dt.date.today()
-    update_cache(today)
+    update_cache(today, months=9)  # ← ← ← 修正ポイント（明示的に9ヶ月指定）
