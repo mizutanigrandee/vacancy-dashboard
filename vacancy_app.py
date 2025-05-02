@@ -18,7 +18,7 @@ if os.path.exists("バナー画像3.png"):
         img_base64 = base64.b64encode(img_bytes).decode("utf-8")
 
     banner_html = f"""
-        <div style="width: 100%; background-color: #f0f2f6; padding: 5px 0; text-align: left;">
+        <div style="width: 100%; background-color: #347ad8; padding: 5px 0; text-align: left;">
             <img src="data:image/png;base64,{img_base64}" style="max-width: 1000px; height: auto;">
         </div>
     """
