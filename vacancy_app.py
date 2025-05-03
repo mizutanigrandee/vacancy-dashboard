@@ -170,43 +170,6 @@ try:
 except Exception:
     st.markdown("<p style='font-size:20px; color:gray;'>最終巡回時刻：取得できませんでした</p>", unsafe_allow_html=True)
 
-# --- 📊 過去30日間の推移グラフ表示（＋イベント表示） ---
-historical_data = load_json(HISTORICAL_FILE)
-if historical_data:
-    query_params = st.experimental_get_query_params()
-    selected_from_url = query_params.get("selected", [None])[0]
-    sorted_dates = sorted(historical_data.keys(), reverse=True)
-    default_index = sorted_dates.index(selected_from_url) if selected_from_url in sorted_dates else 0
-    selected_date = st.selectbox("表示する基準日を選択してください", sorted_dates, index=default_index)
-    selected_dt = dt.date.fromisoformat(selected_date)
-    past_30_dates = [(selected_dt - dt.timedelta(days=i)).isoformat() for i in range(29, -1, -1) if (selected_dt - dt.timedelta(days=i)).isoformat() in historical_data]
-    dates, prices, vacancies = [], [], []
-    for d in past_30_dates:
-        record = historical_data[d]
-        dates.append(d)
-        prices.append(record["avg_price"])
-        vacancies.append(record["vacancy"])
-    st.markdown("#### 🎪 イベント情報（基準日）")
-    if selected_date in event_data:
-        for ev in event_data[selected_date]: st.markdown(f"- {ev['icon']} {ev['name']}")
-    else: st.info("登録イベントはありません。")
-    st.markdown("#### 💴 平均価格の推移（円）")
-    fig1, ax1 = plt.subplots()
-    ax1.plot(dates, prices, marker="o")
-    ax1.set_xticks(dates[::5])
-    ax1.set_ylabel("円")
-    ax1.tick_params(axis='x', rotation=45)
-    st.pyplot(fig1)
-    st.markdown("#### 🏨 空室数の推移（件）")
-    fig2, ax2 = plt.subplots()
-    ax2.plot(dates, vacancies, marker="s", color="green")
-    ax2.set_xticks(dates[::5])
-    ax2.set_ylabel("件")
-    ax2.tick_params(axis='x', rotation=45)
-    st.pyplot(fig2)
-else:
-    st.info("過去データがまだ蓄積されていません。明日以降に表示されます。")
-
 # 注釈
 st.markdown(
     """
