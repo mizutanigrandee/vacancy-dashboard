@@ -9,6 +9,7 @@ from pathlib import Path
 
 APP_ID     = os.environ.get("RAKUTEN_APP_ID", "")
 CACHE_FILE = "vacancy_price_cache.json"
+HISTORICAL_FILE = "historical_data.json"
 
 def fetch_vacancy_and_price(date: dt.date) -> dict:
     """楽天APIから指定日のvacancyとavg_priceを取得"""
@@ -52,7 +53,7 @@ def fetch_vacancy_and_price(date: dt.date) -> dict:
     print(f"   → avg_price = {avg_price}  (vacancy={vacancy_total})", file=sys.stderr)
     return {"vacancy": vacancy_total, "avg_price": avg_price}
 
-def update_cache(start_date: dt.date, months: int = 9):  # ← ← ← 修正ポイント
+def update_cache(start_date: dt.date, months: int = 9):
     today = dt.date.today()
     three_months_ago = today - relativedelta(months=3)
 
@@ -112,7 +113,31 @@ def update_cache(start_date: dt.date, months: int = 9):  # ← ← ← 修正ポ
     )
     print("✅ cache updated", file=sys.stderr)
 
+    # --- 🔁 historical_data.json に当日分を追記保存 ---
+    historical_data = {}
+    if Path(HISTORICAL_FILE).exists():
+        try:
+            with open(HISTORICAL_FILE, "r", encoding="utf-8") as f:
+                historical_data = json.load(f)
+        except Exception as e:
+            print(f"⚠️ error loading historical_data.json: {e}", file=sys.stderr)
+
+    today_str = today.isoformat()
+    if today_str in cache:
+        today_data = {
+            "vacancy": cache[today_str]["vacancy"],
+            "avg_price": cache[today_str]["avg_price"]
+        }
+        historical_data[today_str] = today_data
+
+        try:
+            with open(HISTORICAL_FILE, "w", encoding="utf-8") as f:
+                json.dump(historical_data, f, ensure_ascii=False, indent=2)
+            print("📁 historical_data.json updated", file=sys.stderr)
+        except Exception as e:
+            print(f"⚠️ error saving historical_data.json: {e}", file=sys.stderr)
+
 if __name__ == "__main__":
     print("📡 Starting update_cache.py", file=sys.stderr)
     today = dt.date.today()
-    update_cache(today, months=9)  # ← ← ← 修正ポイント（明示的に9ヶ月指定）
+    update_cache(today, months=9)
