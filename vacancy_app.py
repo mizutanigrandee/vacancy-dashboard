@@ -185,6 +185,60 @@ try:
 except Exception:
     st.markdown("<p style='font-size:20px; color:gray;'>最終巡回時刻：取得できませんでした</p>", unsafe_allow_html=True)
 
+
+# --- 📊 過去30日間の推移グラフ表示 ---
+import matplotlib.pyplot as plt
+
+st.subheader("📊 過去30日間の価格・空室数の推移")
+
+HISTORICAL_FILE = "historical_data.json"
+historical_data = {}
+if os.path.exists(HISTORICAL_FILE):
+    try:
+        with open(HISTORICAL_FILE, "r", encoding="utf-8") as f:
+            historical_data = json.load(f)
+    except Exception as e:
+        st.warning(f"履歴データの読み込みに失敗しました: {e}")
+
+if historical_data:
+    sorted_dates = sorted(historical_data.keys(), reverse=True)
+    selected_date = st.selectbox("表示する基準日を選択してください", sorted_dates)
+
+    selected_dt = dt.date.fromisoformat(selected_date)
+    past_30_dates = [
+        (selected_dt - dt.timedelta(days=i)).isoformat()
+        for i in range(29, -1, -1)
+        if (selected_dt - dt.timedelta(days=i)).isoformat() in historical_data
+    ]
+
+    dates, prices, vacancies = [], [], []
+    for d in past_30_dates:
+        record = historical_data[d]
+        dates.append(d)
+        prices.append(record["avg_price"])
+        vacancies.append(record["vacancy"])
+
+    # 平均価格グラフ
+    st.markdown("#### 💴 平均価格の推移（円）")
+    fig1, ax1 = plt.subplots()
+    ax1.plot(dates, prices, marker="o")
+    ax1.set_xticks(dates[::5])
+    ax1.set_ylabel("円")
+    ax1.tick_params(axis='x', rotation=45)
+    st.pyplot(fig1)
+
+    # 空室数グラフ
+    st.markdown("#### 🏨 空室数の推移（件）")
+    fig2, ax2 = plt.subplots()
+    ax2.plot(dates, vacancies, marker="s", color="green")
+    ax2.set_xticks(dates[::5])
+    ax2.set_ylabel("件")
+    ax2.tick_params(axis='x', rotation=45)
+    st.pyplot(fig2)
+else:
+    st.info("過去データがまだ蓄積されていません。明日以降に表示されます。")
+
+
 # 注釈
 st.markdown(
     """
