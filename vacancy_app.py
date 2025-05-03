@@ -112,7 +112,6 @@ def draw_calendar(month_date: dt.date) -> str:
     }
     </style>
     """
-
     html += '<thead style="background:#f4f4f4;color:#333;font-weight:bold;"><tr>'
     html += ''.join(f'<th style="border:1px solid #aaa;padding:4px;">{d}</th>' for d in "日月火水木金土")
     html += '</tr></thead><tbody>'
@@ -154,16 +153,20 @@ def draw_calendar(month_date: dt.date) -> str:
             if iso in event_data:
                 event_html = '<div style="font-size:12px;margin-top:4px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data[iso]) + '</div>'
 
+            # 📌 日付をリンク化（selectedパラメータ付き）
+            date_link = f"<a href='?selected={iso}' style='text-decoration:none; color:gray;'>{current.day}</a>"
+
             html += (
                 f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
                 f'{icon_html}'
-                f'<div style="position:absolute; top:4px; left:4px; font-size:14px; color:gray; font-weight:bold;">{current.day}</div>'
+                f'<div style="position:absolute; top:4px; left:4px; font-size:14px; font-weight:bold;">{date_link}</div>'
                 f'{vac_html}{price_html}{event_html}'
                 '</td>'
             )
         html += '</tr>'
     html += '</tbody></table></div>'
     return html
+
 
 # 表示
 col1, col2 = st.columns(2)
