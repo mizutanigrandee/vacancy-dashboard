@@ -1,41 +1,35 @@
-name: update
+name: Daily Update
 
 on:
   schedule:
-    - cron: '0 23 * * *'  # 毎日8時(JST) = 23時(UTC)
-  workflow_dispatch:
+    - cron: '0 0 * * *'  # JST9時 = UTC0時
+  workflow_dispatch:     # 手動実行も可能にする
 
 jobs:
-  update:
+  update-data:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-      with:
-        persist-credentials: true
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.12'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
 
-    - name: Install dependencies
-      run: pip install requests python-dateutil openpyxl
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    - name: Run update_cache.py
-      run: python update_cache.py
-      env:
-        RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
+      - name: Run update script
+        run: python update_cache.py
 
-    - name: Pull latest changes to avoid conflicts
-      run: |
-        git config --global user.name 'github-actions'
-        git config --global user.email 'actions@github.com'
-        git pull origin main --rebase || true
-
-    - name: Commit and push updated cache
-      run: |
-        git add vacancy_price_cache.json
-        git commit -m "Update cache file [auto]" || echo "No changes to commit"
-        git push origin main
+      - name: Commit historical_data.json
+        run: |
+          git config user.name github-actions
+          git config user.email actions@github.com
+          git add historical_data.json
+          git commit -m "Update historical_data.json [auto]" || echo "No changes to commit"
+          git push
