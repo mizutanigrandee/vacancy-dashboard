@@ -186,7 +186,7 @@ except Exception:
     st.markdown("<p style='font-size:20px; color:gray;'>最終巡回時刻：取得できませんでした</p>", unsafe_allow_html=True)
 
 
-# --- 📊 過去30日間の推移グラフ表示 ---
+# --- 📊 過去30日間の推移グラフ表示（＋イベント表示） ---
 import matplotlib.pyplot as plt
 
 st.subheader("📊 過去30日間の価格・空室数の推移")
@@ -218,7 +218,15 @@ if historical_data:
         prices.append(record["avg_price"])
         vacancies.append(record["vacancy"])
 
-    # 平均価格グラフ
+    # 🔴 イベント情報を表示（基準日）
+    st.markdown("#### 🎪 イベント情報（基準日）")
+    if selected_date in event_data:
+        for ev in event_data[selected_date]:
+            st.markdown(f"- {ev['icon']} {ev['name']}")
+    else:
+        st.info("登録イベントはありません。")
+
+    # 📈 平均価格グラフ
     st.markdown("#### 💴 平均価格の推移（円）")
     fig1, ax1 = plt.subplots()
     ax1.plot(dates, prices, marker="o")
@@ -227,7 +235,7 @@ if historical_data:
     ax1.tick_params(axis='x', rotation=45)
     st.pyplot(fig1)
 
-    # 空室数グラフ
+    # 🏨 空室数グラフ
     st.markdown("#### 🏨 空室数の推移（件）")
     fig2, ax2 = plt.subplots()
     ax2.plot(dates, vacancies, marker="s", color="green")
@@ -237,7 +245,6 @@ if historical_data:
     st.pyplot(fig2)
 else:
     st.info("過去データがまだ蓄積されていません。明日以降に表示されます。")
-
 
 # 注釈
 st.markdown(
