@@ -154,7 +154,7 @@ def draw_calendar(month_date: dt.date) -> str:
                 event_html = '<div style="font-size:12px;margin-top:4px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data[iso]) + '</div>'
 
             # 📌 日付をリンク化（selectedパラメータ付き）
-            date_link = f"<a href='?selected={iso}' style='text-decoration:none; color:gray;'>{current.day}</a>"
+            date_link = f"<a href='?selected={iso}' target='_self' style='text-decoration:none; color:gray;'>{current.day}</a>"
 
             html += (
                 f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
