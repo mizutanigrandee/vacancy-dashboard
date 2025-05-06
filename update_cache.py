@@ -61,6 +61,9 @@ def update_cache(start_date: dt.date, months: int = 9):
     if Path(CACHE_FILE).exists():
         cache = json.loads(Path(CACHE_FILE).read_text(encoding="utf-8"))
 
+    # 前回の取得データを差分計算用にコピー
+    old_cache = cache.copy()
+
     # 古い(3ヶ月前以前)のキーは削除
     cache = {
         k: v for k, v in cache.items()
@@ -87,9 +90,9 @@ def update_cache(start_date: dt.date, months: int = 9):
                 new_vac = new["vacancy"]
                 new_pri = new["avg_price"]
 
-                prev = cache.get(iso, {})
+                # 前回取得時（昨日）に保存されていた同一日付データを参照
+                prev = old_cache.get(iso, {})
 
-                # --- 差分計算（初回は0表示） ---
                 if "vacancy" in prev and "avg_price" in prev:
                     last_vac = prev["vacancy"]
                     last_pri = prev["avg_price"]
