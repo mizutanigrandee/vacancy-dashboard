@@ -12,7 +12,6 @@ CACHE_FILE = "vacancy_price_cache.json"
 HISTORICAL_FILE = "historical_data.json"
 
 def fetch_vacancy_and_price(date: dt.date) -> dict:
-    """楽天APIから指定日のvacancyとavg_priceを取得"""
     print(f"🔍 fetching {date}", file=sys.stderr)
     prices = []
     vacancy_total = 0
@@ -81,7 +80,6 @@ def update_cache(start_date: dt.date, months: int = 9):
                 iso = day.isoformat()
                 new = fetch_vacancy_and_price(day)
 
-                # 0件データはスキップ（過去日またはエラーの可能性あり）
                 if new["vacancy"] == 0 and new["avg_price"] == 0.0:
                     print(f"⏩ skipping {iso} due to empty data", file=sys.stderr)
                     continue
@@ -90,11 +88,18 @@ def update_cache(start_date: dt.date, months: int = 9):
                 new_pri = new["avg_price"]
 
                 prev = cache.get(iso, {})
-                last_vac = prev.get("last_vacancy", prev.get("vacancy", 0))
-                last_pri = prev.get("last_avg_price", prev.get("avg_price", 0.0))
 
-                vac_diff = new_vac - last_vac
-                pri_diff = new_pri - last_pri
+                # --- 差分計算（初回は0表示） ---
+                if "vacancy" in prev and "avg_price" in prev:
+                    last_vac = prev["vacancy"]
+                    last_pri = prev["avg_price"]
+                    vac_diff = new_vac - last_vac
+                    pri_diff = new_pri - last_pri
+                else:
+                    last_vac = new_vac
+                    last_pri = new_pri
+                    vac_diff = 0
+                    pri_diff = 0.0
 
                 record = {
                     "vacancy": new_vac,
