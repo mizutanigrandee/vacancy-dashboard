@@ -66,15 +66,18 @@ cache_data = load_json(CACHE_FILE)
 today = dt.date.today()
 if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
+
+MAX_MONTH_OFFSET = 12  # 前後12か月まで制限
 nav_left, nav_center, nav_right = st.columns([3, 2, 3])
 with nav_center:
     col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
-        st.button("⬅️ 前月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset - 1))
+        st.button("⬅️ 前月", on_click=lambda: st.session_state.__setitem__("month_offset", max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)))
     with col2:
         st.button("📅 当月", on_click=lambda: st.session_state.__setitem__("month_offset", 0))
     with col3:
-        st.button("➡️ 次月", on_click=lambda: st.session_state.__setitem__("month_offset", st.session_state.month_offset + 1))
+        st.button("➡️ 次月", on_click=lambda: st.session_state.__setitem__("month_offset", min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)))
+
 base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
 month1 = base_month
 month2 = base_month + relativedelta(months=1)
