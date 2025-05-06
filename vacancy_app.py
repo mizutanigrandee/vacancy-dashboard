@@ -31,7 +31,7 @@ HISTORICAL_FILE = "historical_data.json"
 EVENT_EXCEL = "event_data.xlsx"
 
 # ───────── 祝日生成 ─────────
-def generate_holidays(months=6):
+def generate_holidays(months=12):
     today = dt.date.today()
     hol = set()
     for i in range(months * 31):
