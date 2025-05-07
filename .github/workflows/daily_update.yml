@@ -25,6 +25,9 @@ jobs:
 
       - name: Run update script
         run: python update_cache.py
+        env:
+          RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
+
 
       - name: Commit updated cache files
         run: |
