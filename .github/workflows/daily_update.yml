@@ -26,10 +26,10 @@ jobs:
       - name: Run update script
         run: python update_cache.py
 
-      - name: Commit historical_data.json
+      - name: Commit updated cache files
         run: |
           git config user.name github-actions
           git config user.email actions@github.com
-          git add historical_data.json
-          git commit -m "Update historical_data.json [auto]" || echo "No changes to commit"
+          git add historical_data.json vacancy_price_cache.json vacancy_price_cache_previous.json
+          git commit -m "Update cache files [auto]" || echo "No changes to commit"
           git push
