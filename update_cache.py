@@ -8,6 +8,9 @@ from dateutil.relativedelta import relativedelta
 from pathlib import Path
 
 APP_ID              = os.environ.get("RAKUTEN_APP_ID", "")
+if not APP_ID:
+    raise ValueError("❌ RAKUTEN_APP_ID が設定されていません。GitHub Secrets に登録されていますか？")
+
 CACHE_FILE          = "vacancy_price_cache.json"
 PREV_CACHE_FILE     = "vacancy_price_cache_previous.json"   # ← 追加
 HISTORICAL_FILE     = "historical_data.json"
