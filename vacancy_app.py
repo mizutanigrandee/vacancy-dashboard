@@ -165,6 +165,62 @@ with col2:
     st.subheader(f"{month2.year}年 {month2.month}月")
     st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
+import altair as alt
+
+# 例：historical_data.jsonを仮ロード
+HISTORICAL_FILE = "historical_data.json"
+historical_data = load_json(HISTORICAL_FILE)
+
+# URLクエリから選択日取得
+query_params = st.experimental_get_query_params()
+selected_date = None
+if "selected" in query_params:
+    selected_date = query_params["selected"][0]
+    st.session_state["sidebar_open"] = True
+elif "sidebar_open" in st.session_state and st.session_state["sidebar_open"]:
+    # 既に開いている場合は継続表示
+    selected_date = st.session_state.get("selected_date", None)
+else:
+    st.session_state["sidebar_open"] = False
+
+if selected_date:
+    st.session_state["selected_date"] = selected_date
+    st.session_state["sidebar_open"] = True
+
+# サイドバー表示
+if st.session_state.get("sidebar_open", False) and selected_date in historical_data:
+    # サイドバー風パネルを右固定表示
+    st.markdown(
+        """
+        <div id='sidepanel' style='position:fixed; top:0; right:0; width:40vw; height:100vh; background:white; box-shadow:-2px 0 10px #ccc; z-index:1000; padding:32px; overflow-y:scroll;'>
+        """, unsafe_allow_html=True)
+    st.markdown(
+        "<div style='position:absolute; top:16px; right:32px;'>"
+        "<form method='get'><button name='sidebar_close' value='1' style='font-size:24px;'>×</button></form>"
+        "</div>",
+        unsafe_allow_html=True
+    )
+    st.markdown(f"#### {selected_date} の在庫・価格推移")
+    # 履歴データからグラフ用データ抽出
+    df = pd.DataFrame([
+        {"取得日": k, "在庫数": v["vacancy"], "平均価格": v["avg_price"]}
+        for k, v in historical_data[selected_date].items()
+    ])
+    df = df.sort_values("取得日")
+    base = alt.Chart(df).encode(x="取得日:T")
+    line_vacancy = base.mark_line(point=True).encode(y=alt.Y("在庫数", axis=alt.Axis(title="在庫数")))
+    line_price = base.mark_line(point=True, color="red").encode(y=alt.Y("平均価格", axis=alt.Axis(title="平均価格（円）")))
+    chart = alt.layer(line_vacancy, line_price).resolve_scale(y='independent')
+    st.altair_chart(chart, use_container_width=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# ×ボタンでサイドバーを閉じる
+if "sidebar_close" in query_params:
+    st.session_state["sidebar_open"] = False
+    st.experimental_set_query_params()  # クエリをリセット
+
+
+
 # 最終巡回時刻表示
 try:
     mtime = os.path.getmtime(CACHE_FILE)
