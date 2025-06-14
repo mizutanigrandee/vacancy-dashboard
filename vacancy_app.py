@@ -188,29 +188,42 @@ else:
     st.session_state["selected_date"] = selected
     st.session_state["sidebar_open"] = True
 
-# サイドバー表示
+# サイドバー風の見た目だけ出す（HTML/CSSのみ）
 if st.session_state.get("sidebar_open", False) and st.session_state["selected_date"] in historical_data:
     st.markdown(
         """
-        <div id='sidepanel' style='position:fixed; top:0; right:0; width:40vw; height:100vh; background:white; box-shadow:-2px 0 10px #ccc; z-index:1000; padding:32px; overflow-y:scroll;'>
-        """, unsafe_allow_html=True)
-    # ×ボタン
-    if st.button("× サイドバーを閉じる", key="close_sidebar"):
-        st.session_state["sidebar_open"] = False
-        st.session_state["selected_date"] = None
-        st.experimental_rerun()
-    st.markdown(f"#### {st.session_state['selected_date']} の在庫・価格推移")
-    df = pd.DataFrame([
-        {"取得日": k, "在庫数": v["vacancy"], "平均価格": v["avg_price"]}
-        for k, v in historical_data[st.session_state["selected_date"]].items()
-    ])
-    df = df.sort_values("取得日")
-    base = alt.Chart(df).encode(x="取得日:T")
-    line_vacancy = base.mark_line(point=True).encode(y=alt.Y("在庫数", axis=alt.Axis(title="在庫数")))
-    line_price = base.mark_line(point=True, color="red").encode(y=alt.Y("平均価格", axis=alt.Axis(title="平均価格（円）")))
-    chart = alt.layer(line_vacancy, line_price).resolve_scale(y='independent')
-    st.altair_chart(chart, use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+        <div id='sidepanel' style='position:fixed; top:0; right:0; width:40vw; height:100vh; background:white; box-shadow:-2px 0 10px #ccc; z-index:1000; padding:32px; overflow-y:scroll;'></div>
+        """,
+        unsafe_allow_html=True
+    )
+    # ×ボタンとグラフは通常の位置に出す
+    col_spacer, col_sidebar = st.columns([0.60, 0.40])
+    with col_sidebar:
+        if st.button("× サイドバーを閉じる", key="close_sidebar"):
+            st.session_state["sidebar_open"] = False
+            st.session_state["selected_date"] = None
+            st.experimental_rerun()
+        st.markdown(f"#### {st.session_state['selected_date']} の在庫・価格推移")
+        # 空でない・想定通りの型のみに絞る
+        rows = []
+        for k, v in historical_data[st.session_state["selected_date"]].items():
+            try:
+                vacancy = int(v["vacancy"])
+                avg_price = float(v["avg_price"])
+                rows.append({"取得日": k, "在庫数": vacancy, "平均価格": avg_price})
+            except Exception:
+                continue
+        if len(rows) == 0:
+            st.warning("データがありません")
+        else:
+            df = pd.DataFrame(rows)
+            df = df.sort_values("取得日")
+            base = alt.Chart(df).encode(x="取得日:T")
+            line_vacancy = base.mark_line(point=True).encode(y=alt.Y("在庫数", axis=alt.Axis(title="在庫数")))
+            line_price = base.mark_line(point=True, color="red").encode(y=alt.Y("平均価格", axis=alt.Axis(title="平均価格（円）")))
+            chart = alt.layer(line_vacancy, line_price).resolve_scale(y='independent')
+            st.altair_chart(chart, use_container_width=True)
+
 
 
 # 最終巡回時刻表示
