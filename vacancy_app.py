@@ -167,31 +167,42 @@ with col2:
 
 import altair as alt
 
-# 例：historical_data.jsonを仮ロード
+# historical_data.jsonロード
 historical_data = load_json(HISTORICAL_FILE)
-test_dates = list(historical_data.keys())[:5]  # 最初の5日分をサンプル選択肢に
+test_dates = list(historical_data.keys())[:5]  # サンプルで5日分
 
-# Streamlit標準のラジオボタンで日付選択
-selected_date = st.radio("【テスト用】日付を選択してください", test_dates, index=0, key="radio_date")
-st.session_state["selected_date"] = selected_date
-st.session_state["sidebar_open"] = True
+# 初期値はNoneにする
+if "selected_date" not in st.session_state:
+    st.session_state["selected_date"] = None
+if "sidebar_open" not in st.session_state:
+    st.session_state["sidebar_open"] = False
+
+# ラジオボタンで日付選択（初期値未選択）
+selected = st.radio("【テスト用】日付を選択してください", ["未選択"] + test_dates, index=0, key="radio_date")
+
+# 選択状態を制御
+if selected == "未選択":
+    st.session_state["selected_date"] = None
+    st.session_state["sidebar_open"] = False
+else:
+    st.session_state["selected_date"] = selected
+    st.session_state["sidebar_open"] = True
 
 # サイドバー表示
-if st.session_state.get("sidebar_open", False) and selected_date in historical_data:
+if st.session_state.get("sidebar_open", False) and st.session_state["selected_date"] in historical_data:
     st.markdown(
         """
         <div id='sidepanel' style='position:fixed; top:0; right:0; width:40vw; height:100vh; background:white; box-shadow:-2px 0 10px #ccc; z-index:1000; padding:32px; overflow-y:scroll;'>
         """, unsafe_allow_html=True)
-    st.markdown(
-        "<div style='position:absolute; top:16px; right:32px;'>"
-        "<form method='post'><button name='sidebar_close' value='1' style='font-size:24px;'>×</button></form>"
-        "</div>",
-        unsafe_allow_html=True
-    )
-    st.markdown(f"#### {selected_date} の在庫・価格推移")
+    # ×ボタン
+    if st.button("× サイドバーを閉じる", key="close_sidebar"):
+        st.session_state["sidebar_open"] = False
+        st.session_state["selected_date"] = None
+        st.experimental_rerun()
+    st.markdown(f"#### {st.session_state['selected_date']} の在庫・価格推移")
     df = pd.DataFrame([
         {"取得日": k, "在庫数": v["vacancy"], "平均価格": v["avg_price"]}
-        for k, v in historical_data[selected_date].items()
+        for k, v in historical_data[st.session_state["selected_date"]].items()
     ])
     df = df.sort_values("取得日")
     base = alt.Chart(df).encode(x="取得日:T")
@@ -200,11 +211,6 @@ if st.session_state.get("sidebar_open", False) and selected_date in historical_d
     chart = alt.layer(line_vacancy, line_price).resolve_scale(y='independent')
     st.altair_chart(chart, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
-
-# ×ボタンでサイドバーを閉じる（今回は仮対応・オプション）
-if st.session_state.get("sidebar_open", False):
-    if st.button("× サイドバーを閉じる", key="close_sidebar"):
-        st.session_state["sidebar_open"] = False
 
 
 # 最終巡回時刻表示
