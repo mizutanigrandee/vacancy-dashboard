@@ -186,29 +186,32 @@ else:
     st.session_state["sidebar_open"] = True
 
 if st.session_state.get("sidebar_open", False) and st.session_state["selected_date"] in historical_data:
-    if st.button("× サイドバーを閉じる", key="close_sidebar"):
-        st.session_state["sidebar_open"] = False
-        st.session_state["selected_date"] = None
-        st.experimental_rerun()
-    st.markdown(f"#### {st.session_state['selected_date']} の在庫・価格推移")
-    rows = []
-    for k, v in historical_data[st.session_state["selected_date"]].items():
-        try:
-            vacancy = int(v["vacancy"])
-            avg_price = float(v["avg_price"])
-            rows.append({"取得日": k, "在庫数": vacancy, "平均価格": avg_price})
-        except Exception:
-            continue
-    if len(rows) == 0:
-        st.warning("データがありません")
-    else:
-        df = pd.DataFrame(rows)
-        df = df.sort_values("取得日")
-        base = alt.Chart(df).encode(x="取得日:T")
-        line_vacancy = base.mark_line(point=True).encode(y=alt.Y("在庫数", axis=alt.Axis(title="在庫数")))
-        line_price = base.mark_line(point=True, color="red").encode(y=alt.Y("平均価格", axis=alt.Axis(title="平均価格（円）")))
-        chart = alt.layer(line_vacancy, line_price).resolve_scale(y='independent')
-        st.altair_chart(chart, use_container_width=True)
+    # columnsで右寄せ表示
+    left, right = st.columns([2, 1])
+    with right:
+        if st.button("× サイドバーを閉じる", key="close_sidebar"):
+            st.session_state["sidebar_open"] = False
+            st.session_state["selected_date"] = None
+            st.experimental_rerun()
+        st.markdown(f"#### {st.session_state['selected_date']} の在庫・価格推移")
+        rows = []
+        for k, v in historical_data[st.session_state["selected_date"]].items():
+            try:
+                vacancy = int(v["vacancy"])
+                avg_price = float(v["avg_price"])
+                rows.append({"取得日": k, "在庫数": vacancy, "平均価格": avg_price})
+            except Exception:
+                continue
+        if len(rows) == 0:
+            st.warning("データがありません")
+        else:
+            df = pd.DataFrame(rows)
+            df = df.sort_values("取得日")
+            base = alt.Chart(df).encode(x="取得日:T")
+            line_vacancy = base.mark_line(point=True).encode(y=alt.Y("在庫数", axis=alt.Axis(title="在庫数")))
+            line_price = base.mark_line(point=True, color="red").encode(y=alt.Y("平均価格", axis=alt.Axis(title="平均価格（円）")))
+            chart = alt.layer(line_vacancy, line_price).resolve_scale(y='independent')
+            st.altair_chart(chart, use_container_width=True)
 
 
 
