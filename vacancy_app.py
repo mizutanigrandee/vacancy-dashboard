@@ -165,54 +165,6 @@ with col2:
     st.subheader(f"{month2.year}年 {month2.month}月")
     st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
-import altair as alt
-
-historical_data = load_json(HISTORICAL_FILE)
-test_dates = list(historical_data.keys())[:5]
-
-# 初期化
-if "selected_date" not in st.session_state:
-    st.session_state["selected_date"] = None
-if "sidebar_open" not in st.session_state:
-    st.session_state["sidebar_open"] = False
-
-selected = st.radio("【テスト用】日付を選択してください", ["未選択"] + test_dates, index=0, key="radio_date")
-
-if selected == "未選択":
-    st.session_state["selected_date"] = None
-    st.session_state["sidebar_open"] = False
-else:
-    st.session_state["selected_date"] = selected
-    st.session_state["sidebar_open"] = True
-
-if st.session_state.get("sidebar_open", False) and st.session_state["selected_date"] in historical_data:
-    # columnsで右寄せ表示
-    left, right = st.columns([2, 1])
-    with right:
-        if st.button("× サイドバーを閉じる", key="close_sidebar"):
-            st.session_state["sidebar_open"] = False
-            st.session_state["selected_date"] = None
-            st.experimental_rerun()
-        st.markdown(f"#### {st.session_state['selected_date']} の在庫・価格推移")
-        rows = []
-        for k, v in historical_data[st.session_state["selected_date"]].items():
-            try:
-                vacancy = int(v["vacancy"])
-                avg_price = float(v["avg_price"])
-                rows.append({"取得日": k, "在庫数": vacancy, "平均価格": avg_price})
-            except Exception:
-                continue
-        if len(rows) == 0:
-            st.warning("データがありません")
-        else:
-            df = pd.DataFrame(rows)
-            df = df.sort_values("取得日")
-            base = alt.Chart(df).encode(x="取得日:T")
-            line_vacancy = base.mark_line(point=True).encode(y=alt.Y("在庫数", axis=alt.Axis(title="在庫数")))
-            line_price = base.mark_line(point=True, color="red").encode(y=alt.Y("平均価格", axis=alt.Axis(title="平均価格（円）")))
-            chart = alt.layer(line_vacancy, line_price).resolve_scale(y='independent')
-            st.altair_chart(chart, use_container_width=True)
-
 
 
 
