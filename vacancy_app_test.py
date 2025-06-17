@@ -177,7 +177,7 @@ historical_data = load_historical_data()  # ←これでデータが読み込ま
 
 # (中略)
 
-# --- サイドバー グラフ表示機能 ---
+# ───────── サイドバー グラフ表示機能 ─────────
 params = st.query_params
 selected_date = params.get("selected")
 if isinstance(selected_date, list):
@@ -187,11 +187,9 @@ if not selected_date:
 
 with st.sidebar:
     if selected_date:
-        # サイドバー閉じるボタン
         if st.button("× サイドバーを閉じる"):
-            # クエリリセット → 即時 rerun
-            st.experimental_set_query_params()
-            st.experimental_rerun()
+            st.query_params.clear()  # ← 新方式！ここがポイント
+            st.experimental_rerun()  # 即時再描画
         st.markdown(f"#### {selected_date} の在庫・価格推移")
         if selected_date in historical_data:
             df = pd.DataFrame([
