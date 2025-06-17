@@ -144,14 +144,18 @@ def draw_calendar(month_date: dt.date) -> str:
             price_html += '</div>'
             icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:16px;">{get_demand_icon(vac, price)}</div>' if current >= today else ''
             event_html = '<div style="font-size:12px;margin-top:4px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data.get(iso, [])) + '</div>'
-            date_link = f"<a href='?selected={iso}' target='_self' style='text-decoration:none; color:gray;'>{current.day}</a>"
-            html += (
-                f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
-                f'{icon_html}'
-                f'<div style="position:absolute; top:4px; left:4px; font-size:14px; font-weight:bold;">{date_link}</div>'
-                f'{vac_html}{price_html}{event_html}'
-                '</td>'
-            )
+
+# --- クリック範囲をセル全体にするため <a> で<td>内全体を囲う
+html += (
+    f'<td style="position:relative;vertical-align:top;...;padding:0;">'
+    f'<a href="?selected={iso}" target="_self" '
+    f'style="display:block;width:100%;height:100%;padding:8px;text-decoration:none;color:inherit;">'
+    f'{icon_html}'
+    f'<div style="position:absolute; top:4px; left:4px; font-size:14px; font-weight:bold;">{current.day}</div>'
+    f'{vac_html}{price_html}{event_html}'
+    f'</a></td>'
+)
+
         html += '</tr>'
     html += '</tbody></table></div>'
     return html
