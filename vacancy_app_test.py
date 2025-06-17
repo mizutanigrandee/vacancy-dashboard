@@ -165,10 +165,6 @@ with col2:
     st.subheader(f"{month2.year}年 {month2.month}月")
     st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
-# ───────── サイドバー グラフ表示機能 ─────────
-# クエリパラメータで日付取得（新方式のみ使う！）
-params = st.query_params
-selected_date = params.get("selected", [None])[0]
 
 # 履歴データ読込
 def load_historical_data():
@@ -177,11 +173,20 @@ def load_historical_data():
             return json.load(f)
     return {}
 
-historical_data = load_historical_data()
+historical_data = load_historical_data()  # ←これでデータが読み込まれます
+
+# (中略)
+
+# ───────── サイドバー グラフ表示機能 ─────────
+params = st.query_params
+selected_date = params.get("selected", None)
+if isinstance(selected_date, list):
+    selected_date = selected_date[0]
+if not selected_date:
+    selected_date = None
 
 with st.sidebar:
     if selected_date:
-        # サイドバー閉じるボタン
         st.button("× サイドバーを閉じる", on_click=lambda: st.experimental_set_query_params())
         st.markdown(f"#### {selected_date} の在庫・価格推移")
         if selected_date in historical_data:
@@ -196,6 +201,8 @@ with st.sidebar:
             st.info("この日付の履歴データがありません")
     else:
         st.write("カレンダーから日付をクリックしてください。")
+
+
 
 # 最終巡回時刻表示
 try:
