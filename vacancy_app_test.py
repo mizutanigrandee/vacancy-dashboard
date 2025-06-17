@@ -173,6 +173,44 @@ with col2:
     st.subheader(f"{month2.year}年 {month2.month}月")
     st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
+
+# ───────── サイドバー ─────────
+import pandas as pd
+
+# historical_data.json の読み込み
+def load_historical_data():
+    if os.path.exists(HISTORICAL_FILE):
+        with open(HISTORICAL_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+historical_data = load_historical_data()
+
+# クエリパラメータ取得（Streamlitの新方式）
+params = st.query_params
+selected_date = params.get("selected", [None])[0]
+
+with st.sidebar:
+    # 選択日付がある場合のみ
+    if selected_date:
+        st.button("× サイドバーを閉じる", on_click=lambda: st.experimental_set_query_params())  # クエリ消し
+        st.markdown(f"**{selected_date} の在庫・価格推移**")
+        # データが存在する場合だけグラフ表示
+        if selected_date in historical_data:
+            df = pd.DataFrame([
+                {"取得日": k, "在庫数": v["vacancy"], "平均単価": v["avg_price"]}
+                for k, v in sorted(historical_data[selected_date].items())
+            ])
+            df["取得日"] = pd.to_datetime(df["取得日"])
+            st.line_chart(df.set_index("取得日")[["在庫数", "平均単価"]])
+        else:
+            st.info("データがありません")
+    else:
+        st.write("カレンダーから日付をクリックしてください。")
+
+
+
+
 # ▼▼▼ 追加：サイドバーで在庫＆単価の推移グラフ
 def load_json_hist(path):
     if os.path.exists(path):
