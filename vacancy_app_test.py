@@ -146,7 +146,6 @@ def draw_calendar(month_date: dt.date) -> str:
             event_html = '<div style="font-size:12px;margin-top:4px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data.get(iso, [])) + '</div>'
 
 # --- クリック範囲をセル全体にするため <a> で<td>内全体を囲う
-
 html += (
     f'<td style="position:relative;vertical-align:top;border:1px solid #aaa;background:{bg};padding:0;">'
     f'<a href="?selected={iso}" target="_self" '
@@ -156,6 +155,7 @@ html += (
     f'{vac_html}{price_html}{event_html}'
     f'</a></td>'
 )
+
 
 
         html += '</tr>'
