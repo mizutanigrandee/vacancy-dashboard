@@ -9,7 +9,7 @@ import pandas as pd
 import os, json, pytz, jpholiday
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
+st.set_page_config(page_title="テスト版【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
 
 # 🔻 base64埋め込みバナー
 if os.path.exists("バナー画像3.png"):
@@ -187,7 +187,7 @@ if not selected_date:
 
 with st.sidebar:
     st.write("カレンダーから日付をクリックしてください。")
-    st.caption("※左上の矢印（ < ）でサイドバーの開閉ができます")
+    st.caption("※右上の矢印（ < ）でサイドバーの開閉ができます")
 
     if selected_date:
         st.markdown(f"#### {selected_date} の在庫・価格推移")
