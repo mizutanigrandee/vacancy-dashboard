@@ -11,6 +11,14 @@ import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
 
+# ▼▼▼ 追加: 選択日付をURLパラメータ→session_stateへ反映
+params = st.experimental_get_query_params()
+if "selected" in params:
+    sel_date = params["selected"][0]
+    st.session_state["selected_date"] = sel_date
+elif "selected_date" not in st.session_state:
+    st.session_state["selected_date"] = None
+
 # 🔻 base64埋め込みバナー
 if os.path.exists("バナー画像3.png"):
     with open("バナー画像3.png", "rb") as f:
@@ -165,8 +173,45 @@ with col2:
     st.subheader(f"{month2.year}年 {month2.month}月")
     st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
+# ▼▼▼ 追加：サイドバーで在庫＆単価の推移グラフ
+def load_json_hist(path):
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
 
+historical_data = load_json_hist(HISTORICAL_FILE)
+selected_date = st.session_state.get("selected_date", None)
+if selected_date:
+    with st.sidebar:
+        if st.button("× サイドバーを閉じる"):
+            st.session_state.selected_date = None
+            st.experimental_set_query_params()  # URLパラメータをリセット
+            st.experimental_rerun()
+        st.subheader(f"{selected_date} の在庫・価格推移")
 
+        data = historical_data.get(selected_date, {})
+        if data:
+            df = pd.DataFrame([
+                {"取得日": d, "在庫数": v["vacancy"], "平均単価": v["avg_price"]}
+                for d, v in data.items()
+            ])
+            df["取得日"] = pd.to_datetime(df["取得日"])
+            df = df.sort_values("取得日")
+            fig, ax1 = plt.subplots(figsize=(6, 3))
+            ax2 = ax1.twinx()
+            ax1.plot(df["取得日"], df["在庫数"], label="在庫数", marker="o", color="#1f77b4")
+            ax2.plot(df["取得日"], df["平均単価"], color="#ff7f0e", label="平均単価", marker="x")
+            ax1.set_ylabel("在庫数")
+            ax2.set_ylabel("平均単価")
+            ax1.set_xlabel("取得日")
+            ax1.grid(True, linestyle="dotted", alpha=0.5)
+            fig.tight_layout()
+            ax1.legend(loc="upper left")
+            ax2.legend(loc="upper right")
+            st.pyplot(fig)
+        else:
+            st.warning("この日付の履歴データがありません")
 
 # 最終巡回時刻表示
 try:
