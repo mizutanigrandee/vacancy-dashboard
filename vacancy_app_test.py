@@ -11,14 +11,6 @@ import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
 
-# ▼▼▼ 追加: 選択日付をURLパラメータ→session_stateへ反映
-params = st.experimental_get_query_params()
-if "selected" in params:
-    sel_date = params["selected"][0]
-    st.session_state["selected_date"] = sel_date
-elif "selected_date" not in st.session_state:
-    st.session_state["selected_date"] = None
-
 # 🔻 base64埋め込みバナー
 if os.path.exists("バナー画像3.png"):
     with open("バナー画像3.png", "rb") as f:
@@ -174,13 +166,9 @@ with col2:
     st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
 # ───────── サイドバー グラフ表示機能 ─────────
-import pandas as pd
-
-# クエリパラメータで日付取得（新方式）
+# クエリパラメータで日付取得（新方式のみ使う！）
 params = st.query_params
-selected_date = params.get("selected", None)
-if isinstance(selected_date, list):  # ?selected=2025-06-17 だと["2025-06-17"]になる
-    selected_date = selected_date[0]
+selected_date = params.get("selected", [None])[0]
 
 # 履歴データ読込
 def load_historical_data():
@@ -208,10 +196,6 @@ with st.sidebar:
             st.info("この日付の履歴データがありません")
     else:
         st.write("カレンダーから日付をクリックしてください。")
-
-
-
-
 
 # 最終巡回時刻表示
 try:
