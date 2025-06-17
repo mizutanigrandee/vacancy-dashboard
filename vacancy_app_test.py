@@ -198,12 +198,13 @@ with st.sidebar:
         st.markdown(f"#### {selected_date} の在庫・価格推移")
         if selected_date in historical_data:
             df = pd.DataFrame([
-                {"取得日": k, "在庫数": v["vacancy"], "平均単価": v["avg_price"]}
-                for k, v in sorted(historical_data[selected_date].items())
-            ])
-            df["取得日"] = pd.to_datetime(df["取得日"])
-            df = df.sort_values("取得日")
-            st.line_chart(df.set_index("取得日")[["在庫数", "平均単価"]])
+    {
+        "取得日": k,
+        "在庫数": v["vacancy"][0] if isinstance(v["vacancy"], list) else v["vacancy"],
+        "平均単価": v["avg_price"][0] if isinstance(v["avg_price"], list) else v["avg_price"],
+    }
+    for k, v in sorted(historical_data[selected_date].items())
+])
         else:
             st.info("この日付の履歴データがありません")
 
