@@ -135,29 +135,51 @@ def update_cache(start_date: dt.date, months: int = 9):
         encoding="utf-8"
     )
 
-    # --- 🔁 historical_data.json に当日分を追記保存 ---
-    historical_data = {}
-    if Path(HISTORICAL_FILE).exists():
-        try:
-            with open(HISTORICAL_FILE, "r", encoding="utf-8") as f:
-                historical_data = json.load(f)
-        except Exception as e:
-            print(f"⚠️ error loading historical_data.json: {e}", file=sys.stderr)
+from dateutil.relativedelta import relativedelta
 
-    today_str = today.isoformat()
-    if today_str in cache:
-        today_data = {
-            "vacancy":   cache[today_str]["vacancy"],
-            "avg_price": cache[today_str]["avg_price"]
+# --- 🔁 historical_data.json に未来日ごとの履歴を追記・整理して保存 ---
+historical_data = {}
+if Path(HISTORICAL_FILE).exists():
+    try:
+        with open(HISTORICAL_FILE, "r", encoding="utf-8") as f:
+            historical_data = json.load(f)
+    except Exception as e:
+        print(f"⚠️ error loading historical_data.json: {e}", file=sys.stderr)
+
+today_str = today.isoformat()
+
+# 1. 未来日・当日の全データについて、"本日"時点の在庫・料金を履歴追加
+for iso, v in cache.items():
+    # today以降（未来日・当日）だけ
+    if dt.date.fromisoformat(iso) >= today:
+        if iso not in historical_data:
+            historical_data[iso] = {}
+        # その日付の「取得日＝今日」の履歴を追加・上書き
+        historical_data[iso][today_str] = {
+            "vacancy": v["vacancy"],
+            "avg_price": v["avg_price"]
         }
-        historical_data[today_str] = today_data
 
-        try:
-            with open(HISTORICAL_FILE, "w", encoding="utf-8") as f:
-                json.dump(historical_data, f, ensure_ascii=False, indent=2)
-            print("📁 historical_data.json updated", file=sys.stderr)
-        except Exception as e:
-            print(f"⚠️ error saving historical_data.json: {e}", file=sys.stderr)
+# 2. 古い履歴（各日付で「その日から3か月より前」）は削除
+for date_key in list(historical_data.keys()):
+    date_dt = dt.date.fromisoformat(date_key)
+    # 履歴の中で「date_keyより3か月前より古い履歴」を消す
+    limit = date_dt - relativedelta(months=3)
+    for hist_key in list(historical_data[date_key].keys()):
+        hist_dt = dt.date.fromisoformat(hist_key)
+        if hist_dt < limit:
+            del historical_data[date_key][hist_key]
+    # 履歴が空になったらその日付自体も削除（容量節約）
+    if not historical_data[date_key]:
+        del historical_data[date_key]
+
+try:
+    with open(HISTORICAL_FILE, "w", encoding="utf-8") as f:
+        json.dump(historical_data, f, ensure_ascii=False, indent=2)
+    print("📁 historical_data.json updated", file=sys.stderr)
+except Exception as e:
+    print(f"⚠️ error saving historical_data.json: {e}", file=sys.stderr)
+
 
 
 if __name__ == "__main__":
