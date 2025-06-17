@@ -186,10 +186,10 @@ if not selected_date:
     selected_date = None
 
 with st.sidebar:
+    st.write("カレンダーから日付をクリックしてください。")
+    st.caption("※左上の矢印（ < ）でサイドバーの開閉ができます")
+
     if selected_date:
-        if st.button("× サイドバーを閉じる"):
-            st.query_params.clear()  # ← 新方式！ここがポイント
-            st.experimental_rerun()  # 即時再描画
         st.markdown(f"#### {selected_date} の在庫・価格推移")
         if selected_date in historical_data:
             df = pd.DataFrame([
@@ -201,8 +201,7 @@ with st.sidebar:
             st.line_chart(df.set_index("取得日")[["在庫数", "平均単価"]])
         else:
             st.info("この日付の履歴データがありません")
-    else:
-        st.write("カレンダーから日付をクリックしてください。")
+
 
 
 
