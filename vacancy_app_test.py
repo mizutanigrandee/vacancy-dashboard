@@ -173,11 +173,16 @@ with col2:
     st.subheader(f"{month2.year}年 {month2.month}月")
     st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
-
-# ───────── サイドバー ─────────
+# ───────── サイドバー グラフ表示機能 ─────────
 import pandas as pd
 
-# historical_data.json の読み込み
+# クエリパラメータで日付取得（新方式）
+params = st.query_params
+selected_date = params.get("selected", None)
+if isinstance(selected_date, list):  # ?selected=2025-06-17 だと["2025-06-17"]になる
+    selected_date = selected_date[0]
+
+# 履歴データ読込
 def load_historical_data():
     if os.path.exists(HISTORICAL_FILE):
         with open(HISTORICAL_FILE, "r", encoding="utf-8") as f:
@@ -186,70 +191,27 @@ def load_historical_data():
 
 historical_data = load_historical_data()
 
-# クエリパラメータ取得（Streamlitの新方式）
-params = st.query_params
-selected_date = params.get("selected", [None])[0]
-
 with st.sidebar:
-    # 選択日付がある場合のみ
     if selected_date:
-        st.button("× サイドバーを閉じる", on_click=lambda: st.experimental_set_query_params())  # クエリ消し
-        st.markdown(f"**{selected_date} の在庫・価格推移**")
-        # データが存在する場合だけグラフ表示
+        # サイドバー閉じるボタン
+        st.button("× サイドバーを閉じる", on_click=lambda: st.experimental_set_query_params())
+        st.markdown(f"#### {selected_date} の在庫・価格推移")
         if selected_date in historical_data:
             df = pd.DataFrame([
                 {"取得日": k, "在庫数": v["vacancy"], "平均単価": v["avg_price"]}
                 for k, v in sorted(historical_data[selected_date].items())
             ])
             df["取得日"] = pd.to_datetime(df["取得日"])
+            df = df.sort_values("取得日")
             st.line_chart(df.set_index("取得日")[["在庫数", "平均単価"]])
         else:
-            st.info("データがありません")
+            st.info("この日付の履歴データがありません")
     else:
         st.write("カレンダーから日付をクリックしてください。")
 
 
 
 
-# ▼▼▼ 追加：サイドバーで在庫＆単価の推移グラフ
-def load_json_hist(path):
-    if os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
-
-historical_data = load_json_hist(HISTORICAL_FILE)
-selected_date = st.session_state.get("selected_date", None)
-if selected_date:
-    with st.sidebar:
-        if st.button("× サイドバーを閉じる"):
-            st.session_state.selected_date = None
-            st.experimental_set_query_params()  # URLパラメータをリセット
-            st.experimental_rerun()
-        st.subheader(f"{selected_date} の在庫・価格推移")
-
-        data = historical_data.get(selected_date, {})
-        if data:
-            df = pd.DataFrame([
-                {"取得日": d, "在庫数": v["vacancy"], "平均単価": v["avg_price"]}
-                for d, v in data.items()
-            ])
-            df["取得日"] = pd.to_datetime(df["取得日"])
-            df = df.sort_values("取得日")
-            fig, ax1 = plt.subplots(figsize=(6, 3))
-            ax2 = ax1.twinx()
-            ax1.plot(df["取得日"], df["在庫数"], label="在庫数", marker="o", color="#1f77b4")
-            ax2.plot(df["取得日"], df["平均単価"], color="#ff7f0e", label="平均単価", marker="x")
-            ax1.set_ylabel("在庫数")
-            ax2.set_ylabel("平均単価")
-            ax1.set_xlabel("取得日")
-            ax1.grid(True, linestyle="dotted", alpha=0.5)
-            fig.tight_layout()
-            ax1.legend(loc="upper left")
-            ax2.legend(loc="upper right")
-            st.pyplot(fig)
-        else:
-            st.warning("この日付の履歴データがありません")
 
 # 最終巡回時刻表示
 try:
