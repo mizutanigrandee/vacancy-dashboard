@@ -145,7 +145,8 @@ def draw_calendar(month_date: dt.date) -> str:
             icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:16px;">{get_demand_icon(vac, price)}</div>' if current >= today else ''
             event_html = '<div style="font-size:12px;margin-top:4px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data.get(iso, [])) + '</div>'
 
-　　　　　　# --- クリック範囲をセル全体にするため <a> で<td>内全体を囲う
+# --- クリック範囲をセル全体にするため <a> で<td>内全体を囲う
+
 html += (
     f'<td style="position:relative;vertical-align:top;border:1px solid #aaa;background:{bg};padding:0;">'
     f'<a href="?selected={iso}" target="_self" '
