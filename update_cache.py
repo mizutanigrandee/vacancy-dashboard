@@ -1,13 +1,28 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+vacancy-dashboard 予約在庫 & 料金データ取得スクリプト
+毎日 GitHub Actions から呼ばれて
+  • vacancy_price_cache.json        … 直近 3 か月分の最新データ
+  • vacancy_price_cache_previous.json … 1 日前データ（差分計算用バックアップ）
+  • historical_data.json            … 未来日ごとの履歴（3 か月分まで保持）
+を更新します。
+"""
+
 import os
 import sys
 import json
 import calendar
 import requests
 import datetime as dt
-from dateutil.relativedelta import relativedelta
 from pathlib import Path
+from dateutil.relativedelta import relativedelta
 
-APP_ID = os.environ.get("RAKUTEN_APP_ID", "")
+# ──────────────────────────────────
+# 定数
+# ──────────────────────────────────
+APP_ID          = os.environ.get("RAKUTEN_APP_ID", "")
 if not APP_ID:
     raise ValueError("❌ RAKUTEN_APP_ID が設定されていません。GitHub Secrets に登録されていますか？")
 
@@ -15,32 +30,38 @@ CACHE_FILE      = "vacancy_price_cache.json"
 PREV_CACHE_FILE = "vacancy_price_cache_previous.json"
 HISTORICAL_FILE = "historical_data.json"
 
-def fetch_vacancy_and_price(date: dt.date) -> dict:
-    print(f"🔍 fetching {date}", file=sys.stderr)
-    prices = []
+
+# ──────────────────────────────────
+# 楽天トラベル API から 1 日分の在庫数・平均単価を取得
+# ──────────────────────────────────
+def fetch_vacancy_and_price(target: dt.date) -> dict:
+    print(f"🔍 fetching {target}", file=sys.stderr)
+    prices: list[float] = []
     vacancy_total = 0
+
     url = "https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
-    for page in range(1, 4):
+    for page in range(1, 4):                                   # 上位 3 ページ ≒ 90 施設
         params = {
             "applicationId": APP_ID,
             "format": "json",
-            "checkinDate": date.strftime("%Y-%m-%d"),
-            "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
+            "checkinDate":  target.strftime("%Y-%m-%d"),
+            "checkoutDate": (target + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
             "adultNum": 1,
-            "largeClassCode": "japan",
+            "largeClassCode":  "japan",
             "middleClassCode": "osaka",
-            "smallClassCode": "shi",
+            "smallClassCode":  "shi",
             "detailClassCode": "D",
-            "page": page
+            "page": page,
         }
         try:
-            r = requests.get(url, params=params, timeout=10)
-            r.raise_for_status()
-            data = r.json()
+            res = requests.get(url, params=params, timeout=10)
+            res.raise_for_status()
+            data = res.json()
         except Exception as e:
-            print(f"  ⚠️ fetch error on {date} page {page}: {e}", file=sys.stderr)
+            print(f"  ⚠️ fetch error on {target} page {page}: {e}", file=sys.stderr)
             continue
 
+        # 1 ページ目の recordCount が残室（施設）数
         if page == 1:
             vacancy_total = data.get("pagingInfo", {}).get("recordCount", 0)
 
@@ -56,21 +77,30 @@ def fetch_vacancy_and_price(date: dt.date) -> dict:
     print(f"   → avg_price = {avg_price}  (vacancy={vacancy_total})", file=sys.stderr)
     return {"vacancy": vacancy_total, "avg_price": avg_price}
 
-def update_cache(start_date: dt.date, months: int = 9):
+
+# ──────────────────────────────────
+# メイン更新処理
+# ──────────────────────────────────
+def update_cache(start_date: dt.date, months: int = 9) -> dict:
+    """
+    ・未来日（start_date から months か月分）の最新データを取得して cache を更新
+    ・前日との差分を計算して記録
+    ・historic_data.json 追記もここでは行わない（main 節で実施）
+    """
     today = dt.date.today()
     three_months_ago = today - relativedelta(months=3)
 
-    # --- 既存キャッシュ読み込み ---
-    cache = {}
+    # 既存キャッシュ
+    cache: dict[str, dict] = {}
     if Path(CACHE_FILE).exists():
         cache = json.loads(Path(CACHE_FILE).read_text(encoding="utf-8"))
 
-    # --- 前回取得用キャッシュ読み込み ---
-    old_cache = {}
+    # 前回（前日）取得キャッシュ
+    old_cache: dict[str, dict] = {}
     if Path(PREV_CACHE_FILE).exists():
         old_cache = json.loads(Path(PREV_CACHE_FILE).read_text(encoding="utf-8"))
 
-    # 古い(3ヶ月前以前)のキーは削除（メインキャッシュのみ）
+    # 3 か月より古いキーを削除
     cache = {
         k: v for k, v in cache.items()
         if dt.date.fromisoformat(k) >= three_months_ago
@@ -78,103 +108,101 @@ def update_cache(start_date: dt.date, months: int = 9):
 
     cal = calendar.Calendar(firstweekday=calendar.SUNDAY)
 
-    # --- 各日付の更新処理 ---
+    # ── データ取得ループ ──
     for m in range(months):
-        month_start = (start_date + relativedelta(months=m)).replace(day=1)
-        for week in cal.monthdatescalendar(month_start.year, month_start.month):
+        base_month = (start_date + relativedelta(months=m)).replace(day=1)
+        for week in cal.monthdatescalendar(base_month.year, base_month.month):
             for day in week:
-                # 本日より前はスキップ。未来日＆当日のみ取得
-                if day.month != month_start.month or day < today:
+                # 対象月かつ “今日以降” の日付のみ
+                if day.month != base_month.month or day < today:
                     continue
 
                 iso = day.isoformat()
                 new = fetch_vacancy_and_price(day)
-
-                # 空データ（API失敗時）は保存しない
-                if new["vacancy"] == 0 and new["avg_price"] == 0.0:
-                    print(f"⏩ skipping {iso} due to empty data", file=sys.stderr)
+                if new["vacancy"] == 0 and new["avg_price"] == 0:
+                    print(f"⏩ skip {iso} : empty result", file=sys.stderr)
                     continue
 
-                new_vac = new["vacancy"]
-                new_pri = new["avg_price"]
-
-                # 前回取得値（1日前）との差分
+                new_vac, new_pri = new["vacancy"], new["avg_price"]
                 prev = old_cache.get(iso, {})
-                if "vacancy" in prev and "avg_price" in prev:
-                    last_vac  = prev["vacancy"]
-                    last_pri  = prev["avg_price"]
-                    vac_diff  = new_vac - last_vac
-                    pri_diff  = new_pri - last_pri
-                else:
-                    last_vac  = new_vac
-                    last_pri  = new_pri
-                    vac_diff  = 0
-                    pri_diff  = 0.0
+
+                last_vac = prev.get("vacancy", new_vac)
+                last_pri = prev.get("avg_price", new_pri)
 
                 record = {
                     "vacancy":        new_vac,
                     "avg_price":      new_pri,
                     "last_vacancy":   last_vac,
                     "last_avg_price": last_pri,
-                    "vacancy_diff":   vac_diff,
-                    "avg_price_diff": pri_diff,
+                    "vacancy_diff":   new_vac - last_vac,
+                    "avg_price_diff": new_pri - last_pri,
                 }
                 cache[iso] = record
 
-    # --- メインキャッシュとして保存 ---
+    # 保存
     Path(CACHE_FILE).write_text(
         json.dumps(cache, ensure_ascii=False, indent=2),
         encoding="utf-8"
     )
     print("✅ cache updated", file=sys.stderr)
 
-    # --- フロント比較用に“今回”キャッシュを previous ファイルとして保存 ---
+    # “今回” を next run 用 previous として保存
     Path(PREV_CACHE_FILE).write_text(
         json.dumps(cache, ensure_ascii=False, indent=2),
         encoding="utf-8"
     )
 
-    # --- historical_data.json に未来日・当日の履歴を「日時つき」で追加 ---
-    historical_data = {}
+    return cache
+
+
+# ──────────────────────────────────
+# historical_data.json の保守 / 追記
+# ──────────────────────────────────
+def update_history(cache: dict):
+    today = dt.date.today()
+    today_str = today.isoformat()
+
+    hist: dict[str, dict] = {}
     if Path(HISTORICAL_FILE).exists():
         try:
             with open(HISTORICAL_FILE, "r", encoding="utf-8") as f:
-                historical_data = json.load(f)
+                hist = json.load(f)
         except Exception as e:
-            print(f"⚠️ error loading historical_data.json: {e}", file=sys.stderr)
+            print(f"⚠️ error loading history: {e}", file=sys.stderr)
 
-    # 現在日時を「秒」まで含めて記録（日付＋時刻で毎回積み上がる・上書きされない）
-    now_str = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-
+    # 1) 今日以降のデータを履歴に追記
     for iso, v in cache.items():
-        if dt.date.fromisoformat(iso) >= today:
-            if iso not in historical_data:
-                historical_data[iso] = {}
-            historical_data[iso][now_str] = {
-                "vacancy": v["vacancy"],
-                "avg_price": v["avg_price"]
+        iso_date = dt.date.fromisoformat(iso)
+        if iso_date >= today:
+            hist.setdefault(iso, {})
+            hist[iso][today_str] = {
+                "vacancy":   v["vacancy"],
+                "avg_price": v["avg_price"],
             }
 
-    # 2. 古い履歴（各日付で「その日から3か月より前」）は削除
-    for date_key in list(historical_data.keys()):
+    # 2) 各日付の履歴を「その日から 3 か月超えたら削除」
+    for date_key in list(hist.keys()):
         date_dt = dt.date.fromisoformat(date_key)
-        limit = date_dt - relativedelta(months=3)
-        for hist_key in list(historical_data[date_key].keys()):
-            # ここは日付の部分だけで比較（時刻部分は捨てる）
-            hist_dt = dt.datetime.strptime(hist_key[:10], "%Y-%m-%d").date()
-            if hist_dt < limit:
-                del historical_data[date_key][hist_key]
-        if not historical_data[date_key]:
-            del historical_data[date_key]
+        limit   = date_dt - relativedelta(months=3)
+        for hist_key in list(hist[date_key].keys()):
+            if dt.date.fromisoformat(hist_key) < limit:
+                del hist[date_key][hist_key]
+        if not hist[date_key]:      # 空なら削除
+            del hist[date_key]
 
-    try:
-        with open(HISTORICAL_FILE, "w", encoding="utf-8") as f:
-            json.dump(historical_data, f, ensure_ascii=False, indent=2)
-        print("📁 historical_data.json updated", file=sys.stderr)
-    except Exception as e:
-        print(f"⚠️ error saving historical_data.json: {e}", file=sys.stderr)
+    # 保存
+    Path(HISTORICAL_FILE).write_text(
+        json.dumps(hist, ensure_ascii=False, indent=2),
+        encoding="utf-8"
+    )
+    print("📁 historical_data.json updated", file=sys.stderr)
 
+
+# ──────────────────────────────────
+# エントリポイント
+# ──────────────────────────────────
 if __name__ == "__main__":
     print("📡 Starting update_cache.py", file=sys.stderr)
-    today = dt.date.today()
-    update_cache(today, months=9)
+    base = dt.date.today()
+    new_cache = update_cache(base, months=9)
+    update_history(new_cache)
