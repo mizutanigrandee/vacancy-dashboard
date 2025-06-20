@@ -8,6 +8,8 @@ import calendar
 import pandas as pd
 import os, json, pytz, jpholiday
 import matplotlib.pyplot as plt
+import altair as alt
+
 
 st.set_page_config(page_title="テスト版【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
 
@@ -225,10 +227,29 @@ with st.sidebar:
 
     # ───────── グラフ表示を上下 2 段に分ける ─────────
     st.write("##### 在庫数")
-    st.line_chart(df["在庫数"])
+    chart_vac = (
+        alt.Chart(df.reset_index())
+        .mark_line(point=True)
+        .encode(
+            x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
+            y=alt.Y("在庫数:Q", axis=alt.Axis(title=None))
+        )
+        .properties(height=150)
+    )
+    st.altair_chart(chart_vac, use_container_width=True)
 
     st.write("##### 平均単価 (円)")
-    st.line_chart(df["平均単価"])
+    chart_price = (
+        alt.Chart(df.reset_index())
+        .mark_line(point=True, color="#e15759")
+        .encode(
+            x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
+            y=alt.Y("平均単価:Q", axis=alt.Axis(title=None))
+        )
+        .properties(height=150)
+    )
+    st.altair_chart(chart_price, use_container_width=True)
+
     # ───────────────────────────────
 
 
