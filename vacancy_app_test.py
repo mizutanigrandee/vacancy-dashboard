@@ -184,6 +184,7 @@ historical_data = load_historical_data()  # ←これでデータが読み込ま
 
 
 
+
 # ───────── サイドバー グラフ表示機能 ─────────
 params = st.query_params
 selected_date = params.get("selected")
@@ -203,12 +204,10 @@ else:
     # ★選択時は 3:7 の横並びレイアウト（左グラフ、右カレンダー）
     left, right = st.columns([3, 7])
     with left:
-        # ここにグラフコード（下記参照）
         st.markdown(f"#### {selected_date} の在庫・価格推移")
         if selected_date not in historical_data:
             st.info("この日付の履歴データがありません")
         else:
-            # DataFrame
             df = pd.DataFrame(
                 sorted(
                     (
@@ -223,7 +222,6 @@ else:
                 )
             )
             df["取得日"] = pd.to_datetime(df["取得日"])
-            # 在庫数グラフ
             st.write("##### 在庫数")
             chart_vac = (
                 alt.Chart(df)
@@ -235,7 +233,6 @@ else:
                 .properties(height=280, width=400)
             )
             st.altair_chart(chart_vac, use_container_width=True)
-            # 単価グラフ
             st.write("##### 平均単価 (円)")
             chart_price = (
                 alt.Chart(df)
@@ -256,7 +253,6 @@ else:
         with cal2:
             st.subheader(f"{month2.year}年 {month2.month}月")
             st.markdown(draw_calendar(month2), unsafe_allow_html=True)
-
 
     # ───────────────────────────────
 
