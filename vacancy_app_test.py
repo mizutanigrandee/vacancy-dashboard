@@ -228,7 +228,7 @@ elif selected_date and st.session_state["show_graph"]:
         # タイトル下に3ボタンを横並び・左寄せで配置
         button_cols = st.columns([2, 2, 2, 10])  # [閉じる][前日][翌日][空き]
         with button_cols[0]:
-            if st.button("❌ グラフを閉じる"):
+            if st.button("❌ 閉じる"):
                 st.query_params.clear()
                 st.session_state["show_graph"] = False
                 st.rerun()
