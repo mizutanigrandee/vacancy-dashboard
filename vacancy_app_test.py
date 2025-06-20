@@ -112,12 +112,12 @@ def draw_calendar(month_date: dt.date) -> str:
             event_html = '<div style="font-size:12px;margin-top:4px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data.get(iso, [])) + '</div>'
             html += (
                 f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
-                f'<div onclick="window.location.search=\'?selected={iso}\'" '
-                f'style="display:block;width:100%;height:100%;text-decoration:none;color:inherit;cursor:pointer;">'
+                f'<a href="?selected={iso}" target="_self" '
+                f'style="display:block;width:100%;height:100%;text-decoration:none;color:inherit;">'
                 f'{icon_html}'
                 f'<div style="position:absolute; top:4px; left:4px; font-size:14px; font-weight:bold;">{current.day}</div>'
                 f'{vac_html}{price_html}{event_html}'
-                f'</div>'
+                f'</a>'
                 f'</td>'
             )
         html += '</tr>'
