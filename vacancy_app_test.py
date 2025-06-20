@@ -232,8 +232,26 @@ if not selected_date or not st.session_state["show_graph"]:
 # 日付が選択されていればグラフ＋カレンダー表示
 elif selected_date and st.session_state["show_graph"]:
     left, right = st.columns([3, 7])
-    with left:
-        st.markdown(f"#### {selected_date} の在庫・価格推移")
+if selected_date:
+    sel_dt = pd.to_datetime(selected_date).date()
+    cols = st.columns([2, 1, 1, 1])
+    with cols[0]:
+        if st.button("❌ グラフを閉じる"):
+            st.session_state.selected_date = None
+            st.experimental_rerun()
+    with cols[1]:
+        if st.button("＜前日"):
+            new_dt = sel_dt - dt.timedelta(days=1)
+            st.session_state.selected_date = new_dt.isoformat()
+            st.experimental_rerun()
+    with cols[2]:
+        if st.button("翌日＞"):
+            new_dt = sel_dt + dt.timedelta(days=1)
+            st.session_state.selected_date = new_dt.isoformat()
+            st.experimental_rerun()
+    st.markdown(f"#### {selected_date} の在庫・価格推移")
+    # ...（以下は今まで通りグラフを表示）...
+
         if selected_date not in historical_data:
             st.info("この日付の履歴データがありません")
         else:
