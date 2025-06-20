@@ -176,22 +176,28 @@ historical_data = load_historical_data()  # ←これでデータが読み込ま
 
 
 
-# ───────── サイドバー グラフ表示機能 ─────────
-if "show_graph" not in st.session_state:
-    st.session_state["show_graph"] = False
 
+# ───────── グラフ＋カレンダー表示分岐 ─────────
 params = st.query_params
 selected_date = params.get("selected")
 if isinstance(selected_date, list):
     selected_date = selected_date[0]
 
-# 日付クリック時グラフ表示ON
-if selected_date:
+# グラフの表示管理（初期値はTrue）
+if "show_graph" not in st.session_state:
     st.session_state["show_graph"] = True
-    st.session_state["selected"] = selected_date
 
+# 「グラフを閉じる」ボタンが押された時の処理
+if st.session_state.get("show_graph") and selected_date:
+    close = st.button("❌ グラフを閉じる", key="close_graph_btn")
+    if close:
+        st.query_params.clear()   # ← ここでURLの?selected=xxxを消す！
+        st.session_state["show_graph"] = False
+        st.rerun()
+
+# 「グラフを閉じる」ボタン押下後 or 日付未選択ならカレンダー全画面
 if not selected_date or not st.session_state["show_graph"]:
-    # 全画面カレンダー
+    st.session_state["show_graph"] = True  # リセット
     cal1, cal2 = st.columns([1, 1])
     with cal1:
         st.subheader(f"{month1.year}年 {month1.month}月")
@@ -199,21 +205,15 @@ if not selected_date or not st.session_state["show_graph"]:
     with cal2:
         st.subheader(f"{month2.year}年 {month2.month}月")
         st.markdown(draw_calendar(month2), unsafe_allow_html=True)
-else:
-    # グラフ＋カレンダー 3:7
+
+# 日付が選択されていればグラフ＋カレンダー表示
+elif selected_date and st.session_state["show_graph"]:
     left, right = st.columns([3, 7])
     with left:
-        close = st.button("❌ グラフを閉じる", key="close_graph_btn")
-        if close:
-            st.session_state["show_graph"] = False
-            st.session_state["selected"] = ""
-            st.rerun()
         st.markdown(f"#### {selected_date} の在庫・価格推移")
-
         if selected_date not in historical_data:
             st.info("この日付の履歴データがありません")
         else:
-            # DataFrame を作成
             df = pd.DataFrame(
                 sorted(
                     (
@@ -228,8 +228,6 @@ else:
                 )
             )
             df["取得日"] = pd.to_datetime(df["取得日"])
-
-            # 在庫数グラフ
             st.write("##### 在庫数")
             chart_vac = (
                 alt.Chart(df)
@@ -241,8 +239,6 @@ else:
                 .properties(height=320, width=600)
             )
             st.altair_chart(chart_vac, use_container_width=True)
-
-            # 平均単価グラフ
             st.write("##### 平均単価 (円)")
             chart_price = (
                 alt.Chart(df)
@@ -262,6 +258,7 @@ else:
         with cal2:
             st.subheader(f"{month2.year}年 {month2.month}月")
             st.markdown(draw_calendar(month2), unsafe_allow_html=True)
+
 
     # ───────────────────────────────
 
