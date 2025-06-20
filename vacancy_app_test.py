@@ -234,7 +234,7 @@ with st.sidebar:
             x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
             y=alt.Y("在庫数:Q", axis=alt.Axis(title=None))
         )
-        .properties(height=150)
+        .properties(height=320, width=320)  # ←ここでサイズ調整
     )
     st.altair_chart(chart_vac, use_container_width=True)
 
@@ -246,7 +246,7 @@ with st.sidebar:
             x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
             y=alt.Y("平均単価:Q", axis=alt.Axis(title=None))
         )
-        .properties(height=150)
+        .properties(height=320, width=320)  # ←ここでサイズ調整
     )
     st.altair_chart(chart_price, use_container_width=True)
 
