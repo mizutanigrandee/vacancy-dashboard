@@ -57,6 +57,24 @@ st.markdown("""
             font-size: 10px !important;
         }
     }
+    /* PC版：中央寄せ＆最大幅設定 */
+@media (min-width: 700px) {
+    .calendar-wrapper {
+        margin: 0 auto !important;
+        max-width: 1500px !important;
+        min-width: 980px !important;
+        width: 92vw !important;  /* 画面幅の92% */
+        display: flex;
+        justify-content: center;
+    }
+    .calendar-wrapper table {
+        margin-left: auto !important;
+        margin-right: auto !important;
+        width: 100% !important;
+        max-width: 1500px !important;
+    }
+}
+
     </style>
 """, unsafe_allow_html=True)
 
