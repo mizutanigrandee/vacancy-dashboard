@@ -180,10 +180,23 @@ def draw_calendar(month_date: dt.date) -> str:
     .calendar-wrapper td {
         padding-top: 30px !important;
         transition: background-color 0.2s ease;
+        min-width: 44px !important;
+        max-width: 64px !important;
     }
     .calendar-wrapper td:hover {
         background-color: #f5faff !important;
         cursor: pointer;
+    }
+    @media (max-width: 600px) {
+        .calendar-wrapper td {
+            min-width: 34px !important;
+            max-width: 38px !important;
+            padding: 2px !important;
+        }
+        .vac-price {
+            font-size: 11px !important;
+            line-height: 1.1 !important;
+        }
     }
     </style>
     """
@@ -203,34 +216,50 @@ def draw_calendar(month_date: dt.date) -> str:
             price = int(rec["avg_price"])
             diff_v = rec.get("vacancy_diff", 0)
             diff_p = rec.get("avg_price_diff", 0)
-            vac_html = f'<div style="font-size:16px;font-weight:bold;">{vac}件'
-            if diff_v > 0:
-                vac_html += f'<span style="color:blue;font-size:12px;">（+{diff_v}）</span>'
-            elif diff_v < 0:
-                vac_html += f'<span style="color:red;font-size:12px;">（{diff_v}）</span>'
-            vac_html += '</div>'
-            price_html = f'<div style="font-size:16px;font-weight:bold;">￥{price:,}'
-            if diff_p > 0:
-                price_html += '<span style="color:red;"> ↑</span>'
-            elif diff_p < 0:
-                price_html += '<span style="color:blue;"> ↓</span>'
-            price_html += '</div>'
+            # ▼ 在庫数（1行）
+            vac_html = f'''
+            <div class="vac-price" style="font-size:13px;font-weight:bold;line-height:1.2;white-space:nowrap;">
+              {vac}件
+              <span style="font-size:10px; color:{'blue' if diff_v > 0 else 'red' if diff_v < 0 else '#555'};">
+                {f"（{('+' if diff_v > 0 else '')}{diff_v}）" if diff_v != 0 else ''}
+              </span>
+            </div>
+            '''
+            # ▼ 平均価格（2行化・強制折り返し＆小さめ）
+            price_html = f'''
+            <div class="vac-price" style="
+              font-size:12px;
+              font-weight:bold;
+              line-height:1.05;
+              white-space:pre-line;
+              word-break:break-all;
+              margin-bottom:2px;
+              ">
+              ¥{price:,}
+              <span style="font-size:11px; color:{'red' if diff_p > 0 else 'blue' if diff_p < 0 else '#555'};">
+                {'↑' if diff_p > 0 else '↓' if diff_p < 0 else ''}
+              </span>
+            </div>
+            '''
+            # ▼ 需要アイコン
             icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:16px;">{get_demand_icon(vac, price)}</div>' if current >= today else ''
-            event_html = '<div style="font-size:12px;margin-top:4px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data.get(iso, [])) + '</div>'
+            # ▼ イベント
+            event_html = '<div style="font-size:11px;margin-top:2px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data.get(iso, [])) + '</div>'
 
             # --- クリック範囲をセル全体にするため <a> で<td>内全体を囲う
             html += (
                 f'<td style="position:relative;vertical-align:top;border:1px solid #aaa;background:{bg};padding:0;">'
                 f'<a href="?selected={iso}" target="_self" '
-                f'style="display:block;width:100%;height:100%;padding:8px;text-decoration:none;color:inherit;">'
+                f'style="display:block;width:100%;height:100%;padding:6px 2px 6px 2px;text-decoration:none;color:inherit;">'
                 f'{icon_html}'
-                f'<div style="position:absolute; top:4px; left:4px; font-size:14px; font-weight:bold;">{current.day}</div>'
+                f'<div style="position:absolute; top:4px; left:4px; font-size:13px; font-weight:bold;">{current.day}</div>'
                 f'{vac_html}{price_html}{event_html}'
                 f'</a></td>'
             )
         html += '</tr>'
     html += '</tbody></table></div>'
     return html
+
 
 
 
