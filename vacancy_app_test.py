@@ -259,7 +259,7 @@ elif selected_date and st.session_state["show_graph"]:
                     x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
                     y=alt.Y("在庫数:Q", axis=alt.Axis(title=None))
                 )
-                .properties(height=320, width=600)
+                .properties(height=320, width=480)
             )
             st.altair_chart(chart_vac, use_container_width=True)
             st.write("##### 平均単価 (円)")
@@ -270,7 +270,7 @@ elif selected_date and st.session_state["show_graph"]:
                     x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
                     y=alt.Y("平均単価:Q", axis=alt.Axis(title=None))
                 )
-                .properties(height=320, width=600)
+                .properties(height=320, width=480)
             )
             st.altair_chart(chart_price, use_container_width=True)
     with right:
