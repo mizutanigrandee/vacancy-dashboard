@@ -209,45 +209,47 @@ if isinstance(selected_date, list):
 # グラフの表示管理（初期値はTrue）
 if "show_graph" not in st.session_state:
     st.session_state["show_graph"] = True
-# 選択中の日付もセッションで持つ
-if "selected_date" not in st.session_state:
-    st.session_state["selected_date"] = None
 
-# URLクエリ優先でselected_dateを決定
-if selected_date:
-    st.session_state["selected_date"] = selected_date
-selected_date = st.session_state["selected_date"]
-
-# ×や「前日/翌日」ボタン押したらshow_graphとselected_dateを調整
+# グラフ閉じるボタンでグラフ非表示＋日付クリア
 if st.session_state.get("show_graph") and selected_date:
+    cols = st.columns([2, 1, 1, 1])
+    with cols[0]:
+        if st.button("❌ グラフを閉じる"):
+            st.query_params.clear()   # ?selected=xxx を消す
+            st.session_state["show_graph"] = False
+            st.rerun()
+    with cols[1]:
+        if st.button("＜前日"):
+            new_dt = (pd.to_datetime(selected_date) - pd.Timedelta(days=1)).date()
+            st.query_params["selected"] = new_dt.isoformat()
+            st.rerun()
+    with cols[2]:
+        if st.button("翌日＞"):
+            new_dt = (pd.to_datetime(selected_date) + pd.Timedelta(days=1)).date()
+            st.query_params["selected"] = new_dt.isoformat()
+            st.rerun()
+else:
+    cols = None
+
+# 日付未選択 または グラフ閉じた場合→カレンダー全画面
+if not selected_date or not st.session_state["show_graph"]:
+    st.session_state["show_graph"] = True  # リセット
+    cal1, cal2 = st.columns([1, 1])
+    with cal1:
+        st.subheader(f"{month1.year}年 {month1.month}月")
+        st.markdown(draw_calendar(month1), unsafe_allow_html=True)
+    with cal2:
+        st.subheader(f"{month2.year}年 {month2.month}月")
+        st.markdown(draw_calendar(month2), unsafe_allow_html=True)
+
+# 日付選択中＆グラフ表示 → 3:7レイアウト
+elif selected_date and st.session_state["show_graph"]:
     left, right = st.columns([3, 7])
     with left:
-        sel_dt = pd.to_datetime(selected_date).date()
-        cols = st.columns([2, 1, 1, 1])
-        with cols[0]:
-            if st.button("❌ グラフを閉じる"):
-                st.session_state["show_graph"] = False
-                st.session_state["selected_date"] = None
-                st.query_params.clear()   # ← URLのクエリもクリア
-                st.experimental_rerun()
-        with cols[1]:
-            if st.button("＜前日"):
-                new_dt = sel_dt - dt.timedelta(days=1)
-                st.session_state["selected_date"] = new_dt.isoformat()
-                st.query_params["selected"] = new_dt.isoformat()
-                st.experimental_rerun()
-        with cols[2]:
-            if st.button("翌日＞"):
-                new_dt = sel_dt + dt.timedelta(days=1)
-                st.session_state["selected_date"] = new_dt.isoformat()
-                st.query_params["selected"] = new_dt.isoformat()
-                st.experimental_rerun()
-        # 右端スペース(cols[3])は空欄でOK
         st.markdown(f"#### {selected_date} の在庫・価格推移")
         if selected_date not in historical_data:
             st.info("この日付の履歴データがありません")
         else:
-            # DataFrame からグラフ生成
             df = pd.DataFrame(
                 sorted(
                     (
@@ -285,28 +287,14 @@ if st.session_state.get("show_graph") and selected_date:
             )
             st.altair_chart(chart_price, use_container_width=True)
     with right:
-        # カレンダー表示は必ず「選択中の日付」が含まれる月2つを出す
-        show_month = sel_dt.replace(day=1)
-        show_next = (show_month + relativedelta(months=1))
         cal1, cal2 = st.columns([1, 1])
         with cal1:
-            st.subheader(f"{show_month.year}年 {show_month.month}月")
-            st.markdown(draw_calendar(show_month), unsafe_allow_html=True)
+            st.subheader(f"{month1.year}年 {month1.month}月")
+            st.markdown(draw_calendar(month1), unsafe_allow_html=True)
         with cal2:
-            st.subheader(f"{show_next.year}年 {show_next.month}月")
-            st.markdown(draw_calendar(show_next), unsafe_allow_html=True)
+            st.subheader(f"{month2.year}年 {month2.month}月")
+            st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
-# ×が押されるか日付未選択なら：カレンダーだけ全画面
-else:
-    st.session_state["show_graph"] = True  # グラフ状態リセット
-    st.session_state["selected_date"] = None
-    cal1, cal2 = st.columns([1, 1])
-    with cal1:
-        st.subheader(f"{month1.year}年 {month1.month}月")
-        st.markdown(draw_calendar(month1), unsafe_allow_html=True)
-    with cal2:
-        st.subheader(f"{month2.year}年 {month2.month}月")
-        st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
 
     # ───────────────────────────────
