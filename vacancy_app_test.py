@@ -190,65 +190,84 @@ selected_date = params.get("selected")
 if isinstance(selected_date, list):      # クエリが ["2025-07-02"] のような配列になる事がある
     selected_date = selected_date[0]
 
-with st.sidebar:
-    # ① クリックされていない
-    if not selected_date:
-        st.write("カレンダーから日付をクリックしてください。")
-        st.caption("※右上の矢印（ < ）でサイドバーの開閉ができます")
-        st.stop()          # ← ここで処理を打ち切る
+# ① 分岐開始
+if not selected_date:
+    # 👇【未選択】画面いっぱいにカレンダー2枚
+    cal1, cal2 = st.columns(2)
+    with cal1:
+        st.subheader(f"{month1.year}年 {month1.month}月")
+        st.markdown(draw_calendar(month1), unsafe_allow_html=True)
+    with cal2:
+        st.subheader(f"{month2.year}年 {month2.month}月")
+        st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
-    # ② 履歴が存在しない日
-    if selected_date not in historical_data:
+    st.write("カレンダーから日付をクリックしてください。")
+    st.caption("※右上の矢印（ < ）でサイドバーの開閉ができます")
+    st.stop()  # ← ここで打ち切る
+
+else:
+    # 👇【日付選択時】左3:右7で分割
+    left_col, right_col = st.columns([3, 7])
+
+    # --- 左側（3）：グラフ
+    with left_col:
         st.markdown(f"#### {selected_date} の在庫・価格推移")
-        st.info("この日付の履歴データがありません")
-        st.stop()
 
-    # ③ 履歴がある（ここまで来たら必ずある）
-    st.markdown(f"#### {selected_date} の在庫・価格推移")
+        if selected_date not in historical_data:
+            st.info("この日付の履歴データがありません")
+        else:
+            # DataFrame を組む → 取得日順に並べ替え
+            df = pd.DataFrame(
+                sorted(
+                    (
+                        {
+                            "取得日": hist_date,
+                            "在庫数": rec["vacancy"],
+                            "平均単価": rec["avg_price"],
+                        }
+                        for hist_date, rec in historical_data[selected_date].items()
+                    ),
+                    key=lambda x: x["取得日"]
+                )
+            )
 
-    # DataFrame を組む → 取得日順に並べ替え
-    df = pd.DataFrame(
-        sorted(
-            (
-                {
-                    "取得日": hist_date,
-                    "在庫数": rec["vacancy"],
-                    "平均単価": rec["avg_price"],
-                }
-                for hist_date, rec in historical_data[selected_date].items()
-            ),
-            key=lambda x: x["取得日"]
-        )
-    )
+            df["取得日"] = pd.to_datetime(df["取得日"])
 
-    # 取得日を時系列インデックスに
-    df["取得日"] = pd.to_datetime(df["取得日"])
-    df = df.set_index("取得日")
+            st.write("##### 在庫数")
+            chart_vac = (
+                alt.Chart(df)
+                .mark_line(point=True)
+                .encode(
+                    x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
+                    y=alt.Y("在庫数:Q", axis=alt.Axis(title=None))
+                )
+                .properties(height=320, width=480)
+            )
+            st.altair_chart(chart_vac, use_container_width=True)
 
-    # ───────── グラフ表示を上下 2 段に分ける ─────────
-    st.write("##### 在庫数")
-    chart_vac = (
-        alt.Chart(df.reset_index())
-        .mark_line(point=True)
-        .encode(
-            x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
-            y=alt.Y("在庫数:Q", axis=alt.Axis(title=None))
-        )
-        .properties(height=320, width=480)  # ←ここでサイズ調整
-    )
-    st.altair_chart(chart_vac, use_container_width=True)
+            st.write("##### 平均単価 (円)")
+            chart_price = (
+                alt.Chart(df)
+                .mark_line(point=True, color="#e15759")
+                .encode(
+                    x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
+                    y=alt.Y("平均単価:Q", axis=alt.Axis(title=None))
+                )
+                .properties(height=320, width=480)
+            )
+            st.altair_chart(chart_price, use_container_width=True)
 
-    st.write("##### 平均単価 (円)")
-    chart_price = (
-        alt.Chart(df.reset_index())
-        .mark_line(point=True, color="#e15759")
-        .encode(
-            x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
-            y=alt.Y("平均単価:Q", axis=alt.Axis(title=None))
-        )
-        .properties(height=320, width=480)  # ←ここでサイズ調整
-    )
-    st.altair_chart(chart_price, use_container_width=True)
+    # --- 右側（7）：カレンダー2枚
+    with right_col:
+        cal1, cal2 = st.columns(2)
+        with cal1:
+            st.subheader(f"{month1.year}年 {month1.month}月")
+            st.markdown(draw_calendar(month1), unsafe_allow_html=True)
+        with cal2:
+            st.subheader(f"{month2.year}年 {month2.month}月")
+            st.markdown(draw_calendar(month2), unsafe_allow_html=True)
+
+
 
     # ───────────────────────────────
 
