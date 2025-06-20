@@ -204,7 +204,7 @@ with st.sidebar:
     # ③ 履歴がある（ここまで来たら必ずある）
     st.markdown(f"#### {selected_date} の在庫・価格推移")
 
-    # DataFrame を組む → 取得日順に並べ直し
+    # DataFrame を組む → 取得日順に並べ替え
     df = pd.DataFrame(
         sorted(
             (
@@ -218,10 +218,19 @@ with st.sidebar:
             key=lambda x: x["取得日"]
         )
     )
+
+    # 取得日を時系列インデックスに
     df["取得日"] = pd.to_datetime(df["取得日"])
     df = df.set_index("取得日")
 
-    st.line_chart(df[["在庫数", "平均単価"]])
+    # ───────── グラフ表示を上下 2 段に分ける ─────────
+    st.write("##### 在庫数")
+    st.line_chart(df["在庫数"])
+
+    st.write("##### 平均単価 (円)")
+    st.line_chart(df["平均単価"])
+    # ───────────────────────────────
+
 
 
 
