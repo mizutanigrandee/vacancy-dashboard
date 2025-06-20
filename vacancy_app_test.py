@@ -192,6 +192,8 @@ if selected_date:
 
 # デバッグ用に表示
 st.write("▶ selected_date =", selected_date)   # ←★ 追加
+st.write("▶ key_exists :", selected_date in historical_data)
+
 
 
 if not selected_date:
