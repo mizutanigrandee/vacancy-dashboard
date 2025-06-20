@@ -14,92 +14,83 @@ import altair as alt
 st.set_page_config(page_title="テスト版【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
 
 st.markdown("""
-    <style>
-    /* 既存の全体設定など */
+<style>
+/* ---- 全体レイアウト ---- */
+.main .block-container {
+    max-width: 1800px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 2vw;
+    padding-right: 2vw;
+}
+
+/* ---- カレンダー中央寄せ＆幅コントロール（PC用）---- */
+.calendar-wrapper {
+    margin: 0 auto !important;
+    max-width: 1200px !important;   /* ここを調整すれば2か月分の横幅が最適化 */
+    min-width: 900px !important;
+    width: 100% !important;
+    display: flex;
+    justify-content: center;
+}
+
+.calendar-wrapper table {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    width: 100% !important;
+    max-width: 1200px !important;
+    table-layout: fixed !important;
+}
+
+.calendar-wrapper td, .calendar-wrapper th {
+    min-width: 75px !important;   /* ←1セルの幅（70～85で好みに調整OK） */
+    max-width: 90px !important;
+    height: 85px !important;
+    padding: 2px !important;
+}
+
+/* ---- スマホ最適化 ---- */
+@media (max-width: 700px) {
     .main .block-container {
-        max-width: 1600px;
-        padding-left: 2vw;
-        padding-right: 2vw;
-    }
-    h1, h2, h3, h4 {
-        font-size: 2vw;
-    }
-    .stButton > button {
-        font-size: 1.2vw !important;
-        padding: 0.6em 1.5em;
+        max-width: 100vw !important;
+        padding-left: 1vw;
+        padding-right: 1vw;
     }
     .calendar-wrapper {
-        overflow-x: auto;
-        width: 100%;
-    }
-    @media screen and (max-width: 700px) {
-        h1, h2, h3, h4 { font-size: 4vw !important; }
-        .main .block-container { padding-left: 2vw; padding-right: 2vw; }
-        .stButton > button { font-size: 2vw !important; }
-    }
-
-    /* ここからカレンダーセルのスリム化を追加！！ */
-    .calendar-col {
-        min-width: 54px !important;
-        max-width: 60px !important;
-        padding: 2px 2px !important;
-        font-size: 16px !important;
-        word-break: keep-all;
-    }
-    @media (max-width: 600px) {
-        .calendar-col {
-            min-width: 36px !important;
-            max-width: 42px !important;
-            font-size: 11px !important;
-            padding: 1px 1px !important;
-        }
-        .calendar-col span, .calendar-col div {
-            font-size: 10px !important;
-        }
-    }
-    /* PC版：中央寄せ＆最大幅設定 */
-@media (min-width: 700px) {
-    .calendar-wrapper {
-        margin: 0 auto !important;
-        max-width: 1500px !important;
-        min-width: 980px !important;
-        width: 92vw !important;  /* 画面幅の92% */
-        display: flex;
-        justify-content: center;
+        min-width: unset !important;
+        max-width: 100vw !important;
+        width: 100vw !important;
     }
     .calendar-wrapper table {
-        margin-left: auto !important;
-        margin-right: auto !important;
-        width: 100% !important;
-        max-width: 1500px !important;
+        min-width: unset !important;
+        max-width: 100vw !important;
+        width: 100vw !important;
     }
-}
-@media (min-width: 700px) {
-    .calendar-wrapper {
-        margin: 0 auto !important;
-        max-width: 1100px !important;  /* ←ここを広げすぎず1100px程度に */
-        min-width: 900px !important;
-        width: 100% !important;
-        display: flex;
-        justify-content: center;
-    }
-    .calendar-wrapper table {
-        margin-left: auto !important;
-        margin-right: auto !important;
-        width: 100% !important;
-        max-width: 1100px !important; /* テーブル幅も同じに */
-        table-layout: fixed !important;
-    }
-    .calendar-wrapper td {
-        min-width: 65px !important;  /* ←セル幅は1日あたりこのくらいが推奨 */
-        max-width: 85px !important;
-        height: 85px !important;
+    .calendar-wrapper td, .calendar-wrapper th {
+        min-width: 34px !important;
+        max-width: 40px !important;
+        height: 72px !important;
+        padding: 1px !important;
     }
 }
 
+/* ---- ボタンや見出しのサイズもシンプルに相対で ---- */
+.stButton > button {
+    font-size: 1.1em !important;
+    padding: 0.6em 1.5em;
+}
+h1, h2, h3, h4 {
+    font-size: 2vw;
+}
+@media (max-width: 700px) {
+    h1, h2, h3, h4 { font-size: 4vw !important; }
+    .stButton > button { font-size: 2vw !important; }
+}
 
-    </style>
+/* ---- 不要な古いカレンダーセルの個別クラスや二重メディアクエリは削除済み ---- */
+</style>
 """, unsafe_allow_html=True)
+
 
 
 # 🔻 base64埋め込みバナー
