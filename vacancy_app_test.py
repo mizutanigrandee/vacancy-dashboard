@@ -113,7 +113,7 @@ def draw_calendar(month_date: dt.date) -> str:
             date_link = f"<a href='?selected={iso}' target='_self' style='text-decoration:none; color:gray;'>{current.day}</a>"
             html += (
                 f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
-                f'<div onclick="window.location.href=\'?selected={iso}\'" '
+                f'<div onclick="window.location.search=\'?selected={iso}\'" '
                 f'style="display:block;width:100%;height:100%;text-decoration:none;color:inherit;cursor:pointer;">'
                 f'{icon_html}'
                 f'<div style="position:absolute; top:4px; left:4px; font-size:14px; font-weight:bold;">{current.day}</div>'
@@ -121,6 +121,7 @@ def draw_calendar(month_date: dt.date) -> str:
                 f'</div>'
                 f'</td>'
             )
+
 
         html += '</tr>'
     html += '</tbody></table></div>'
