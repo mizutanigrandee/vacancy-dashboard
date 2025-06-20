@@ -7,7 +7,7 @@ import pandas as pd
 import os, json, pytz, jpholiday
 import altair as alt
 
-st.set_page_config(page_title="【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
+st.set_page_config(page_title="テスト版【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
 
 # --- バナー表示は本稼働のまま
 if os.path.exists("バナー画像3.png"):
