@@ -15,30 +15,35 @@ st.set_page_config(page_title="テスト版【めちゃいいツール】ミナ�
 
 st.markdown("""
 <style>
-/* ==== 全体ブロックを中央＆最大1200pxに ==== */
+/* --- 全体レイアウト最大幅を広めに・中央寄せ --- */
 .main .block-container {
-    max-width: 1200px !important;
+    max-width: 1800px !important;
     margin-left: auto;
     margin-right: auto;
-    padding-left: 24px;
-    padding-right: 24px;
+    padding-left: 16px;
+    padding-right: 16px;
 }
-/* ==== カレンダーのテーブルを中央＆最大幅固定 ==== */
+
+/* --- カレンダー2枚が横幅いっぱいに並ぶよう、wrapper幅100%・中央寄せ --- */
 .calendar-wrapper {
     width: 100%;
     margin: 0 auto !important;
-    max-width: 580px !important; /* 1枚600px幅以内でOK */
+    max-width: 100% !important;
+    display: block;
 }
+
 .calendar-wrapper table {
     width: 100% !important;
     table-layout: fixed !important;
     margin: 0 auto;
+    font-size: 15px;
 }
-/* ==== カレンダーセル幅・高さ ==== */
+
+/* --- カレンダーセル幅・高さをたっぷり取る --- */
 .calendar-wrapper td, .calendar-wrapper th {
-    min-width: 64px !important;
-    max-width: 80px !important;
-    height: 78px !important;
+    min-width: 92px !important;    /* ここを90～100pxで微調整すると◎ */
+    max-width: 120px !important;
+    height: 95px !important;
     padding: 4px 2px !important;
     vertical-align: top;
     background: #fff;
@@ -48,7 +53,7 @@ st.markdown("""
     background: #f4f4f4;
 }
 
-/* ==== スマホ専用 ==== */
+/* --- スマホ（700px以下）は自動スリム化 --- */
 @media (max-width: 700px) {
     .main .block-container {
         max-width: 100vw !important;
@@ -63,6 +68,7 @@ st.markdown("""
     .calendar-wrapper table {
         max-width: 100vw !important;
         width: 100vw !important;
+        font-size: 11px;
     }
     .calendar-wrapper td, .calendar-wrapper th {
         min-width: 34px !important;
@@ -71,13 +77,15 @@ st.markdown("""
         padding: 2px 1px !important;
     }
 }
-/* ==== ボタンと見出し ==== */
+
+/* --- ボタンと見出し（見やすさ重視でvw指定はナシ）--- */
 .stButton > button {
-    font-size: 1.1em !important;
-    padding: 0.6em 1.5em;
+    font-size: 1.04em !important;
+    padding: 0.6em 1.4em;
 }
 h1, h2, h3, h4 {
-    font-size: 2vw;
+    font-size: 1.4em;
+    font-weight: bold;
 }
 @media (max-width: 700px) {
     h1, h2, h3, h4 { font-size: 4vw !important; }
@@ -85,6 +93,7 @@ h1, h2, h3, h4 {
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 
