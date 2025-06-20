@@ -210,69 +210,6 @@ if isinstance(selected_date, list):
 if "show_graph" not in st.session_state:
     st.session_state["show_graph"] = True
 
-with left:
-    # タイトル下に3ボタンを横並び・左寄せで配置
-    button_cols = st.columns([1, 1, 1, 8])  # [閉じる][前日][翌日][空き]
-    with button_cols[0]:
-        if st.button("❌ グラフを閉じる"):
-            st.query_params.clear()
-            st.session_state["show_graph"] = False
-            st.rerun()
-    with button_cols[1]:
-        if st.button("＜前日"):
-            new_dt = pd.to_datetime(selected_date).date() - dt.timedelta(days=1)
-            st.query_params["selected"] = new_dt.isoformat()
-            st.rerun()
-    with button_cols[2]:
-        if st.button("翌日＞"):
-            new_dt = pd.to_datetime(selected_date).date() + dt.timedelta(days=1)
-            st.query_params["selected"] = new_dt.isoformat()
-            st.rerun()
-    # ボタン下にグラフタイトルと内容
-    st.markdown(f"#### {selected_date} の在庫・価格推移")
-    if selected_date not in historical_data:
-        st.info("この日付の履歴データがありません")
-    else:
-        # DataFrame からグラフ生成
-        df = pd.DataFrame(
-            sorted(
-                (
-                    {
-                        "取得日": hist_date,
-                        "在庫数": rec["vacancy"],
-                        "平均単価": rec["avg_price"],
-                    }
-                    for hist_date, rec in historical_data[selected_date].items()
-                ),
-                key=lambda x: x["取得日"]
-            )
-        )
-        df["取得日"] = pd.to_datetime(df["取得日"])
-        st.write("##### 在庫数")
-        chart_vac = (
-            alt.Chart(df)
-            .mark_line(point=True)
-            .encode(
-                x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
-                y=alt.Y("在庫数:Q", axis=alt.Axis(title=None))
-            )
-            .properties(height=320, width=600)
-        )
-        st.altair_chart(chart_vac, use_container_width=True)
-        st.write("##### 平均単価 (円)")
-        chart_price = (
-            alt.Chart(df)
-            .mark_line(point=True, color="#e15759")
-            .encode(
-                x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
-                y=alt.Y("平均単価:Q", axis=alt.Axis(title=None))
-            )
-            .properties(height=320, width=600)
-        )
-        st.altair_chart(chart_price, use_container_width=True)
-
-
-
 # 日付未選択 または グラフ閉じた場合→カレンダー全画面
 if not selected_date or not st.session_state["show_graph"]:
     st.session_state["show_graph"] = True  # リセット
@@ -288,10 +225,29 @@ if not selected_date or not st.session_state["show_graph"]:
 elif selected_date and st.session_state["show_graph"]:
     left, right = st.columns([3, 7])
     with left:
+        # タイトル下に3ボタンを横並び・左寄せで配置
+        button_cols = st.columns([1, 1, 1, 8])  # [閉じる][前日][翌日][空き]
+        with button_cols[0]:
+            if st.button("❌ グラフを閉じる"):
+                st.query_params.clear()
+                st.session_state["show_graph"] = False
+                st.rerun()
+        with button_cols[1]:
+            if st.button("＜前日"):
+                new_dt = pd.to_datetime(selected_date).date() - dt.timedelta(days=1)
+                st.query_params["selected"] = new_dt.isoformat()
+                st.rerun()
+        with button_cols[2]:
+            if st.button("翌日＞"):
+                new_dt = pd.to_datetime(selected_date).date() + dt.timedelta(days=1)
+                st.query_params["selected"] = new_dt.isoformat()
+                st.rerun()
+        # ボタン下にグラフタイトルと内容
         st.markdown(f"#### {selected_date} の在庫・価格推移")
         if selected_date not in historical_data:
             st.info("この日付の履歴データがありません")
         else:
+            # DataFrame からグラフ生成
             df = pd.DataFrame(
                 sorted(
                     (
@@ -328,6 +284,7 @@ elif selected_date and st.session_state["show_graph"]:
                 .properties(height=320, width=600)
             )
             st.altair_chart(chart_price, use_container_width=True)
+
     with right:
         cal1, cal2 = st.columns([1, 1])
         with cal1:
@@ -336,7 +293,6 @@ elif selected_date and st.session_state["show_graph"]:
         with cal2:
             st.subheader(f"{month2.year}年 {month2.month}月")
             st.markdown(draw_calendar(month2), unsafe_allow_html=True)
-
 
 
     # ───────────────────────────────
