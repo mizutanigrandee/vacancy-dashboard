@@ -9,6 +9,32 @@ import altair as alt
 
 st.set_page_config(page_title="テスト版【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
 
+# 🔻スマホ専用カレンダーCSS
+st.markdown("""
+<style>
+@media (max-width: 700px) {
+    .calendar-wrapper td, .calendar-wrapper th {
+        min-width: 32px !important;
+        max-width: 38px !important;
+        font-size: 9px !important;
+        padding: 1px 0 1px 0 !important;
+    }
+    .calendar-wrapper td div,
+    .calendar-wrapper td span {
+        font-size: 9px !important;
+        line-height: 1.05 !important;
+    }
+    .calendar-wrapper td > div > div:nth-child(2),
+    .calendar-wrapper td > div > div:nth-child(3) {
+        display: block !important;
+        width: 100% !important;
+        text-align: left !important;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 # --- バナー表示は本稼働のまま
 if os.path.exists("バナー画像3.png"):
     with open("バナー画像3.png", "rb") as f:
