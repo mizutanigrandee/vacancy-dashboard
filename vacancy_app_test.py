@@ -64,25 +64,48 @@ def load_event_data_from_excel(filepath=EVENT_EXCEL):
 event_data = load_event_data_from_excel()
 cache_data = load_json(CACHE_FILE)
 
-# ───────── ナビゲーション ─────────
+# --- ナビゲーション ---
 today = dt.date.today()
+
+# ▼▼▼ ここを新しく修正！ ▼▼▼
+params = st.query_params
+selected_date = params.get("selected")
+if isinstance(selected_date, list):
+    selected_date = selected_date[0]
+
+# 選択された日付があればその月を基準に、なければ今日
+if selected_date:
+    try:
+        base_month = pd.to_datetime(selected_date).date().replace(day=1)
+    except Exception:
+        base_month = today.replace(day=1)
+else:
+    base_month = today.replace(day=1)
+
+# 月移動はセッションに保持（なければ0）
 if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
 
-MAX_MONTH_OFFSET = 12  # 前後12か月まで制限
+MAX_MONTH_OFFSET = 12
+
+# ボタンUI
 nav_left, nav_center, nav_right = st.columns([3, 2, 3])
 with nav_center:
     col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
-        st.button("⬅️ 前月", on_click=lambda: st.session_state.__setitem__("month_offset", max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)))
+        if st.button("⬅️ 前月"):
+            st.session_state.month_offset -= 1
     with col2:
-        st.button("📅 当月", on_click=lambda: st.session_state.__setitem__("month_offset", 0))
+        if st.button("📅 当月"):
+            st.session_state.month_offset = 0
     with col3:
-        st.button("➡️ 次月", on_click=lambda: st.session_state.__setitem__("month_offset", min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)))
+        if st.button("➡️ 次月"):
+            st.session_state.month_offset += 1
 
-base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
-month1 = base_month
-month2 = base_month + relativedelta(months=1)
+# ▼▼▼ ここも修正（カレンダー月をオフセット） ▼▼▼
+month1 = base_month + relativedelta(months=st.session_state.month_offset)
+month2 = month1 + relativedelta(months=1)
+
 
 # ───────── 需要アイコン ─────────
 def get_demand_icon(vac, price):
