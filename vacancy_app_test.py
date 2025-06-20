@@ -15,31 +15,47 @@ st.set_page_config(page_title="テスト版【めちゃいいツール】ミナ�
 
 st.markdown("""
     <style>
-    /* 全体の最大幅を広げる */
+    /* 既存の全体設定など */
     .main .block-container {
         max-width: 1600px;
         padding-left: 2vw;
         padding-right: 2vw;
     }
-    /* 見出しなどのフォントサイズを相対値に */
     h1, h2, h3, h4 {
         font-size: 2vw;
     }
-    /* ボタンやグラフなどにも余白をつける例 */
     .stButton > button {
         font-size: 1.2vw !important;
         padding: 0.6em 1.5em;
     }
-    /* カレンダーを横スクロールできるようにする例 */
     .calendar-wrapper {
         overflow-x: auto;
         width: 100%;
     }
-    /* スマホなど小画面のときは文字サイズを少し大きめに */
     @media screen and (max-width: 700px) {
         h1, h2, h3, h4 { font-size: 4vw !important; }
         .main .block-container { padding-left: 2vw; padding-right: 2vw; }
         .stButton > button { font-size: 2vw !important; }
+    }
+
+    /* ここからカレンダーセルのスリム化を追加！！ */
+    .calendar-col {
+        min-width: 54px !important;
+        max-width: 60px !important;
+        padding: 2px 2px !important;
+        font-size: 16px !important;
+        word-break: keep-all;
+    }
+    @media (max-width: 600px) {
+        .calendar-col {
+            min-width: 36px !important;
+            max-width: 42px !important;
+            font-size: 11px !important;
+            padding: 1px 1px !important;
+        }
+        .calendar-col span, .calendar-col div {
+            font-size: 10px !important;
+        }
     }
     </style>
 """, unsafe_allow_html=True)
