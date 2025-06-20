@@ -163,15 +163,6 @@ def draw_calendar(month_date: dt.date) -> str:
 
 
 
-# カレンダー表示
-col1, col2 = st.columns(2)
-with col1:
-    st.subheader(f"{month1.year}年 {month1.month}月")
-    st.markdown(draw_calendar(month1), unsafe_allow_html=True)
-with col2:
-    st.subheader(f"{month2.year}年 {month2.month}月")
-    st.markdown(draw_calendar(month2), unsafe_allow_html=True)
-
 
 # 履歴データ読込
 def load_historical_data():
