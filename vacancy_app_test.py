@@ -216,37 +216,28 @@ def draw_calendar(month_date: dt.date) -> str:
             price = int(rec["avg_price"])
             diff_v = rec.get("vacancy_diff", 0)
             diff_p = rec.get("avg_price_diff", 0)
-            # ▼ 在庫数（1行）
-            vac_html = f'''
-            <div class="vac-price" style="font-size:13px;font-weight:bold;line-height:1.2;white-space:nowrap;">
-              {vac}件
-              <span style="font-size:10px; color:{'blue' if diff_v > 0 else 'red' if diff_v < 0 else '#555'};">
-                {f"（{('+' if diff_v > 0 else '')}{diff_v}）" if diff_v != 0 else ''}
-              </span>
-            </div>
-            '''
-            # ▼ 平均価格（2行化・強制折り返し＆小さめ）
-            price_html = f'''
-            <div class="vac-price" style="
-              font-size:12px;
-              font-weight:bold;
-              line-height:1.05;
-              white-space:pre-line;
-              word-break:break-all;
-              margin-bottom:2px;
-              ">
-              ¥{price:,}
-              <span style="font-size:11px; color:{'red' if diff_p > 0 else 'blue' if diff_p < 0 else '#555'};">
-                {'↑' if diff_p > 0 else '↓' if diff_p < 0 else ''}
-              </span>
-            </div>
-            '''
-            # ▼ 需要アイコン
+
+            # --- ここをすべて1行で！ ---
+            vac_html = (
+                f'<div class="vac-price" style="font-size:13px;font-weight:bold;line-height:1.2;white-space:nowrap;">'
+                f'{vac}件'
+                f'<span style="font-size:10px; color:{"blue" if diff_v > 0 else "red" if diff_v < 0 else "#555"};">'
+                f'{f"（{("+" if diff_v > 0 else "")}{diff_v}）" if diff_v != 0 else ""}'
+                f'</span>'
+                f'</div>'
+            )
+            price_html = (
+                f'<div class="vac-price" style="font-size:12px;font-weight:bold;line-height:1.05;white-space:pre-line;word-break:break-all;margin-bottom:2px;">'
+                f'¥{price:,}'
+                f'<span style="font-size:11px; color:{"red" if diff_p > 0 else "blue" if diff_p < 0 else "#555"};">'
+                f'{"↑" if diff_p > 0 else "↓" if diff_p < 0 else ""}'
+                f'</span>'
+                f'</div>'
+            )
+
             icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:16px;">{get_demand_icon(vac, price)}</div>' if current >= today else ''
-            # ▼ イベント
             event_html = '<div style="font-size:11px;margin-top:2px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data.get(iso, [])) + '</div>'
 
-            # --- クリック範囲をセル全体にするため <a> で<td>内全体を囲う
             html += (
                 f'<td style="position:relative;vertical-align:top;border:1px solid #aaa;background:{bg};padding:0;">'
                 f'<a href="?selected={iso}" target="_self" '
@@ -259,8 +250,6 @@ def draw_calendar(month_date: dt.date) -> str:
         html += '</tr>'
     html += '</tbody></table></div>'
     return html
-
-
 
 
 
