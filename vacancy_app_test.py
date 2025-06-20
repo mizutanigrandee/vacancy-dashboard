@@ -187,6 +187,8 @@ params = st.query_params
 selected_date = params.get("selected")
 if isinstance(selected_date, list):
     selected_date = selected_date[0]
+if selected_date:
+    selected_date = selected_date.strip()
 if not selected_date:
     selected_date = None
 
