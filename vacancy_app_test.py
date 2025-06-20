@@ -15,66 +15,63 @@ st.set_page_config(page_title="テスト版【めちゃいいツール】ミナ�
 
 st.markdown("""
 <style>
-/* ---- 全体レイアウト ---- */
+/* ==== 全体ブロックを中央＆最大1200pxに ==== */
 .main .block-container {
-    max-width: 1800px;
+    max-width: 1200px !important;
     margin-left: auto;
     margin-right: auto;
-    padding-left: 2vw;
-    padding-right: 2vw;
+    padding-left: 24px;
+    padding-right: 24px;
 }
-
-/* ---- カレンダー中央寄せ＆幅コントロール（PC用）---- */
+/* ==== カレンダーのテーブルを中央＆最大幅固定 ==== */
 .calendar-wrapper {
+    width: 100%;
     margin: 0 auto !important;
-    max-width: 1200px !important;   /* ここを調整すれば2か月分の横幅が最適化 */
-    min-width: 900px !important;
-    width: 100% !important;
-    display: flex;
-    justify-content: center;
+    max-width: 580px !important; /* 1枚600px幅以内でOK */
 }
-
 .calendar-wrapper table {
-    margin-left: auto !important;
-    margin-right: auto !important;
     width: 100% !important;
-    max-width: 1200px !important;
     table-layout: fixed !important;
+    margin: 0 auto;
 }
-
+/* ==== カレンダーセル幅・高さ ==== */
 .calendar-wrapper td, .calendar-wrapper th {
-    min-width: 75px !important;   /* ←1セルの幅（70～85で好みに調整OK） */
-    max-width: 90px !important;
-    height: 85px !important;
-    padding: 2px !important;
+    min-width: 64px !important;
+    max-width: 80px !important;
+    height: 78px !important;
+    padding: 4px 2px !important;
+    vertical-align: top;
+    background: #fff;
+}
+.calendar-wrapper th {
+    font-weight: bold;
+    background: #f4f4f4;
 }
 
-/* ---- スマホ最適化 ---- */
+/* ==== スマホ専用 ==== */
 @media (max-width: 700px) {
     .main .block-container {
         max-width: 100vw !important;
-        padding-left: 1vw;
-        padding-right: 1vw;
+        padding-left: 2vw;
+        padding-right: 2vw;
     }
     .calendar-wrapper {
-        min-width: unset !important;
         max-width: 100vw !important;
         width: 100vw !important;
+        margin: 0 !important;
     }
     .calendar-wrapper table {
-        min-width: unset !important;
         max-width: 100vw !important;
         width: 100vw !important;
     }
     .calendar-wrapper td, .calendar-wrapper th {
         min-width: 34px !important;
-        max-width: 40px !important;
-        height: 72px !important;
-        padding: 1px !important;
+        max-width: 38px !important;
+        height: 68px !important;
+        padding: 2px 1px !important;
     }
 }
-
-/* ---- ボタンや見出しのサイズもシンプルに相対で ---- */
+/* ==== ボタンと見出し ==== */
 .stButton > button {
     font-size: 1.1em !important;
     padding: 0.6em 1.5em;
@@ -86,10 +83,9 @@ h1, h2, h3, h4 {
     h1, h2, h3, h4 { font-size: 4vw !important; }
     .stButton > button { font-size: 2vw !important; }
 }
-
-/* ---- 不要な古いカレンダーセルの個別クラスや二重メディアクエリは削除済み ---- */
 </style>
 """, unsafe_allow_html=True)
+
 
 
 
