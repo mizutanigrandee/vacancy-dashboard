@@ -177,13 +177,21 @@ historical_data = load_historical_data()  # ←これでデータが読み込ま
 
 
 # ───────── サイドバー グラフ表示機能 ─────────
+if "show_graph" not in st.session_state:
+    st.session_state["show_graph"] = False
+
 params = st.query_params
 selected_date = params.get("selected")
 if isinstance(selected_date, list):
     selected_date = selected_date[0]
 
-if not selected_date:
-    # 日付未選択時：全画面カレンダー（1:1横並び）
+# 日付クリック時グラフ表示ON
+if selected_date:
+    st.session_state["show_graph"] = True
+    st.session_state["selected"] = selected_date
+
+if not selected_date or not st.session_state["show_graph"]:
+    # 全画面カレンダー
     cal1, cal2 = st.columns([1, 1])
     with cal1:
         st.subheader(f"{month1.year}年 {month1.month}月")
@@ -192,10 +200,16 @@ if not selected_date:
         st.subheader(f"{month2.year}年 {month2.month}月")
         st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 else:
-    # 日付選択時：左3=グラフ／右7=カレンダー
+    # グラフ＋カレンダー 3:7
     left, right = st.columns([3, 7])
     with left:
+        close = st.button("❌ グラフを閉じる", key="close_graph_btn")
+        if close:
+            st.session_state["show_graph"] = False
+            st.session_state["selected"] = ""
+            st.experimental_rerun()
         st.markdown(f"#### {selected_date} の在庫・価格推移")
+
         if selected_date not in historical_data:
             st.info("この日付の履歴データがありません")
         else:
