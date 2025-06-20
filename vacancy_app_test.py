@@ -187,36 +187,28 @@ historical_data = load_historical_data()  # ←これでデータが読み込ま
 # ───────── サイドバー グラフ表示機能 ─────────
 params = st.query_params
 selected_date = params.get("selected")
-if isinstance(selected_date, list):      # クエリが ["2025-07-02"] のような配列になる事がある
+if isinstance(selected_date, list):
     selected_date = selected_date[0]
 
-# ① 分岐開始
 if not selected_date:
-    # 👇【未選択】画面いっぱいにカレンダー2枚
-    cal1, cal2 = st.columns(2)
+    # ★未選択時はカレンダーのみ、横一列レイアウト
+    cal1, cal2 = st.columns([1, 1])
     with cal1:
         st.subheader(f"{month1.year}年 {month1.month}月")
         st.markdown(draw_calendar(month1), unsafe_allow_html=True)
     with cal2:
         st.subheader(f"{month2.year}年 {month2.month}月")
         st.markdown(draw_calendar(month2), unsafe_allow_html=True)
-
-    st.write("カレンダーから日付をクリックしてください。")
-    st.caption("※右上の矢印（ < ）でサイドバーの開閉ができます")
-    st.stop()  # ← ここで打ち切る
-
 else:
-    # 👇【日付選択時】左3:右7で分割
-    left_col, right_col = st.columns([3, 7])
-
-    # --- 左側（3）：グラフ
-    with left_col:
+    # ★選択時は 3:7 の横並びレイアウト（左グラフ、右カレンダー）
+    left, right = st.columns([3, 7])
+    with left:
+        # ここにグラフコード（下記参照）
         st.markdown(f"#### {selected_date} の在庫・価格推移")
-
         if selected_date not in historical_data:
             st.info("この日付の履歴データがありません")
         else:
-            # DataFrame を組む → 取得日順に並べ替え
+            # DataFrame
             df = pd.DataFrame(
                 sorted(
                     (
@@ -230,9 +222,8 @@ else:
                     key=lambda x: x["取得日"]
                 )
             )
-
             df["取得日"] = pd.to_datetime(df["取得日"])
-
+            # 在庫数グラフ
             st.write("##### 在庫数")
             chart_vac = (
                 alt.Chart(df)
@@ -241,10 +232,10 @@ else:
                     x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
                     y=alt.Y("在庫数:Q", axis=alt.Axis(title=None))
                 )
-                .properties(height=320, width=480)
+                .properties(height=280, width=400)
             )
             st.altair_chart(chart_vac, use_container_width=True)
-
+            # 単価グラフ
             st.write("##### 平均単価 (円)")
             chart_price = (
                 alt.Chart(df)
@@ -253,20 +244,18 @@ else:
                     x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
                     y=alt.Y("平均単価:Q", axis=alt.Axis(title=None))
                 )
-                .properties(height=320, width=480)
+                .properties(height=280, width=400)
             )
             st.altair_chart(chart_price, use_container_width=True)
 
-    # --- 右側（7）：カレンダー2枚
-    with right_col:
-        cal1, cal2 = st.columns(2)
+    with right:
+        cal1, cal2 = st.columns([1, 1])
         with cal1:
             st.subheader(f"{month1.year}年 {month1.month}月")
             st.markdown(draw_calendar(month1), unsafe_allow_html=True)
         with cal2:
             st.subheader(f"{month2.year}年 {month2.month}月")
             st.markdown(draw_calendar(month2), unsafe_allow_html=True)
-
 
 
     # ───────────────────────────────
