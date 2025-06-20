@@ -74,6 +74,29 @@ st.markdown("""
         max-width: 1500px !important;
     }
 }
+@media (min-width: 700px) {
+    .calendar-wrapper {
+        margin: 0 auto !important;
+        max-width: 1100px !important;  /* ←ここを広げすぎず1100px程度に */
+        min-width: 900px !important;
+        width: 100% !important;
+        display: flex;
+        justify-content: center;
+    }
+    .calendar-wrapper table {
+        margin-left: auto !important;
+        margin-right: auto !important;
+        width: 100% !important;
+        max-width: 1100px !important; /* テーブル幅も同じに */
+        table-layout: fixed !important;
+    }
+    .calendar-wrapper td {
+        min-width: 65px !important;  /* ←セル幅は1日あたりこのくらいが推奨 */
+        max-width: 85px !important;
+        height: 85px !important;
+    }
+}
+
 
     </style>
 """, unsafe_allow_html=True)
