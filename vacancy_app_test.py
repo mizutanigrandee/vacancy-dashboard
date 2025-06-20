@@ -196,8 +196,6 @@ else:
     left, right = st.columns([3, 7])
     with left:
         st.markdown(f"#### {selected_date} の在庫・価格推移")
-            with left:
-        st.markdown(f"#### {selected_date} の在庫・価格推移")
         if selected_date not in historical_data:
             st.info("この日付の履歴データがありません")
         else:
@@ -242,8 +240,6 @@ else:
                 .properties(height=320, width=600)
             )
             st.altair_chart(chart_price, use_container_width=True)
-
-        ...
     with right:
         cal1, cal2 = st.columns([1, 1])
         with cal1:
@@ -252,7 +248,6 @@ else:
         with cal2:
             st.subheader(f"{month2.year}年 {month2.month}月")
             st.markdown(draw_calendar(month2), unsafe_allow_html=True)
-
 
     # ───────────────────────────────
 
