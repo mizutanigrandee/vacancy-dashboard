@@ -11,40 +11,35 @@ import matplotlib.pyplot as plt
 import altair as alt
 
 
-st.set_page_config(page_title="テスト版【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
+st.set_page_config(page_title="【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
 
+# --- PC: 本稼働版そのまま／スマホ: 横スクロール&最小化 ---
 st.markdown("""
 <style>
-/* --- 全体レイアウト最大幅を広めに・中央寄せ --- */
+/* ==== 全体中央寄せ＋最大1200px ===== */
 .main .block-container {
-    max-width: 1800px !important;
+    max-width: 1200px !important;
     margin-left: auto;
     margin-right: auto;
-    padding-left: 16px;
-    padding-right: 16px;
+    padding-left: 24px;
+    padding-right: 24px;
 }
-
-/* --- カレンダー2枚が横幅いっぱいに並ぶよう、wrapper幅100%・中央寄せ --- */
+/* ==== カレンダーのテーブル最大幅固定(PC) ==== */
 .calendar-wrapper {
     width: 100%;
     margin: 0 auto !important;
-    max-width: 100% !important;
-    display: block;
+    max-width: 620px !important;  /* 1カレンダー=幅600px目安 */
 }
-
 .calendar-wrapper table {
     width: 100% !important;
     table-layout: fixed !important;
     margin: 0 auto;
-    font-size: 15px;
 }
-
-/* --- カレンダーセル幅・高さをたっぷり取る --- */
 .calendar-wrapper td, .calendar-wrapper th {
-    min-width: 92px !important;    /* ここを90～100pxで微調整すると◎ */
-    max-width: 120px !important;
-    height: 95px !important;
-    padding: 4px 2px !important;
+    min-width: 64px !important;
+    max-width: 82px !important;
+    height: 84px !important;
+    padding: 6px 2px 2px 2px !important;
     vertical-align: top;
     background: #fff;
 }
@@ -52,8 +47,7 @@ st.markdown("""
     font-weight: bold;
     background: #f4f4f4;
 }
-
-/* --- スマホ（700px以下）は自動スリム化 --- */
+/* ==== スマホ（狭幅時）はスクロール&最小化 ==== */
 @media (max-width: 700px) {
     .main .block-container {
         max-width: 100vw !important;
@@ -64,28 +58,26 @@ st.markdown("""
         max-width: 100vw !important;
         width: 100vw !important;
         margin: 0 !important;
+        overflow-x: auto;
     }
     .calendar-wrapper table {
-        max-width: 100vw !important;
+        min-width: 420px !important;
         width: 100vw !important;
-        font-size: 11px;
     }
     .calendar-wrapper td, .calendar-wrapper th {
-        min-width: 34px !important;
-        max-width: 38px !important;
-        height: 68px !important;
-        padding: 2px 1px !important;
+        min-width: 36px !important;
+        max-width: 44px !important;
+        height: 60px !important;
+        font-size: 10px !important;
+        padding: 2px 1px 1px 1px !important;
     }
 }
-
-/* --- ボタンと見出し（見やすさ重視でvw指定はナシ）--- */
 .stButton > button {
-    font-size: 1.04em !important;
-    padding: 0.6em 1.4em;
+    font-size: 1.1em !important;
+    padding: 0.6em 1.5em;
 }
 h1, h2, h3, h4 {
-    font-size: 1.4em;
-    font-weight: bold;
+    font-size: 2vw;
 }
 @media (max-width: 700px) {
     h1, h2, h3, h4 { font-size: 4vw !important; }
@@ -93,6 +85,7 @@ h1, h2, h3, h4 {
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 
@@ -214,92 +207,9 @@ def draw_calendar(month_date: dt.date) -> str:
     html = '<div class="calendar-wrapper"><table style="border-collapse:collapse;width:100%;table-layout:fixed;text-align:center;">'
     html += """
     <style>
-    .calendar-wrapper td {
-        padding: 0 !important;
-        vertical-align: top !important;
-        min-width: 46px !important;
-        max-width: 64px !important;
-        height: 92px !important;
-        position: relative;
-    }
-    .calendar-cell-inner {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: flex-start;
-        height: 100%;
-        width: 100%;
-        padding: 3px 2px 2px 2px;
-        box-sizing: border-box;
-    }
-    .calendar-date-row {
-        width: 100%;
-        display: flex;
-        flex-direction: row;
-        align-items: flex-start;
-        justify-content: space-between;
-    }
-    .calendar-date-day {
-        font-size: 13px;
-        font-weight: bold;
-        color: #222;
-    }
-    .calendar-demand-icon {
-        font-size: 15px;
-        font-weight: bold;
-        color: #e9743a;
-        margin-left: auto;
-    }
-    .calendar-vac-row, .calendar-price-row {
-        font-size: 12px;
-        font-weight: bold;
-        width: 100%;
-        line-height: 1.1;
-        display: flex;
-        flex-direction: row;
-        justify-content: flex-start;
-        align-items: baseline;
-        margin-top: 1px;
-    }
-    .calendar-price-row {
-        font-size: 12px;
-        color: #111;
-        margin-bottom: 2px;
-    }
-    .calendar-vac-diff, .calendar-price-diff {
-        font-size: 10px;
-        margin-left: 2px;
-    }
-    .calendar-price-diff-up {
-        color: red;
-    }
-    .calendar-price-diff-down {
-        color: blue;
-    }
-    .calendar-vac-diff-up {
-        color: blue;
-    }
-    .calendar-vac-diff-down {
-        color: red;
-    }
-    .calendar-event-row {
-        font-size: 10px;
-        color: #444;
-        width: 100%;
-        margin-top: 2px;
-        word-break: break-all;
-        line-height: 1.1;
-    }
-    @media (max-width: 600px) {
-        .calendar-wrapper td {
-            min-width: 38px !important;
-            max-width: 40px !important;
-            height: 92px !important;
-        }
-        .calendar-date-day { font-size: 11px !important; }
-        .calendar-demand-icon { font-size: 13px !important; }
-        .calendar-vac-row, .calendar-price-row { font-size: 11px !important; }
-        .calendar-event-row { font-size: 9px !important; }
+    .calendar-wrapper td:hover {
+        background-color: #f5faff !important;
+        cursor: pointer;
     }
     </style>
     """
@@ -319,50 +229,32 @@ def draw_calendar(month_date: dt.date) -> str:
             price = int(rec["avg_price"])
             diff_v = rec.get("vacancy_diff", 0)
             diff_p = rec.get("avg_price_diff", 0)
-            # 日付・需要
-            date_row = (
-                f'<div class="calendar-date-row">'
-                f'<span class="calendar-date-day">{current.day}</span>'
-                f'<span class="calendar-demand-icon">{get_demand_icon(vac, price) if current >= today else ""}</span>'
-                f'</div>'
-            )
-            # 在庫＋前日比
-            vac_row = (
-                f'<div class="calendar-vac-row">'
-                f'{vac}件'
-                f'<span class="calendar-vac-diff {"calendar-vac-diff-up" if diff_v > 0 else "calendar-vac-diff-down" if diff_v < 0 else ""}">'
-                f'{f"（{("+" if diff_v > 0 else "")}{diff_v}）" if diff_v != 0 else ""}'
-                f'</span>'
-                f'</div>'
-            )
-            # 価格＋上下
-            price_row = (
-                f'<div class="calendar-price-row">'
-                f'¥{price:,}'
-                f'<span class="calendar-price-diff {"calendar-price-diff-up" if diff_p > 0 else "calendar-price-diff-down" if diff_p < 0 else ""}">'
-                f'{"↑" if diff_p > 0 else "↓" if diff_p < 0 else ""}'
-                f'</span>'
-                f'</div>'
-            )
-            # イベント
-            events = event_data.get(iso, [])
-            event_row = (
-                '<div class="calendar-event-row">' +
-                '<br>'.join(f'{e["icon"]} {e["name"]}' for e in events) +
-                '</div>' if events else ''
-            )
-            # 全体ラップ
+            vac_html = f'<div style="font-size:16px;font-weight:bold;">{vac}件'
+            if diff_v > 0:
+                vac_html += f'<span style="color:blue;font-size:12px;">（+{diff_v}）</span>'
+            elif diff_v < 0:
+                vac_html += f'<span style="color:red;font-size:12px;">（{diff_v}）</span>'
+            vac_html += '</div>'
+            price_html = f'<div style="font-size:16px;font-weight:bold;">￥{price:,}'
+            if diff_p > 0:
+                price_html += '<span style="color:red;"> ↑</span>'
+            elif diff_p < 0:
+                price_html += '<span style="color:blue;"> ↓</span>'
+            price_html += '</div>'
+            icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:16px;">{get_demand_icon(vac, price)}</div>' if current >= today else ''
+            event_html = '<div style="font-size:12px;margin-top:4px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data.get(iso, [])) + '</div>'
+            date_link = f"<a href='?selected={iso}' target='_self' style='text-decoration:none; color:gray;'>{current.day}</a>"
             html += (
-                f'<td style="position:relative;vertical-align:top;border:1px solid #aaa;background:{bg};padding:0;">'
-                f'<a href="?selected={iso}" target="_self" style="display:block;width:100%;height:100%;text-decoration:none;color:inherit;">'
-                f'<div class="calendar-cell-inner">'
-                f'{date_row}{vac_row}{price_row}{event_row}'
-                f'</div>'
-                f'</a></td>'
+                f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
+                f'{icon_html}'
+                f'<div style="position:absolute; top:4px; left:4px; font-size:14px; font-weight:bold;">{date_link}</div>'
+                f'{vac_html}{price_html}{event_html}'
+                '</td>'
             )
         html += '</tr>'
     html += '</tbody></table></div>'
     return html
+
 
 
 
