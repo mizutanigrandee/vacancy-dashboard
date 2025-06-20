@@ -212,24 +212,25 @@ if "show_graph" not in st.session_state:
 
 # グラフ閉じるボタンでグラフ非表示＋日付クリア
 if st.session_state.get("show_graph") and selected_date:
-    cols = st.columns([2, 1, 1, 1])
-    with cols[0]:
+    btn_cols = st.columns([1, 1, 1])
+    with btn_cols[0]:
         if st.button("❌ グラフを閉じる"):
-            st.query_params.clear()   # ?selected=xxx を消す
+            st.query_params.clear()
             st.session_state["show_graph"] = False
             st.rerun()
-    with cols[1]:
+    with btn_cols[1]:
         if st.button("＜前日"):
             new_dt = (pd.to_datetime(selected_date) - pd.Timedelta(days=1)).date()
             st.query_params["selected"] = new_dt.isoformat()
             st.rerun()
-    with cols[2]:
+    with btn_cols[2]:
         if st.button("翌日＞"):
             new_dt = (pd.to_datetime(selected_date) + pd.Timedelta(days=1)).date()
             st.query_params["selected"] = new_dt.isoformat()
             st.rerun()
 else:
-    cols = None
+    btn_cols = None
+
 
 # 日付未選択 または グラフ閉じた場合→カレンダー全画面
 if not selected_date or not st.session_state["show_graph"]:
