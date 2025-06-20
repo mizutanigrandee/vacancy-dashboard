@@ -200,6 +200,9 @@ def get_demand_icon(vac, price):
     return ""
 
 # ───────── カレンダー描画 ─────────
+# もうst.markdown("""<style>.... は削除してください！
+
+# カレンダー描画も本稼働版のまま（装飾用CSSはdraw_calendar内だけ）
 def draw_calendar(month_date: dt.date) -> str:
     cal = calendar.Calendar(calendar.SUNDAY)
     weeks = cal.monthdatescalendar(month_date.year, month_date.month)
@@ -207,6 +210,10 @@ def draw_calendar(month_date: dt.date) -> str:
     html = '<div class="calendar-wrapper"><table style="border-collapse:collapse;width:100%;table-layout:fixed;text-align:center;">'
     html += """
     <style>
+    .calendar-wrapper td {
+        padding-top: 30px !important;
+        transition: background-color 0.2s ease;
+    }
     .calendar-wrapper td:hover {
         background-color: #f5faff !important;
         cursor: pointer;
@@ -254,7 +261,6 @@ def draw_calendar(month_date: dt.date) -> str:
         html += '</tr>'
     html += '</tbody></table></div>'
     return html
-
 
 
 
