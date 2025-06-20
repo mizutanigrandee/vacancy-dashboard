@@ -83,49 +83,47 @@ def draw_calendar(month_date: dt.date) -> str:
     html += '<thead style="background:#f4f4f4;color:#333;font-weight:bold;"><tr>'
     html += ''.join(f'<th style="border:1px solid #aaa;padding:4px;">{d}</th>' for d in "日月火水木金土")
     html += '</tr></thead><tbody>'
-for week in weeks:
-    html += '<tr>'
-    for current in week:
-        if current.month != month_date.month:
-            html += '<td style="border:1px solid #aaa;padding:8px;background:#fff;"></td>'
-            continue
-        bg = '#ddd' if current < today else ('#ffecec' if (current in HOLIDAYS or current.weekday() == 6) else ('#e0f7ff' if current.weekday() == 5 else '#fff'))
-        iso = current.isoformat()
-        rec = cache_data.get(iso, {"vacancy": 0, "avg_price": 0})
-        vac = rec["vacancy"]
-        price = int(rec["avg_price"])
-        diff_v = rec.get("vacancy_diff", 0)
-        diff_p = rec.get("avg_price_diff", 0)
-        vac_html = f'<div style="font-size:16px;font-weight:bold;">{vac}件'
-        if diff_v > 0:
-            vac_html += f'<span style="color:blue;font-size:12px;">（+{diff_v}）</span>'
-        elif diff_v < 0:
-            vac_html += f'<span style="color:red;font-size:12px;">（{diff_v}）</span>'
-        vac_html += '</div>'
-        price_html = f'<div style="font-size:16px;font-weight:bold;">￥{price:,}'
-        if diff_p > 0:
-            price_html += '<span style="color:red;"> ↑</span>'
-        elif diff_p < 0:
-            price_html += '<span style="color:blue;"> ↓</span>'
-        price_html += '</div>'
-        icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:16px;">{get_demand_icon(vac, price)}</div>' if current >= today else ''
-        event_html = '<div style="font-size:12px;margin-top:4px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data.get(iso, [])) + '</div>'
-        
-        # --- ここがセル全体クリック部分 ---
-        html += (
-            f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
-            f'<div onclick="window.location.search=\'?selected={iso}\'" '
-            f'style="display:block;width:100%;height:100%;text-decoration:none;color:inherit;cursor:pointer;">'
-            f'{icon_html}'
-            f'<div style="position:absolute; top:4px; left:4px; font-size:14px; font-weight:bold;">{current.day}</div>'
-            f'{vac_html}{price_html}{event_html}'
-            f'</div>'
-            f'</td>'
-        )
-    html += '</tr>'
-
+    for week in weeks:
+        html += '<tr>'
+        for current in week:
+            if current.month != month_date.month:
+                html += '<td style="border:1px solid #aaa;padding:8px;background:#fff;"></td>'
+                continue
+            bg = '#ddd' if current < today else ('#ffecec' if (current in HOLIDAYS or current.weekday() == 6) else ('#e0f7ff' if current.weekday() == 5 else '#fff'))
+            iso = current.isoformat()
+            rec = cache_data.get(iso, {"vacancy": 0, "avg_price": 0})
+            vac = rec["vacancy"]
+            price = int(rec["avg_price"])
+            diff_v = rec.get("vacancy_diff", 0)
+            diff_p = rec.get("avg_price_diff", 0)
+            vac_html = f'<div style="font-size:16px;font-weight:bold;">{vac}件'
+            if diff_v > 0:
+                vac_html += f'<span style="color:blue;font-size:12px;">（+{diff_v}）</span>'
+            elif diff_v < 0:
+                vac_html += f'<span style="color:red;font-size:12px;">（{diff_v}）</span>'
+            vac_html += '</div>'
+            price_html = f'<div style="font-size:16px;font-weight:bold;">￥{price:,}'
+            if diff_p > 0:
+                price_html += '<span style="color:red;"> ↑</span>'
+            elif diff_p < 0:
+                price_html += '<span style="color:blue;"> ↓</span>'
+            price_html += '</div>'
+            icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:16px;">{get_demand_icon(vac, price)}</div>' if current >= today else ''
+            event_html = '<div style="font-size:12px;margin-top:4px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data.get(iso, [])) + '</div>'
+            html += (
+                f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
+                f'<div onclick="window.location.search=\'?selected={iso}\'" '
+                f'style="display:block;width:100%;height:100%;text-decoration:none;color:inherit;cursor:pointer;">'
+                f'{icon_html}'
+                f'<div style="position:absolute; top:4px; left:4px; font-size:14px; font-weight:bold;">{current.day}</div>'
+                f'{vac_html}{price_html}{event_html}'
+                f'</div>'
+                f'</td>'
+            )
+        html += '</tr>'
     html += '</tbody></table></div>'
     return html
+
 
 # --- カレンダー描画ロジック ---
 today = dt.date.today()
