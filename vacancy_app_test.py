@@ -178,25 +178,91 @@ def draw_calendar(month_date: dt.date) -> str:
     html += """
     <style>
     .calendar-wrapper td {
-        padding-top: 30px !important;
-        transition: background-color 0.2s ease;
-        min-width: 44px !important;
+        padding: 0 !important;
+        vertical-align: top !important;
+        min-width: 46px !important;
         max-width: 64px !important;
+        height: 92px !important;
+        position: relative;
     }
-    .calendar-wrapper td:hover {
-        background-color: #f5faff !important;
-        cursor: pointer;
+    .calendar-cell-inner {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        height: 100%;
+        width: 100%;
+        padding: 3px 2px 2px 2px;
+        box-sizing: border-box;
+    }
+    .calendar-date-row {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        justify-content: space-between;
+    }
+    .calendar-date-day {
+        font-size: 13px;
+        font-weight: bold;
+        color: #222;
+    }
+    .calendar-demand-icon {
+        font-size: 15px;
+        font-weight: bold;
+        color: #e9743a;
+        margin-left: auto;
+    }
+    .calendar-vac-row, .calendar-price-row {
+        font-size: 12px;
+        font-weight: bold;
+        width: 100%;
+        line-height: 1.1;
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start;
+        align-items: baseline;
+        margin-top: 1px;
+    }
+    .calendar-price-row {
+        font-size: 12px;
+        color: #111;
+        margin-bottom: 2px;
+    }
+    .calendar-vac-diff, .calendar-price-diff {
+        font-size: 10px;
+        margin-left: 2px;
+    }
+    .calendar-price-diff-up {
+        color: red;
+    }
+    .calendar-price-diff-down {
+        color: blue;
+    }
+    .calendar-vac-diff-up {
+        color: blue;
+    }
+    .calendar-vac-diff-down {
+        color: red;
+    }
+    .calendar-event-row {
+        font-size: 10px;
+        color: #444;
+        width: 100%;
+        margin-top: 2px;
+        word-break: break-all;
+        line-height: 1.1;
     }
     @media (max-width: 600px) {
         .calendar-wrapper td {
-            min-width: 34px !important;
-            max-width: 38px !important;
-            padding: 2px !important;
+            min-width: 38px !important;
+            max-width: 40px !important;
+            height: 92px !important;
         }
-        .vac-price {
-            font-size: 11px !important;
-            line-height: 1.1 !important;
-        }
+        .calendar-date-day { font-size: 11px !important; }
+        .calendar-demand-icon { font-size: 13px !important; }
+        .calendar-vac-row, .calendar-price-row { font-size: 11px !important; }
+        .calendar-event-row { font-size: 9px !important; }
     }
     </style>
     """
@@ -216,35 +282,45 @@ def draw_calendar(month_date: dt.date) -> str:
             price = int(rec["avg_price"])
             diff_v = rec.get("vacancy_diff", 0)
             diff_p = rec.get("avg_price_diff", 0)
-
-            # --- ここをすべて1行で！ ---
-            vac_html = (
-                f'<div class="vac-price" style="font-size:13px;font-weight:bold;line-height:1.2;white-space:nowrap;">'
+            # 日付・需要
+            date_row = (
+                f'<div class="calendar-date-row">'
+                f'<span class="calendar-date-day">{current.day}</span>'
+                f'<span class="calendar-demand-icon">{get_demand_icon(vac, price) if current >= today else ""}</span>'
+                f'</div>'
+            )
+            # 在庫＋前日比
+            vac_row = (
+                f'<div class="calendar-vac-row">'
                 f'{vac}件'
-                f'<span style="font-size:10px; color:{"blue" if diff_v > 0 else "red" if diff_v < 0 else "#555"};">'
+                f'<span class="calendar-vac-diff {"calendar-vac-diff-up" if diff_v > 0 else "calendar-vac-diff-down" if diff_v < 0 else ""}">'
                 f'{f"（{("+" if diff_v > 0 else "")}{diff_v}）" if diff_v != 0 else ""}'
                 f'</span>'
                 f'</div>'
             )
-            price_html = (
-                f'<div class="vac-price" style="font-size:12px;font-weight:bold;line-height:1.05;white-space:pre-line;word-break:break-all;margin-bottom:2px;">'
+            # 価格＋上下
+            price_row = (
+                f'<div class="calendar-price-row">'
                 f'¥{price:,}'
-                f'<span style="font-size:11px; color:{"red" if diff_p > 0 else "blue" if diff_p < 0 else "#555"};">'
+                f'<span class="calendar-price-diff {"calendar-price-diff-up" if diff_p > 0 else "calendar-price-diff-down" if diff_p < 0 else ""}">'
                 f'{"↑" if diff_p > 0 else "↓" if diff_p < 0 else ""}'
                 f'</span>'
                 f'</div>'
             )
-
-            icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:16px;">{get_demand_icon(vac, price)}</div>' if current >= today else ''
-            event_html = '<div style="font-size:11px;margin-top:2px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data.get(iso, [])) + '</div>'
-
+            # イベント
+            events = event_data.get(iso, [])
+            event_row = (
+                '<div class="calendar-event-row">' +
+                '<br>'.join(f'{e["icon"]} {e["name"]}' for e in events) +
+                '</div>' if events else ''
+            )
+            # 全体ラップ
             html += (
                 f'<td style="position:relative;vertical-align:top;border:1px solid #aaa;background:{bg};padding:0;">'
-                f'<a href="?selected={iso}" target="_self" '
-                f'style="display:block;width:100%;height:100%;padding:6px 2px 6px 2px;text-decoration:none;color:inherit;">'
-                f'{icon_html}'
-                f'<div style="position:absolute; top:4px; left:4px; font-size:13px; font-weight:bold;">{current.day}</div>'
-                f'{vac_html}{price_html}{event_html}'
+                f'<a href="?selected={iso}" target="_self" style="display:block;width:100%;height:100%;text-decoration:none;color:inherit;">'
+                f'<div class="calendar-cell-inner">'
+                f'{date_row}{vac_row}{price_row}{event_row}'
+                f'</div>'
                 f'</a></td>'
             )
         html += '</tr>'
