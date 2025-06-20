@@ -180,54 +180,48 @@ def load_historical_data():
 
 historical_data = load_historical_data()  # ←これでデータが読み込まれます
 
-# (中略)
+
 
 # ───────── サイドバー グラフ表示機能 ─────────
 params = st.query_params
 selected_date = params.get("selected")
-if isinstance(selected_date, list):
+if isinstance(selected_date, list):      # クエリが ["2025-07-02"] のような配列になる事がある
     selected_date = selected_date[0]
-if selected_date:
-    selected_date = selected_date.strip()
-
-# デバッグ用に表示
-st.write("▶ selected_date =", selected_date)   # ←★ 追加
-st.write("▶ key_exists :", selected_date in historical_data)
-
-
-
-if not selected_date:
-    selected_date = None
 
 with st.sidebar:
-    st.write("カレンダーから日付をクリックしてください。")
-    st.caption("※右上の矢印（ < ）でサイドバーの開閉ができます")
+    # ① クリックされていない
+    if not selected_date:
+        st.write("カレンダーから日付をクリックしてください。")
+        st.caption("※右上の矢印（ < ）でサイドバーの開閉ができます")
+        st.stop()          # ← ここで処理を打ち切る
 
-    if selected_date:
+    # ② 履歴が存在しない日
+    if selected_date not in historical_data:
         st.markdown(f"#### {selected_date} の在庫・価格推移")
-        # 新方式：すべての「取得日」を横断して、この日付のデータを集める
-        records = []
-        for acquired_date, v in historical_data.items():
-            if selected_date in v:
-                # 「vacancy」「avg_price」がリスト形式なら値を抽出（過去の形式対策）
-                vacancy = v[selected_date]["vacancy"]
-                avg_price = v[selected_date]["avg_price"]
-                if isinstance(vacancy, list):
-                    vacancy = vacancy[0]
-                if isinstance(avg_price, list):
-                    avg_price = avg_price[0]
-                records.append({
-                    "取得日": acquired_date,
-                    "在庫数": vacancy,
-                    "平均単価": avg_price,
-                })
-        if records:
-            df = pd.DataFrame(records)
-            df["取得日"] = pd.to_datetime(df["取得日"])
-            df = df.sort_values("取得日")
-            st.line_chart(df.set_index("取得日")[["在庫数", "平均単価"]])
-        else:
-            st.info("この日付の履歴データがありません")
+        st.info("この日付の履歴データがありません")
+        st.stop()
+
+    # ③ 履歴がある（ここまで来たら必ずある）
+    st.markdown(f"#### {selected_date} の在庫・価格推移")
+
+    # DataFrame を組む → 取得日順に並べ直し
+    df = pd.DataFrame(
+        sorted(
+            (
+                {
+                    "取得日": hist_date,
+                    "在庫数": rec["vacancy"],
+                    "平均単価": rec["avg_price"],
+                }
+                for hist_date, rec in historical_data[selected_date].items()
+            ),
+            key=lambda x: x["取得日"]
+        )
+    )
+    df["取得日"] = pd.to_datetime(df["取得日"])
+    df = df.set_index("取得日")
+
+    st.line_chart(df[["在庫数", "平均単価"]])
 
 
 
