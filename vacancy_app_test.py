@@ -232,7 +232,7 @@ if not selected_date or not st.session_state["show_graph"]:
 # 日付が選択されていればグラフ＋カレンダー表示
 elif selected_date and st.session_state["show_graph"]:
     left, right = st.columns([3, 7])
-if selected_date:
+with left:
     sel_dt = pd.to_datetime(selected_date).date()
     cols = st.columns([2, 1, 1, 1])
     with cols[0]:
@@ -249,48 +249,49 @@ if selected_date:
             new_dt = sel_dt + dt.timedelta(days=1)
             st.session_state.selected_date = new_dt.isoformat()
             st.experimental_rerun()
+    # 右端スペース
     st.markdown(f"#### {selected_date} の在庫・価格推移")
-    # ...（以下は今まで通りグラフを表示）...
+    if selected_date not in historical_data:
+        st.info("この日付の履歴データがありません")
+    else:
+        # DataFrame からグラフ生成
+        df = pd.DataFrame(
+            sorted(
+                (
+                    {
+                        "取得日": hist_date,
+                        "在庫数": rec["vacancy"],
+                        "平均単価": rec["avg_price"],
+                    }
+                    for hist_date, rec in historical_data[selected_date].items()
+                ),
+                key=lambda x: x["取得日"]
+            )
+        )
+        df["取得日"] = pd.to_datetime(df["取得日"])
+        st.write("##### 在庫数")
+        chart_vac = (
+            alt.Chart(df)
+            .mark_line(point=True)
+            .encode(
+                x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
+                y=alt.Y("在庫数:Q", axis=alt.Axis(title=None))
+            )
+            .properties(height=320, width=600)
+        )
+        st.altair_chart(chart_vac, use_container_width=True)
+        st.write("##### 平均単価 (円)")
+        chart_price = (
+            alt.Chart(df)
+            .mark_line(point=True, color="#e15759")
+            .encode(
+                x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
+                y=alt.Y("平均単価:Q", axis=alt.Axis(title=None))
+            )
+            .properties(height=320, width=600)
+        )
+        st.altair_chart(chart_price, use_container_width=True)
 
-        if selected_date not in historical_data:
-            st.info("この日付の履歴データがありません")
-        else:
-            df = pd.DataFrame(
-                sorted(
-                    (
-                        {
-                            "取得日": hist_date,
-                            "在庫数": rec["vacancy"],
-                            "平均単価": rec["avg_price"],
-                        }
-                        for hist_date, rec in historical_data[selected_date].items()
-                    ),
-                    key=lambda x: x["取得日"]
-                )
-            )
-            df["取得日"] = pd.to_datetime(df["取得日"])
-            st.write("##### 在庫数")
-            chart_vac = (
-                alt.Chart(df)
-                .mark_line(point=True)
-                .encode(
-                    x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
-                    y=alt.Y("在庫数:Q", axis=alt.Axis(title=None))
-                )
-                .properties(height=320, width=480)
-            )
-            st.altair_chart(chart_vac, use_container_width=True)
-            st.write("##### 平均単価 (円)")
-            chart_price = (
-                alt.Chart(df)
-                .mark_line(point=True, color="#e15759")
-                .encode(
-                    x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
-                    y=alt.Y("平均単価:Q", axis=alt.Axis(title=None))
-                )
-                .properties(height=320, width=480)
-            )
-            st.altair_chart(chart_price, use_container_width=True)
     with right:
         cal1, cal2 = st.columns([1, 1])
         with cal1:
