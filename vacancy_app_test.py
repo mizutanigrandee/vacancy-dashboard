@@ -297,8 +297,13 @@ elif selected_date and st.session_state["show_graph"]:
 
     # ───────────────────────────────
 
-
-
+# --- 最終巡回時刻の直前 ---
+st.markdown(
+    "<div style='font-size:17px; color:#296;'>"
+    "日付を選択すると推移グラフが表示されます"
+    "</div>",
+    unsafe_allow_html=True
+)
 
 # 最終巡回時刻表示
 try:
