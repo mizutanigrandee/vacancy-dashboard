@@ -207,7 +207,7 @@ else:
         if close:
             st.session_state["show_graph"] = False
             st.session_state["selected"] = ""
-            st.experimental_rerun()
+            st.rerun()
         st.markdown(f"#### {selected_date} の在庫・価格推移")
 
         if selected_date not in historical_data:
