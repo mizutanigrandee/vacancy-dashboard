@@ -189,6 +189,11 @@ if isinstance(selected_date, list):
     selected_date = selected_date[0]
 if selected_date:
     selected_date = selected_date.strip()
+
+# デバッグ用に表示
+st.write("▶ selected_date =", selected_date)   # ←★ 追加
+
+
 if not selected_date:
     selected_date = None
 
