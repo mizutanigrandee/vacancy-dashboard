@@ -13,6 +13,38 @@ import altair as alt
 
 st.set_page_config(page_title="テスト版【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
 
+st.markdown("""
+    <style>
+    /* 全体の最大幅を広げる */
+    .main .block-container {
+        max-width: 1600px;
+        padding-left: 2vw;
+        padding-right: 2vw;
+    }
+    /* 見出しなどのフォントサイズを相対値に */
+    h1, h2, h3, h4 {
+        font-size: 2vw;
+    }
+    /* ボタンやグラフなどにも余白をつける例 */
+    .stButton > button {
+        font-size: 1.2vw !important;
+        padding: 0.6em 1.5em;
+    }
+    /* カレンダーを横スクロールできるようにする例 */
+    .calendar-wrapper {
+        overflow-x: auto;
+        width: 100%;
+    }
+    /* スマホなど小画面のときは文字サイズを少し大きめに */
+    @media screen and (max-width: 700px) {
+        h1, h2, h3, h4 { font-size: 4vw !important; }
+        .main .block-container { padding-left: 2vw; padding-right: 2vw; }
+        .stButton > button { font-size: 2vw !important; }
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+
 # 🔻 base64埋め込みバナー
 if os.path.exists("バナー画像3.png"):
     with open("バナー画像3.png", "rb") as f:
