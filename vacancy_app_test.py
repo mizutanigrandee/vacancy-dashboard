@@ -236,24 +236,25 @@ MAX_MONTH_OFFSET = 12
 
 
 
-# PC専用（従来のアイコン横並び）
+# --- 横 3 つだけのナビ行（左右の空白カラムをなくす） ---
 st.markdown('<div class="pc-nav-row">', unsafe_allow_html=True)
-nav_left, nav_center, nav_right = st.columns([3, 2, 3])
-with nav_center:
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col1:
-        if st.button("⬅️ 前月", key="pc_prev"):
-            st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
-            st.rerun()
-    with col2:
-        if st.button("📅 当月", key="pc_today"):
-            st.session_state.month_offset = 0
-            st.rerun()
-    with col3:
-        if st.button("➡️ 次月", key="pc_next"):
-            st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
-            st.rerun()
+
+nav_cols = st.columns(3, gap="small")          # ← ここだけ！
+with nav_cols[0]:
+    if st.button("⬅️ 前月", key="nav_prev", use_container_width=True):
+        st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
+        st.rerun()
+with nav_cols[1]:
+    if st.button("📅 当月", key="nav_today", use_container_width=True):
+        st.session_state.month_offset = 0
+        st.rerun()
+with nav_cols[2]:
+    if st.button("➡️ 次月", key="nav_next", use_container_width=True):
+        st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
+        st.rerun()
+
 st.markdown('</div>', unsafe_allow_html=True)
+
 
 
 
