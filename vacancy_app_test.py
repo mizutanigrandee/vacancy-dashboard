@@ -30,6 +30,32 @@ st.markdown("""
         width: 100% !important;
         text-align: left !important;
     }
+    .main-banner {
+        width: 100% !important;
+        max-width: 98vw !important;
+        height: auto !important;
+        display: block;
+        margin: 0 auto;
+    }
+    /* ナビゲーションボタンを横並びに */
+    .css-1kyxreq, .css-1fcdlh2, .css-ocqkz7, .css-1v0mbdj {
+        flex-direction: row !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 4px !important;
+    }
+    .stButton button {
+        min-width: 74px !important;
+        font-size: 1rem !important;
+        padding: 8px 0 !important;
+    }
+    /* グラフ時のボタン群も横並びに */
+    .stColumns {
+        flex-direction: row !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -42,9 +68,10 @@ if os.path.exists("バナー画像3.png"):
         img_base64 = base64.b64encode(img_bytes).decode("utf-8")
     st.markdown(f"""
         <div style="width: 100%; background-color: #e4f0f4; padding: 5px 0; text-align: left;">
-            <img src="data:image/png;base64,{img_base64}" style="max-width: 1000px; height: auto;">
+            <img class="main-banner" src="data:image/png;base64,{img_base64}" style="max-width: 1000px; height: auto;">
         </div><br>
     """, unsafe_allow_html=True)
+
 
 APP_ID = st.secrets["RAKUTEN_APP_ID"]
 CACHE_FILE = "vacancy_price_cache.json"
