@@ -37,6 +37,32 @@ st.markdown("""
         display: block;
         margin: 0 auto;
     }
+    @media (max-width: 700px) {
+  /* stButtonが直接並ぶ場合 */
+  .stButton {
+    display: inline-block !important;
+    margin-right: 4px !important;
+    margin-bottom: 0 !important;
+    vertical-align: middle !important;
+  }
+  /* stButton複数個を囲む親要素 */
+  .stButton + .stButton, 
+  div[data-testid="stHorizontalBlock"] > div:has(.stButton) {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  /* グラフ用など、stColumnsで並ぶボタンも一応横並びに */
+  .stColumns {
+    flex-direction: row !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
 }
 </style>
 """, unsafe_allow_html=True)
