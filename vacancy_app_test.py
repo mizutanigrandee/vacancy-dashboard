@@ -54,7 +54,7 @@ st.markdown("""
 nav_action = st.query_params.get("nav")
 MAX_MONTH_OFFSET = 12
 if nav_action == "prev":
-    st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
+    st.session_state.month_offset = max(st.session_state.get("month_offset", 0) - 1, -MAX_MONTH_OFFSET)
     st.query_params.pop("nav")
     st.rerun()
 elif nav_action == "today":
@@ -62,7 +62,7 @@ elif nav_action == "today":
     st.query_params.pop("nav")
     st.rerun()
 elif nav_action == "next":
-    st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
+    st.session_state.month_offset = min(st.session_state.get("month_offset", 0) + 1, MAX_MONTH_OFFSET)
     st.query_params.pop("nav")
     st.rerun()
 
@@ -190,19 +190,20 @@ if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
 MAX_MONTH_OFFSET = 12
 
-# 旧ナビゲーション（st.button）
-nav_left, nav_center, nav_right = st.columns([3, 2, 3])
-with nav_center:
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col1:
-        if st.button("⬅️ 前月"):
-            st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
-    with col2:
-        if st.button("📅 当月"):
-            st.session_state.month_offset = 0
-    with col3:
-        if st.button("➡️ 次月"):
-            st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
+# --- 変更点①：月移動ボタンのレイアウトを簡素化 ---
+col1, col2, col3 = st.columns(3)
+with col1:
+    if st.button("⬅️ 前月", use_container_width=True):
+        st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
+        st.rerun()
+with col2:
+    if st.button("📅 当月", use_container_width=True):
+        st.session_state.month_offset = 0
+        st.rerun()
+with col3:
+    if st.button("➡️ 次月", use_container_width=True):
+        st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
+        st.rerun()
 
 base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
 month1 = base_month
@@ -220,25 +221,27 @@ if "show_graph" not in st.session_state:
     st.session_state["show_graph"] = True
 
 if selected_date and st.session_state["show_graph"]:
+    # --- 変更点②：グラフ操作ボタンをカラム分割の外（上）に移動 ---
+    btn_cols = st.columns(3)
+    with btn_cols[0]:
+        if st.button("❌ 閉じる", use_container_width=True):
+            st.query_params.clear()
+            st.session_state["show_graph"] = False
+            st.rerun()
+    with btn_cols[1]:
+        if st.button("＜前日", use_container_width=True):
+            new_dt = pd.to_datetime(selected_date).date() - dt.timedelta(days=1)
+            st.query_params["selected"] = new_dt.isoformat()
+            st.rerun()
+    with btn_cols[2]:
+        if st.button("翌日＞", use_container_width=True):
+            new_dt = pd.to_datetime(selected_date).date() + dt.timedelta(days=1)
+            st.query_params["selected"] = new_dt.isoformat()
+            st.rerun()
+
+    # グラフとカレンダーのレイアウト
     left, right = st.columns([3, 7])
     with left:
-        btn_cols = st.columns(3)
-        with btn_cols[0]:
-            if st.button("❌ 閉じる"):
-                st.query_params.clear()
-                st.session_state["show_graph"] = False
-                st.rerun()
-        with btn_cols[1]:
-            if st.button("＜前日"):
-                new_dt = pd.to_datetime(selected_date).date() - dt.timedelta(days=1)
-                st.query_params["selected"] = new_dt.isoformat()
-                st.rerun()
-        with btn_cols[2]:
-            if st.button("翌日＞"):
-                new_dt = pd.to_datetime(selected_date).date() + dt.timedelta(days=1)
-                st.query_params["selected"] = new_dt.isoformat()
-                st.rerun()
-
         st.markdown(f"#### {selected_date} の在庫・価格推移")
         if (
             selected_date not in historical_data or
@@ -296,6 +299,7 @@ if selected_date and st.session_state["show_graph"]:
             st.subheader(f"{month2.year}年 {month2.month}月")
             st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 else:
+    # グラフが表示されていない場合は、カレンダーのみ表示
     cal1, cal2 = st.columns(2)
     with cal1:
         st.subheader(f"{month1.year}年 {month1.month}月")
@@ -305,6 +309,7 @@ else:
         st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
 # --- カレンダー下部の案内など ---
+st.markdown("<hr>", unsafe_allow_html=True) # 区切り線を追加
 st.markdown(
     "<div style='font-size:17px; color:#296;'>日付を選択すると推移グラフが表示されます</div>",
     unsafe_allow_html=True
@@ -323,10 +328,10 @@ st.markdown("""
     - 平均価格の<span style="color:red;">↑</span>／<span style="color:blue;">↓</span>は、前回巡回時点との平均価格の上昇／下降を示します。<br>
     - 会場アイコン：🔴京セラドーム / 🔵ヤンマースタジアム / ★その他会場<br>
     - 炎マーク（需要シンボル）の内訳：<br>
-      &nbsp;&nbsp;・🔥1：残室 ≤250 または 価格 ≥25,000円<br>
-      &nbsp;&nbsp;・🔥2：残室 ≤200 または 価格 ≥30,000円<br>
-      &nbsp;&nbsp;・🔥3：残室 ≤150 または 価格 ≥35,000円<br>
-      &nbsp;&nbsp;・🔥4：残室 ≤100 または 価格 ≥40,000円<br>
-      &nbsp;&nbsp;・🔥5：残室 ≤70 または 価格 ≥50,000円<br>
+        ・🔥1：残室 ≤250 または 価格 ≥25,000円<br>
+        ・🔥2：残室 ≤200 または 価格 ≥30,000円<br>
+        ・🔥3：残室 ≤150 または 価格 ≥35,000円<br>
+        ・🔥4：残室 ≤100 または 価格 ≥40,000円<br>
+        ・🔥5：残室 ≤70 または 価格 ≥50,000円<br>
     </div>
     """, unsafe_allow_html=True)
