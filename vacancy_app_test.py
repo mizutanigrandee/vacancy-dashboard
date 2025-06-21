@@ -88,6 +88,34 @@ st.markdown("""
 
 
 
+st.markdown("""
+<style>
+/* 共通デザイン（PC/スマホどちらも） */
+.nav-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 12px 0 18px;
+}
+.nav-btn {
+    display: block;
+    padding: 6px 14px;
+    font-size: 1.05rem;
+    border: 1px solid #aaa;
+    border-radius: 9px;
+    text-decoration: none;
+    color: inherit;
+}
+
+/* スマホ幅だけ微調整 */
+@media (max-width: 700px) {
+    .nav-btn { min-width: 68px; }          /* 押しやすい幅 */
+    .nav-btn::first-letter { color: transparent; }  /* 絵文字を透明化＝テキスト風 */
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 
 # --- クエリ対応 ---
 nav_action = st.query_params.get("nav")
@@ -236,24 +264,33 @@ MAX_MONTH_OFFSET = 12
 
 
 
-# --- 横 3 つだけのナビ行（左右の空白カラムをなくす） ---
-st.markdown('<div class="pc-nav-row">', unsafe_allow_html=True)
+# --- ナビゲーション（PC・スマホ共通：HTML で横 3 つ） ---
+if "month_offset" not in st.session_state:
+    st.session_state.month_offset = 0
+MAX_MONTH_OFFSET = 12
 
-nav_cols = st.columns(3, gap="small")          # ← ここだけ！
-with nav_cols[0]:
-    if st.button("⬅️ 前月", key="nav_prev", use_container_width=True):
-        st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
-        st.rerun()
-with nav_cols[1]:
-    if st.button("📅 当月", key="nav_today", use_container_width=True):
-        st.session_state.month_offset = 0
-        st.rerun()
-with nav_cols[2]:
-    if st.button("➡️ 次月", key="nav_next", use_container_width=True):
-        st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
-        st.rerun()
+nav_html = """
+<div class='nav-row'>
+  <a href='?nav=prev'  class='nav-btn'>⬅️ 前月</a>
+  <a href='?nav=today' class='nav-btn'>📅 当月</a>
+  <a href='?nav=next'  class='nav-btn'>➡️ 次月</a>
+</div>
+"""
+st.markdown(nav_html, unsafe_allow_html=True)
 
-st.markdown('</div>', unsafe_allow_html=True)
+# --- ナビゲーション（PC・スマホ共通：HTML で横 3 つ） ---
+if "month_offset" not in st.session_state:
+    st.session_state.month_offset = 0
+MAX_MONTH_OFFSET = 12
+
+nav_html = """
+<div class='nav-row'>
+  <a href='?nav=prev'  class='nav-btn'>⬅️ 前月</a>
+  <a href='?nav=today' class='nav-btn'>📅 当月</a>
+  <a href='?nav=next'  class='nav-btn'>➡️ 次月</a>
+</div>
+"""
+st.markdown(nav_html, unsafe_allow_html=True)
 
 
 
