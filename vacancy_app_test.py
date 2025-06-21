@@ -12,43 +12,49 @@ st.set_page_config(page_title="テスト版【めちゃいいツール】ミナ�
 # 🔻スマホ専用カレンダーCSS
 st.markdown("""
 <style>
-@media (max-width: 700px) {
-    .calendar-wrapper td, .calendar-wrapper th {
-        min-width: 32px !important;
-        max-width: 38px !important;
-        font-size: 9px !important;
-        padding: 1px 0 1px 0 !important;
+/* ========== 共通 ========== */
+.nav-bar{
+    display:flex;               /* 横並び */
+    justify-content:center;
+    align-items:center;
+    gap:14px;
+    margin:4px 0 12px;
+}
+.nav-btn{
+    border:1px solid #ccc;
+    border-radius:6px;
+    padding:4px 10px;
+    text-decoration:none;
+    background:#fff;
+    font-size:1.05rem;
+}
+.icon{font-size:1.2rem;margin-right:4px;}
+.text{}
+
+/* ---------- スマホ専用 ---------- */
+@media (max-width:700px){
+    .calendar-wrapper td, .calendar-wrapper th{
+        min-width:32px!important;max-width:38px!important;
+        font-size:9px!important;padding:1px 0!important;
     }
     .calendar-wrapper td div,
-    .calendar-wrapper td span {
-        font-size: 9px !important;
-        line-height: 1.05 !important;
+    .calendar-wrapper td span{font-size:9px!important;line-height:1.05!important;}
+    .calendar-wrapper td>div>div:nth-child(2),
+    .calendar-wrapper td>div>div:nth-child(3){
+        display:block!important;width:100%!important;text-align:left!important;
     }
-    .calendar-wrapper td > div > div:nth-child(2),
-    .calendar-wrapper td > div > div:nth-child(3) {
-        display: block !important;
-        width: 100% !important;
-        text-align: left !important;
-    }
-    .main-banner {
-        width: 100% !important;
-        max-width: 98vw !important;
-        height: auto !important;
-        display: block;
-        margin: 0 auto;
-    }
-    .icon { display: none !important; }
-    .text { display: inline !important; }
-    .nav-btn { font-size: 1.1rem !important; min-width: 70px !important;}
+    .main-banner{width:100%!important;max-width:98vw!important;height:auto!important;display:block;margin:0 auto;}
+    /* 👉 スマホではアイコンを隠しテキストだけ表示 */
+    .icon{display:none!important;}
 }
-/* PCはデフォルト */
-@media (min-width: 701px) {
-    .icon { display: inline !important; }
-    .text { display: inline !important; }
-    .nav-btn { font-size: 1.1rem !important; min-width: 80px !important;}
+
+/* ---------- PC 専用 ---------- */
+@media (min-width:701px){
+    .nav-btn{min-width:80px!important;}
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 # --- クエリ対応 ---
 nav_action = st.query_params.get("nav")
@@ -190,19 +196,21 @@ if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
 MAX_MONTH_OFFSET = 12
 
-# 旧ナビゲーション（st.button）
-nav_left, nav_center, nav_right = st.columns([3, 2, 3])
-with nav_center:
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col1:
-        if st.button("⬅️ 前月"):
-            st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
-    with col2:
-        if st.button("📅 当月"):
-            st.session_state.month_offset = 0
-    with col3:
-        if st.button("➡️ 次月"):
-            st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
+# ===== 月送りナビ（共通）==========================================
+st.markdown("""
+<div class="nav-bar">
+  <a href="?nav=prev"  class="nav-btn">
+     <span class="icon">⬅️</span><span class="text">前月</span>
+  </a>
+  <a href="?nav=today" class="nav-btn">
+     <span class="icon">📅</span><span class="text">当月</span>
+  </a>
+  <a href="?nav=next"  class="nav-btn">
+     <span class="icon">➡️</span><span class="text">次月</span>
+  </a>
+</div>
+""", unsafe_allow_html=True)
+
 
 base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
 month1 = base_month
@@ -222,21 +230,18 @@ if "show_graph" not in st.session_state:
 if selected_date and st.session_state["show_graph"]:
     left, right = st.columns([3, 7])
     with left:
-        btn_cols = st.columns(3)
-        with btn_cols[0]:
-            if st.button("❌ 閉じる"):
-                st.query_params.clear()
-                st.session_state["show_graph"] = False
-                st.rerun()
-        with btn_cols[1]:
-            if st.button("＜前日"):
-                new_dt = pd.to_datetime(selected_date).date() - dt.timedelta(days=1)
-                st.query_params["selected"] = new_dt.isoformat()
-                st.rerun()
-        with btn_cols[2]:
-            if st.button("翌日＞"):
-                new_dt = pd.to_datetime(selected_date).date() + dt.timedelta(days=1)
-                st.query_params["selected"] = new_dt.isoformat()
+# ===== 1日推移グラフ用 ナビ ======================================
+prev_dt = (pd.to_datetime(selected_date).date() - dt.timedelta(days=1)).isoformat()
+next_dt = (pd.to_datetime(selected_date).date() + dt.timedelta(days=1)).isoformat()
+
+st.markdown(f"""
+<div class="nav-bar" style="justify-content:flex-start;">
+  <a href="?selected={prev_dt}" class="nav-btn"><span class="text">＜前日</span></a>
+  <a href="?selected={next_dt}" class="nav-btn"><span class="text">翌日＞</span></a>
+  <a href="."                     class="nav-btn"><span class="text">❌ 閉じる</span></a>
+</div>
+""", unsafe_allow_html=True)
+
                 st.rerun()
 
         st.markdown(f"#### {selected_date} の在庫・価格推移")
