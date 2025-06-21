@@ -52,19 +52,19 @@ st.markdown("""
 
 st.markdown("""
 <style>
-/* スマホ専用ナビ：表示（PCでは非表示） */
+/* ...あなたの既存styleはそのままでOK... */
 @media (max-width: 700px) {
-    .mobile-nav-row { display: flex !important; flex-direction: row; gap: 5px; margin-bottom: 10px; }
+    .mobile-nav-row { display: flex !important; flex-direction: row; gap: 5px; margin-bottom: 10px;}
     .mobile-nav-row button { width: 100%; font-size: 1.1rem; min-width: 68px; padding: 5px 0; border-radius: 9px; border: 1px solid #aaa;}
     .pc-nav-row { display: none !important; }
 }
-/* PC専用ナビ：表示（スマホでは非表示） */
 @media (min-width: 701px) {
     .mobile-nav-row { display: none !important; }
     .pc-nav-row { display: block !important; }
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 
@@ -209,37 +209,46 @@ params = st.query_params
 selected_date = params.get("selected")
 if isinstance(selected_date, list): selected_date = selected_date[0]
 
-# --- ナビゲーションUI：スマホ用＋PC用同居 ---
-# モバイル（スマホ）用：テキスト＆横並びボタン
+# --- ナビゲーションUI ---
+if "month_offset" not in st.session_state:
+    st.session_state.month_offset = 0
+MAX_MONTH_OFFSET = 12
+
+# スマホ専用（テキスト横並びボタン）
 st.markdown('<div class="mobile-nav-row">', unsafe_allow_html=True)
 col_a, col_b, col_c = st.columns(3)
 with col_a:
     if st.button("前月", key="mob_prev"):
         st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
+        st.rerun()
 with col_b:
     if st.button("当月", key="mob_today"):
         st.session_state.month_offset = 0
+        st.rerun()
 with col_c:
     if st.button("次月", key="mob_next"):
         st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
+        st.rerun()
 st.markdown('</div>', unsafe_allow_html=True)
 
-# PC用：従来のアイコン付ボタン＋横並び
-with st.container():
-    st.markdown('<div class="pc-nav-row">', unsafe_allow_html=True)
-    nav_left, nav_center, nav_right = st.columns([3, 2, 3])
-    with nav_center:
-        col1, col2, col3 = st.columns([1, 1, 1])
-        with col1:
-            if st.button("⬅️ 前月", key="pc_prev"):
-                st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
-        with col2:
-            if st.button("📅 当月", key="pc_today"):
-                st.session_state.month_offset = 0
-        with col3:
-            if st.button("➡️ 次月", key="pc_next"):
-                st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
-    st.markdown('</div>', unsafe_allow_html=True)
+# PC専用（従来のアイコン横並び）
+st.markdown('<div class="pc-nav-row">', unsafe_allow_html=True)
+nav_left, nav_center, nav_right = st.columns([3, 2, 3])
+with nav_center:
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col1:
+        if st.button("⬅️ 前月", key="pc_prev"):
+            st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
+            st.rerun()
+    with col2:
+        if st.button("📅 当月", key="pc_today"):
+            st.session_state.month_offset = 0
+            st.rerun()
+    with col3:
+        if st.button("➡️ 次月", key="pc_next"):
+            st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
+            st.rerun()
+st.markdown('</div>', unsafe_allow_html=True)
 
 
 
