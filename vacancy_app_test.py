@@ -9,58 +9,35 @@ import altair as alt
 
 st.set_page_config(page_title="テスト版【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
 
-# 🔻スマホ専用カレンダーCSS
+# 🔻 ナビゲーション共通 CSS（このブロックをコピペ）
 st.markdown("""
 <style>
+/* ===== スマホ幅 (～700px) ===== */
 @media (max-width: 700px) {
-    .calendar-wrapper td, .calendar-wrapper th {
-        min-width: 32px !important;
-        max-width: 38px !important;
-        font-size: 9px !important;
-        padding: 1px 0 1px 0 !important;
+    /* ナビ行を横並びに */
+    .pc-nav-row {
+        display: flex !important;
+        justify-content: center;
+        gap: 6px;
+        margin-bottom: 12px;
     }
-    .calendar-wrapper td div,
-    .calendar-wrapper td span {
-        font-size: 9px !important;
-        line-height: 1.05 !important;
+    /* ボタン見た目をテキスト風に（サイズ調整） */
+    .pc-nav-row button {
+        font-size: 1.1rem !important;
+        padding: 6px 10px !important;
+        min-width: 70px !important;
+        border-radius: 9px !important;
     }
-    .calendar-wrapper td > div > div:nth-child(2),
-    .calendar-wrapper td > div > div:nth-child(3) {
+    /* ボタン先頭の絵文字だけ非表示 → テキストっぽく見せる */
+    .pc-nav-row button::first-letter {
+        color: transparent;
+    }
+}
+/* ===== PC幅 (701px～) ===== */
+@media (min-width: 701px) {
+    .pc-nav-row {       /* いままで通りブロック表示 */
         display: block !important;
-        width: 100% !important;
-        text-align: left !important;
     }
-    .main-banner {
-        width: 100% !important;
-        max-width: 98vw !important;
-        height: auto !important;
-        display: block;
-        margin: 0 auto;
-    }
-    .icon { display: none !important; }
-    .text { display: inline !important; }
-    .nav-btn { font-size: 1.1rem !important; min-width: 70px !important;}
-}
-/* PCはデフォルト */
-@media (min-width: 701px) {
-    .icon { display: inline !important; }
-    .text { display: inline !important; }
-    .nav-btn { font-size: 1.1rem !important; min-width: 80px !important;}
-}
-</style>
-""", unsafe_allow_html=True)
-
-st.markdown("""
-<style>
-/* ...あなたの既存styleはそのままでOK... */
-@media (max-width: 700px) {
-    .mobile-nav-row { display: flex !important; flex-direction: row; gap: 5px; margin-bottom: 10px;}
-    .mobile-nav-row button { width: 100%; font-size: 1.1rem; min-width: 68px; padding: 5px 0; border-radius: 9px; border: 1px solid #aaa;}
-    .pc-nav-row { display: none !important; }
-}
-@media (min-width: 701px) {
-    .mobile-nav-row { display: none !important; }
-    .pc-nav-row { display: block !important; }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -214,22 +191,7 @@ if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
 MAX_MONTH_OFFSET = 12
 
-# スマホ専用（テキスト横並びボタン）
-st.markdown('<div class="mobile-nav-row">', unsafe_allow_html=True)
-col_a, col_b, col_c = st.columns(3)
-with col_a:
-    if st.button("前月", key="mob_prev"):
-        st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
-        st.rerun()
-with col_b:
-    if st.button("当月", key="mob_today"):
-        st.session_state.month_offset = 0
-        st.rerun()
-with col_c:
-    if st.button("次月", key="mob_next"):
-        st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
-        st.rerun()
-st.markdown('</div>', unsafe_allow_html=True)
+
 
 # PC専用（従来のアイコン横並び）
 st.markdown('<div class="pc-nav-row">', unsafe_allow_html=True)
