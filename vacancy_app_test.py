@@ -9,55 +9,29 @@ import altair as alt
 
 st.set_page_config(page_title="テスト版【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
 
-# 🔻CSS：PCとスマホでUIを切り替えるための設定を追加
+# --- PC/スマホ判定 ---
+def is_mobile():
+    # Streamlit公式: User-Agent判定はできないが横幅で仮判定
+    return st.get_option("client.viewportWidth", 800) <= 700
+
+# --- ナビボタンCSS ---
 st.markdown("""
 <style>
-/* --- 変更点①：ここから --- */
-/* デフォルト（スマホ表示）では、PC用UIを隠し、スマホ用UIを表示 */
-#pc-nav, #pc-graph-nav { display: none; }
-#mobile-nav, #mobile-graph-nav { display: block; }
-
-/* 画面幅が701px以上（PC表示）になったら、表示を逆転させる */
-@media (min-width: 701px) {
-    #pc-nav, #pc-graph-nav { display: block; }
-    #mobile-nav, #mobile-graph-nav { display: none; }
+/* 横並びHTMLボタン共通デザイン */
+.nav-btn-row {
+  display: flex; justify-content: space-between; gap: 8px; margin: 16px 0 22px 0;
 }
-/* --- 変更点①：ここまで --- */
-
-@media (max-width: 700px) {
-    .calendar-wrapper td, .calendar-wrapper th {
-        min-width: 32px !important;
-        max-width: 38px !important;
-        font-size: 9px !important;
-        padding: 1px 0 1px 0 !important;
-    }
-    .calendar-wrapper td div,
-    .calendar-wrapper td span {
-        font-size: 9px !important;
-        line-height: 1.05 !important;
-    }
-    .calendar-wrapper td > div > div:nth-child(2),
-    .calendar-wrapper td > div > div:nth-child(3) {
-        display: block !important;
-        width: 100% !important;
-        text-align: left !important;
-    }
-    .main-banner {
-        width: 100% !important;
-        max-width: 98vw !important;
-        height: auto !important;
-        display: block;
-        margin: 0 auto;
-    }
-    .icon { display: none !important; }
-    .text { display: inline !important; }
-    .nav-btn { font-size: 1.1rem !important; min-width: 70px !important;}
+.nav-btn-row a {
+  flex:1; display:inline-block; padding:14px 0; border:1px solid #bbb; border-radius:12px;
+  background:#fff; color:#222; text-decoration:none; text-align:center; font-size:1.19rem; font-weight:500;
+  transition: background 0.15s, color 0.15s;
 }
-/* PCはデフォルト */
-@media (min-width: 701px) {
-    .icon { display: inline !important; }
-    .text { display: inline !important; }
-    .nav-btn { font-size: 1.1rem !important; min-width: 80px !important;}
+.nav-btn-row a:active { background:#eee; color:#ff4b4b; }
+@media (max-width:700px) {
+  .calendar-wrapper td, .calendar-wrapper th {min-width:32px!important;max-width:38px!important;font-size:9px!important;padding:1px 0!important;}
+  .calendar-wrapper td div,.calendar-wrapper td span{font-size:9px!important;line-height:1.05!important;}
+  .calendar-wrapper td>div>div:nth-child(2),.calendar-wrapper td>div>div:nth-child(3){display:block!important;width:100%!important;text-align:left!important;}
+  .main-banner{width:100%!important;max-width:98vw!important;height:auto!important;display:block;margin:0 auto;}
 }
 </style>
 """, unsafe_allow_html=True)
@@ -66,7 +40,7 @@ st.markdown("""
 nav_action = st.query_params.get("nav")
 MAX_MONTH_OFFSET = 12
 if nav_action == "prev":
-    st.session_state.month_offset = max(st.session_state.get("month_offset", 0) - 1, -MAX_MONTH_OFFSET)
+    st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
     st.query_params.pop("nav")
     st.rerun()
 elif nav_action == "today":
@@ -74,11 +48,11 @@ elif nav_action == "today":
     st.query_params.pop("nav")
     st.rerun()
 elif nav_action == "next":
-    st.session_state.month_offset = min(st.session_state.get("month_offset", 0) + 1, MAX_MONTH_OFFSET)
+    st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
     st.query_params.pop("nav")
     st.rerun()
 
-# --- バナー表示 ---
+# --- バナー ---
 if os.path.exists("バナー画像3.png"):
     with open("バナー画像3.png", "rb") as f:
         img_bytes = f.read()
@@ -202,43 +176,33 @@ if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
 MAX_MONTH_OFFSET = 12
 
-# --- 変更点②：PC用とスマホ用のナビゲーションを両方記述し、CSSで切り替える ---
-# PC用ナビゲーション (元のコードと同じ)
-st.markdown('<div id="pc-nav">', unsafe_allow_html=True)
-nav_left, nav_center, nav_right = st.columns([3, 2, 3])
-with nav_center:
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col1:
-        if st.button("⬅️ 前月", key="pc_prev"):
-            st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
-            st.rerun()
-    with col2:
-        if st.button("📅 当月", key="pc_today"):
-            st.session_state.month_offset = 0
-            st.rerun()
-    with col3:
-        if st.button("➡️ 次月", key="pc_next"):
-            st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
-            st.rerun()
-st.markdown('</div>', unsafe_allow_html=True)
-
-# スマホ用ナビゲーション (横並び)
-st.markdown('<div id="mobile-nav">', unsafe_allow_html=True)
-mcol1, mcol2, mcol3 = st.columns(3)
-with mcol1:
-    if st.button("⬅️ 前月", use_container_width=True, key="mobile_prev"):
-        st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
-        st.rerun()
-with mcol2:
-    if st.button("📅 当月", use_container_width=True, key="mobile_today"):
-        st.session_state.month_offset = 0
-        st.rerun()
-with mcol3:
-    if st.button("➡️ 次月", use_container_width=True, key="mobile_next"):
-        st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
-        st.rerun()
-st.markdown('</div>', unsafe_allow_html=True)
-
+# ======= ここが重要！PC/スマホで分岐して表示 ===========
+if is_mobile():
+    # スマホ：横並びHTMLボタンだけ
+    st.markdown("""
+    <div class="nav-btn-row">
+      <a href="?nav=prev" target="_self">前月</a>
+      <a href="?nav=today" target="_self">当月</a>
+      <a href="?nav=next" target="_self">次月</a>
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    # PC：従来のst.button（中央寄せ）
+    nav_left, nav_center, nav_right = st.columns([3, 2, 3])
+    with nav_center:
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col1:
+            if st.button("⬅️ 前月"):
+                st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
+                st.rerun()
+        with col2:
+            if st.button("📅 当月"):
+                st.session_state.month_offset = 0
+                st.rerun()
+        with col3:
+            if st.button("➡️ 次月"):
+                st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
+                st.rerun()
 
 base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
 month1 = base_month
@@ -258,47 +222,34 @@ if "show_graph" not in st.session_state:
 if selected_date and st.session_state["show_graph"]:
     left, right = st.columns([3, 7])
     with left:
-        # --- 変更点③：グラフ操作ボタンも同様にPC用/スマホ用を記述 ---
-        # PC用グラフ操作ボタン (元のコードと同じ)
-        st.markdown('<div id="pc-graph-nav">', unsafe_allow_html=True)
-        btn_cols = st.columns(3)
-        with btn_cols[0]:
-            if st.button("❌ 閉じる", key="pc_close"):
-                st.query_params.clear()
-                st.session_state["show_graph"] = False
-                st.rerun()
-        with btn_cols[1]:
-            if st.button("＜前日", key="pc_g_prev"):
-                new_dt = pd.to_datetime(selected_date).date() - dt.timedelta(days=1)
-                st.query_params["selected"] = new_dt.isoformat()
-                st.rerun()
-        with btn_cols[2]:
-            if st.button("翌日＞", key="pc_g_next"):
-                new_dt = pd.to_datetime(selected_date).date() + dt.timedelta(days=1)
-                st.query_params["selected"] = new_dt.isoformat()
-                st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # スマホ用グラフ操作ボタン (横並び)
-        st.markdown('<div id="mobile-graph-nav">', unsafe_allow_html=True)
-        mbtn_cols = st.columns(3)
-        with mbtn_cols[0]:
-            if st.button("❌ 閉じる", use_container_width=True, key="mobile_close"):
-                st.query_params.clear()
-                st.session_state["show_graph"] = False
-                st.rerun()
-        with mbtn_cols[1]:
-            if st.button("＜前日", use_container_width=True, key="mobile_g_prev"):
-                new_dt = pd.to_datetime(selected_date).date() - dt.timedelta(days=1)
-                st.query_params["selected"] = new_dt.isoformat()
-                st.rerun()
-        with mbtn_cols[2]:
-            if st.button("翌日＞", use_container_width=True, key="mobile_g_next"):
-                new_dt = pd.to_datetime(selected_date).date() + dt.timedelta(days=1)
-                st.query_params["selected"] = new_dt.isoformat()
-                st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-
+        # ===== スマホだけグラフ操作ナビもHTML横並び化 =====
+        if is_mobile():
+            prev_dt = (pd.to_datetime(selected_date).date() - dt.timedelta(days=1)).isoformat()
+            next_dt = (pd.to_datetime(selected_date).date() + dt.timedelta(days=1)).isoformat()
+            st.markdown(f"""
+            <div class="nav-btn-row">
+              <a href="." target="_self">❌ 閉じる</a>
+              <a href="?selected={prev_dt}" target="_self">&lt;前日</a>
+              <a href="?selected={next_dt}" target="_self">翌日&gt;</a>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            btn_cols = st.columns(3)
+            with btn_cols[0]:
+                if st.button("❌ 閉じる"):
+                    st.query_params.clear()
+                    st.session_state["show_graph"] = False
+                    st.rerun()
+            with btn_cols[1]:
+                if st.button("＜前日"):
+                    new_dt = pd.to_datetime(selected_date).date() - dt.timedelta(days=1)
+                    st.query_params["selected"] = new_dt.isoformat()
+                    st.rerun()
+            with btn_cols[2]:
+                if st.button("翌日＞"):
+                    new_dt = pd.to_datetime(selected_date).date() + dt.timedelta(days=1)
+                    st.query_params["selected"] = new_dt.isoformat()
+                    st.rerun()
 
         st.markdown(f"#### {selected_date} の在庫・価格推移")
         if (
@@ -384,10 +335,10 @@ st.markdown("""
     - 平均価格の<span style="color:red;">↑</span>／<span style="color:blue;">↓</span>は、前回巡回時点との平均価格の上昇／下降を示します。<br>
     - 会場アイコン：🔴京セラドーム / 🔵ヤンマースタジアム / ★その他会場<br>
     - 炎マーク（需要シンボル）の内訳：<br>
-        ・🔥1：残室 ≤250 または 価格 ≥25,000円<br>
-        ・🔥2：残室 ≤200 または 価格 ≥30,000円<br>
-        ・🔥3：残室 ≤150 または 価格 ≥35,000円<br>
-        ・🔥4：残室 ≤100 または 価格 ≥40,000円<br>
-        ・🔥5：残室 ≤70 または 価格 ≥50,000円<br>
+      &nbsp;&nbsp;・🔥1：残室 ≤250 または 価格 ≥25,000円<br>
+      &nbsp;&nbsp;・🔥2：残室 ≤200 または 価格 ≥30,000円<br>
+      &nbsp;&nbsp;・🔥3：残室 ≤150 または 価格 ≥35,000円<br>
+      &nbsp;&nbsp;・🔥4：残室 ≤100 または 価格 ≥40,000円<br>
+      &nbsp;&nbsp;・🔥5：残室 ≤70 または 価格 ≥50,000円<br>
     </div>
     """, unsafe_allow_html=True)
