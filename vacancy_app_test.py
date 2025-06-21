@@ -130,47 +130,57 @@ def draw_calendar(month_date: dt.date):
     cal = calendar.Calendar(calendar.SUNDAY)
     weeks = cal.monthdatescalendar(month_date.year, month_date.month)
     today = dt.date.today()
-    st.markdown('<div class="calendar-wrapper"><table style="border-collapse:collapse;width:100%;table-layout:fixed;text-align:center;">', unsafe_allow_html=True)
-    st.markdown('<thead style="background:#f4f4f4;color:#333;font-weight:bold;"><tr>' + ''.join(f'<th style="border:1px solid #aaa;padding:4px;">{d}</th>' for d in "日月火水木金土") + '</tr></thead><tbody>', unsafe_allow_html=True)
+    html = '<div class="calendar-wrapper"><table style="border-collapse:collapse;width:100%;table-layout:fixed;text-align:center;">'
+    # 曜日ラベル
+    html += '<thead style="background:#f4f4f4;color:#333;font-weight:bold;"><tr>'
+    for d in "日月火水木金土":
+        html += f'<th style="border:1px solid #aaa;padding:4px;">{d}</th>'
+    html += '</tr></thead><tbody>'
+    # カレンダー本体
     for week in weeks:
-        st.markdown('<tr>', unsafe_allow_html=True)
-        cols = st.columns(7)
-        for idx, current in enumerate(week):
+        html += '<tr>'
+        for current in week:
             if current.month != month_date.month:
-                # 他月は空白
-                cols[idx].markdown('<td style="border:1px solid #aaa;padding:8px;background:#fff;"></td>', unsafe_allow_html=True)
+                html += '<td style="border:1px solid #aaa;padding:8px;background:#fff;"></td>'
                 continue
-            # 背景色
-            bg = '#ddd' if current < today else ('#ffecec' if (current in HOLIDAYS or current.weekday() == 6) else ('#e0f7ff' if current.weekday() == 5 else '#fff'))
+            # 色分け
+            bg = '#ddd' if current < today else (
+                '#ffecec' if (current in HOLIDAYS or current.weekday() == 6) else (
+                '#e0f7ff' if current.weekday() == 5 else '#fff'))
             iso = current.isoformat()
             rec = cache_data.get(iso, {"vacancy": 0, "avg_price": 0})
             vac = rec["vacancy"]
             price = int(rec["avg_price"])
             diff_v = rec.get("vacancy_diff", 0)
             diff_p = rec.get("avg_price_diff", 0)
-            # 前日比
             vac_html = f'<div style="font-size:16px;font-weight:bold;">{vac}件'
-            if diff_v > 0: vac_html += f'<span style="color:blue;font-size:12px;">（+{diff_v}）</span>'
-            elif diff_v < 0: vac_html += f'<span style="color:red;font-size:12px;">（{diff_v}）</span>'
+            if diff_v > 0:
+                vac_html += f'<span style="color:blue;font-size:12px;">（+{diff_v}）</span>'
+            elif diff_v < 0:
+                vac_html += f'<span style="color:red;font-size:12px;">（{diff_v}）</span>'
             vac_html += '</div>'
             price_html = f'<div style="font-size:16px;font-weight:bold;">￥{price:,}'
-            if diff_p > 0: price_html += '<span style="color:red;"> ↑</span>'
-            elif diff_p < 0: price_html += '<span style="color:blue;"> ↓</span>'
+            if diff_p > 0:
+                price_html += '<span style="color:red;"> ↑</span>'
+            elif diff_p < 0:
+                price_html += '<span style="color:blue;"> ↓</span>'
             price_html += '</div>'
-            # イベント・炎
             icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:16px;">{get_demand_icon(vac, price)}</div>' if current >= today else ''
             event_html = '<div style="font-size:12px;margin-top:4px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data.get(iso, [])) + '</div>'
-            cell_html = (
+            # カレンダーセル（aタグで選択/ページ遷移）
+            current_params = st.query_params.to_dict()
+            new_params = {**current_params, "selected": iso}
+            href = "?" + "&".join([f"{k}={v}" for k, v in new_params.items()])
+            html += (
                 f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
+                f'<a href="{href}" target="_self" style="display:block;width:100%;height:100%;text-decoration:none;color:inherit;">'
+                f'{icon_html}'
                 f'<div style="position:absolute; top:4px; left:4px; font-size:14px; font-weight:bold;">{current.day}</div>'
-                f'{icon_html}{vac_html}{price_html}{event_html}'
-            )
-            # セルクリックで日付変更
-            if cols[idx].button(f"{current.day}\n{vac}件\n￥{price:,}", key=f"calbtn-{iso}", help=f"{iso}", use_container_width=True):
-                st.session_state["selected_date"] = iso
-            cols[idx].markdown(cell_html + '</td>', unsafe_allow_html=True)
-        st.markdown('</tr>', unsafe_allow_html=True)
-    st.markdown('</tbody></table></div>', unsafe_allow_html=True)
+                f'{vac_html}{price_html}{event_html}'
+                '</a></td>')
+        html += '</tr>'
+    html += '</tbody></table></div>'
+    return html
 
 
 # --- セッション状態の初期化 ---
