@@ -16,7 +16,7 @@ st.markdown("""
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px 20px;
+    padding: 4px 4px;
     min-width: 130px;
     max-width: 220px;
     border: 1.8px solid #b9b9c9;
@@ -59,7 +59,7 @@ st.markdown("""
     .custom-button {
         min-width: 56px !important;
         max-width: 90vw !important;
-        padding: 4.2px 0 !important;
+        padding: 4.2px 1 !important;
         font-size: 0.7rem !important;
     }
     .custom-button .icon {
