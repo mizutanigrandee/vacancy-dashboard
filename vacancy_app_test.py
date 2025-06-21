@@ -13,30 +13,34 @@ st.set_page_config(page_title="テスト版【めちゃいいツール】ミナ�
 st.markdown("""
 <style>
 @media (max-width: 700px) {
+    .calendar-wrapper td, .calendar-wrapper th {
+        min-width: 32px !important;
+        max-width: 38px !important;
+        font-size: 9px !important;
+        padding: 1px 0 1px 0 !important;
+    }
+    .calendar-wrapper td div,
+    .calendar-wrapper td span {
+        font-size: 9px !important;
+        line-height: 1.05 !important;
+    }
+    .calendar-wrapper td > div > div:nth-child(2),
+    .calendar-wrapper td > div > div:nth-child(3) {
+        display: block !important;
+        width: 100% !important;
+        text-align: left !important;
+    }
     .main-banner {
-        width: 98vw !important;
+        width: 100% !important;
         max-width: 98vw !important;
         height: auto !important;
         display: block;
         margin: 0 auto;
     }
-    /* 必要に応じてクラス名を修正してください */
-    .st-emotion-cache-1kyxreq, .st-emotion-cache-1fcdlh2, .st-emotion-cache-ocqkz7, .st-emotion-cache-1v0mbdj {
-        flex-direction: row !important;
-        justify-content: center !important;
-        align-items: center !important;
-        gap: 6px !important;
-    }
-    .stButton > button {
-        min-width: 80px !important;
-        font-size: 1rem !important;
-        padding: 8px 0 !important;
-        margin: 2px 0 !important;
-    }
 }
 </style>
-
 """, unsafe_allow_html=True)
+
 
 
 
@@ -163,24 +167,22 @@ params = st.query_params
 selected_date = params.get("selected")
 if isinstance(selected_date, list): selected_date = selected_date[0]
 
-# --- ナビゲーションUI（スマホも横並びになるHTML＋form方式） ---
-if "month_offset" not in st.session_state:
-    st.session_state.month_offset = 0
+# ナビゲーションUI
+if "month_offset" not in st.session_state: st.session_state.month_offset = 0
 MAX_MONTH_OFFSET = 12
+nav_left, nav_center, nav_right = st.columns([3, 2, 3])
+with nav_center:
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col1:
+        if st.button("⬅️ 前月"):
+            st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
+    with col2:
+        if st.button("📅 当月"):
+            st.session_state.month_offset = 0
+    with col3:
+        if st.button("➡️ 次月"):
+            st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
 
-st.markdown("""
-<div id="nav-btns" style="display:flex;flex-direction:row;justify-content:center;gap:10px;flex-wrap:wrap;">
-    <form action="" method="get" style="margin:0;">
-        <button name="nav" value="prev" type="submit" style="min-width:74px;font-size:1rem;padding:8px 0;">⬅️ 前月</button>
-    </form>
-    <form action="" method="get" style="margin:0;">
-        <button name="nav" value="today" type="submit" style="min-width:74px;font-size:1rem;padding:8px 0;">📅 当月</button>
-    </form>
-    <form action="" method="get" style="margin:0;">
-        <button name="nav" value="next" type="submit" style="min-width:74px;font-size:1rem;padding:8px 0;">➡️ 次月</button>
-    </form>
-</div>
-""", unsafe_allow_html=True)
 
 # --- クエリ対応 ---
 nav_action = st.query_params.get("nav")
