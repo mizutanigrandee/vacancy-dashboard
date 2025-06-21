@@ -14,6 +14,8 @@ st.markdown("""
 <style>
 .custom-button {
     display: flex;
+    flex-direction: row;       /* ← 横並び強制 */
+    flex-wrap: nowrap;         /* ← 折返し禁止 */
     align-items: center;
     justify-content: center;
     padding: 9px 0px;
@@ -29,6 +31,7 @@ st.markdown("""
     margin: 0 10px 10px 0;
     box-shadow: 0 1.5px 7px rgba(0,0,0,0.03);
     transition: background 0.18s, color 0.18s, border 0.18s;
+    white-space: nowrap;       /* ← テキスト改行禁止 */
 }
 .custom-button, .custom-button:visited, .custom-button:active {
     text-decoration: none !important;
@@ -65,6 +68,9 @@ st.markdown("""
         max-width: 90vw !important;
         padding: 4.2px 1 !important;
         font-size: 0.7rem !important;
+        flex-direction: row !important;   /* ← 横並び強制 */
+        flex-wrap: nowrap !important;     /* ← 折返し禁止 */
+        white-space: nowrap !important;   /* ← テキスト改行禁止 */
     }
     .custom-button .icon {
         font-size: 1.09em !important;
@@ -88,6 +94,7 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 # --- バナー表示 ---
 if os.path.exists("バナー画像3.png"):
