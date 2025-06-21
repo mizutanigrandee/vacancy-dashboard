@@ -190,87 +190,23 @@ if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
 MAX_MONTH_OFFSET = 12
 
-# =====================================================================
-# ① 旧ナビゲーション（st.button 3 つ）を丸ごと無効化 ---------------
-#     ── すぐ下に if False: ブロックを置くので何も動きません
-# ---------------------------------------------------------------------
-if False:                                   # ← ここだけ編集禁止
-    nav_left, nav_center, nav_right = st.columns([3, 2, 3])
-    with nav_center:
-        col1, col2, col3 = st.columns([1, 1, 1])
-        with col1:
-            if st.button("⬅️ 前月"):
-                st.session_state.month_offset = max(
-                    st.session_state.month_offset - 1, -12
-                )
-                st.rerun()
-        with col2:
-            if st.button("📅 当月"):
-                st.session_state.month_offset = 0
-                st.rerun()
-        with col3:
-            if st.button("➡️ 次月"):
-                st.session_state.month_offset = min(
-                    st.session_state.month_offset + 1, 12
-                )
-                st.rerun()
+# 旧ナビゲーション（st.button）
+nav_left, nav_center, nav_right = st.columns([3, 2, 3])
+with nav_center:
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col1:
+        if st.button("⬅️ 前月"):
+            st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
+    with col2:
+        if st.button("📅 当月"):
+            st.session_state.month_offset = 0
+    with col3:
+        if st.button("➡️ 次月"):
+            st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
 
-
-# =====================================================================
-# ① 旧ナビゲーション（st.button 3 つ）を丸ごと無効化 ---------------
-#    → if False: ブロックに入れるだけなので削除不要、戻すときは
-#      False → True にすれば復活できます
-# ---------------------------------------------------------------------
-if False:                                   # ← ここだけ触らない
-    nav_left, nav_center, nav_right = st.columns([3, 2, 3])
-    with nav_center:
-        col1, col2, col3 = st.columns([1, 1, 1])
-        with col1:
-            if st.button("⬅️ 前月"):
-                st.session_state.month_offset = max(
-                    st.session_state.month_offset - 1, -MAX_MONTH_OFFSET
-                )
-                st.rerun()
-        with col2:
-            if st.button("📅 当月"):
-                st.session_state.month_offset = 0
-                st.rerun()
-        with col3:
-            if st.button("➡️ 次月"):
-                st.session_state.month_offset = min(
-                    st.session_state.month_offset + 1, MAX_MONTH_OFFSET
-                )
-                st.rerun()
-# ---------------------------------------------------------------------
-
-
-# ② 新ナビゲーション  ―― PC はそのまま / スマホは横 1 行テキスト ----
-nav_html = """
-<style>
-/* ---- 共通 ---- */
-.nav-row{
-    display:flex;justify-content:center;gap:8px;margin:12px 0 20px;
-}
-.nav-row a{
-    padding:6px 14px;border:1px solid #aaa;border-radius:8px;
-    font-size:1.05rem;text-decoration:none;color:inherit;
-}
-/* ---- スマホだけ上書き ---- */
-@media (max-width:700px){
-  .nav-row a{min-width:70px;}               /* 押しやすい幅 */
-  .nav-row a::first-letter{color:transparent;} /* アイコン透明化 */
-}
-</style>
-
-<div class='nav-row'>
-  <a href='?nav=prev'  target='_self'>⬅️ 前月</a>
-  <a href='?nav=today' target='_self'>📅 当月</a>
-  <a href='?nav=next'  target='_self'>➡️ 次月</a>
-</div>
-"""
-st.markdown(nav_html, unsafe_allow_html=True)
-# =====================================================================
-
+base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
+month1 = base_month
+month2 = base_month + relativedelta(months=1)
 
 # --- グラフ履歴 ---
 def load_historical_data():
