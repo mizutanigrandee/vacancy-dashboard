@@ -81,6 +81,13 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
+st.markdown("""
+<style>
+.date-link, .nav-btn { cursor:pointer; }   /* クリックカーソルだけ維持 */
+</style>
+""", unsafe_allow_html=True)
+
+
 
 # --- クエリ対応 ---
 nav_action = st.query_params.get("nav")
@@ -203,7 +210,7 @@ def draw_calendar(month_date: dt.date) -> str:
             event_html = '<div style="font-size:12px;margin-top:4px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data.get(iso, [])) + '</div>'
             html += (
                 f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
-                f'<a href="?selected={iso}" target="_self" '
+                f'<a href="javascript:window.location.search=\'?selected={iso}\';" class="date-link">'
                 f'style="display:block;width:100%;height:100%;text-decoration:none;color:inherit;">'
                 f'{icon_html}'
                 f'<div style="position:absolute; top:4px; left:4px; font-size:14px; font-weight:bold;">{current.day}</div>'
@@ -234,13 +241,14 @@ if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
 MAX_MONTH_OFFSET = 12
 
-nav_html = """
+nav_html = f"""
 <div class='nav-row'>
-  <a href='?nav=prev'  class='nav-btn'>⬅️ 前月</a>
-  <a href='?nav=today' class='nav-btn'>📅 当月</a>
-  <a href='?nav=next'  class='nav-btn'>➡️ 次月</a>
+  <a onclick='window.location.search=\"?nav=prev\";'  class='nav-btn'>⬅️ 前月</a>
+  <a onclick='window.location.search=\"?nav=today\";' class='nav-btn'>📅 当月</a>
+  <a onclick='window.location.search=\"?nav=next\";'  class='nav-btn'>➡️ 次月</a>
 </div>
 """
+
 st.markdown(nav_html, unsafe_allow_html=True)
 
 
