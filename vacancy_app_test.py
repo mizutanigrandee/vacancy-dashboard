@@ -252,6 +252,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 
 
+
 # --- クエリ対応 ---
 nav_action = st.query_params.get("nav")
 if nav_action == "prev":
