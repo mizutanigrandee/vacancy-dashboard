@@ -46,43 +46,8 @@ st.markdown("""
         display: block;
         margin: 0 auto;
     }
-}
-/* ===== PC幅 (701px～) ===== */
-@media (min-width: 701px) {
-    .pc-nav-row {       /* いままで通りブロック表示 */
-        display: block !important;
-    }
-}
-</style>
-""", unsafe_allow_html=True)
-
-
-st.markdown("""
-<style>
-/* ───────── スマホだけの上書き ───────── */
-@media (max-width: 700px) {
-
-  /* ナビを横並びにする ───── */
-  .pc-nav-row {                 /* ← 既存のナビ行 div */
-      display: flex !important; /* 縦→横 */
-      justify-content: center;  /* 中央寄せ */
-      gap: 6px;                 /* ボタン間隔 */
-      margin-bottom: 14px;
-  }
-
-  /* ボタン幅をそろえ、押しやすく */
-  .pc-nav-row .stButton { flex: 1; }          /* 3 ボタン均等幅 */
-  .pc-nav-row button {
-      font-size: 1.05rem !important;
-      padding: 6px 0 !important;
-      border-radius: 9px !important;
-  }
-
-  /* 先頭の絵文字（⬅️📅➡️）を隠してテキスト風に */
-  .pc-nav-row button::first-letter { color: transparent; }
 
 }
-/* ───────── ここまで ───────── */
 </style>
 """, unsafe_allow_html=True)
 
@@ -277,21 +242,6 @@ nav_html = """
 </div>
 """
 st.markdown(nav_html, unsafe_allow_html=True)
-
-# --- ナビゲーション（PC・スマホ共通：HTML で横 3 つ） ---
-if "month_offset" not in st.session_state:
-    st.session_state.month_offset = 0
-MAX_MONTH_OFFSET = 12
-
-nav_html = """
-<div class='nav-row'>
-  <a href='?nav=prev'  class='nav-btn'>⬅️ 前月</a>
-  <a href='?nav=today' class='nav-btn'>📅 当月</a>
-  <a href='?nav=next'  class='nav-btn'>➡️ 次月</a>
-</div>
-"""
-st.markdown(nav_html, unsafe_allow_html=True)
-
 
 
 
