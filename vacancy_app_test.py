@@ -30,7 +30,6 @@ st.markdown("""
     box-shadow: 0 1.5px 7px rgba(0,0,0,0.03);
     transition: background 0.18s, color 0.18s, border 0.18s;
 }
-/* ★ここに下線消し・色強制のCSSを追加！★ */
 .custom-button, .custom-button:visited, .custom-button:active {
     text-decoration: none !important;
     color: #1a1a1a !important;
@@ -45,11 +44,6 @@ st.markdown("""
     margin-right: 11px;
     line-height: 1;
     display: inline-block;
-}
-.custom-button:hover {
-    background: #f3f3fa;
-    border-color: #e53939;
-    color: #e53939;
 }
 .nav-button-container, .graph-button-container {
     display: flex;
@@ -76,7 +70,6 @@ st.markdown("""
         font-size: 1.09em !important;
         margin-right: 8px !important;
     }
-    /* 以下カレンダー等スマホ調整 */
     .calendar-wrapper td, .calendar-wrapper th {
         min-width: 32px !important; max-width: 38px !important;
         font-size: 9px !important; padding: 1px 0 1px 0 !important;
@@ -94,26 +87,6 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
-
-
-
-# --- クエリ対応 ---
-params = st.query_params
-nav_action = params.get("nav")
-if "month_offset" not in st.session_state: st.session_state.month_offset = 0
-MAX_MONTH_OFFSET = 12
-
-if nav_action:
-    if nav_action == "prev":
-        st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
-    elif nav_action == "today":
-        st.session_state.month_offset = 0
-    elif nav_action == "next":
-        st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
-    # クエリパラメータクリア
-    new_params = {k: v for k, v in params.items() if k != 'nav'}
-    st.query_params.from_dict(new_params)
-    st.rerun()
 
 # --- バナー表示 ---
 if os.path.exists("バナー画像3.png"):
@@ -189,10 +162,6 @@ def draw_calendar(month_date: dt.date) -> str:
                 continue
             bg = '#ddd' if current < today else ('#ffecec' if (current in HOLIDAYS or current.weekday() == 6) else ('#e0f7ff' if current.weekday() == 5 else '#fff'))
             iso = current.isoformat()
-            # URL生成（パラメータ維持）
-            current_params = st.query_params.to_dict()
-            new_params = {**current_params, "selected": iso}
-            href = "?" + "&".join([f"{k}={v}" for k, v in new_params.items()])
             rec = cache_data.get(iso, {"vacancy": 0, "avg_price": 0})
             vac = rec["vacancy"]
             price = int(rec["avg_price"])
@@ -208,30 +177,61 @@ def draw_calendar(month_date: dt.date) -> str:
             price_html += '</div>'
             icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:16px;">{get_demand_icon(vac, price)}</div>' if current >= today else ''
             event_html = '<div style="font-size:12px;margin-top:4px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data.get(iso, [])) + '</div>'
-            html += (f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
-                     f'<a href="{href}" target="_self" style="display:block;width:100%;height:100%;text-decoration:none;color:inherit;">'
+            # クリック時にsession_stateを書き換え・rerunさせる（js使わずシンプル対応）
+            cell_onclick = f"window.parent.postMessage({{'type':'select_date','date':'{iso}'}}, '*')"
+            html += (f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;cursor:pointer;" '
+                     f'onclick="{cell_onclick}">'
                      f'{icon_html}<div style="position:absolute; top:4px; left:4px; font-size:14px; font-weight:bold;">{current.day}</div>'
-                     f'{vac_html}{price_html}{event_html}</a></td>')
+                     f'{vac_html}{price_html}{event_html}</td>')
         html += '</tr>'
     html += '</tbody></table></div>'
     return html
 
+# --- ページ状態管理用カスタムJS ---
+st.markdown("""
+<script>
+window.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'select_date') {
+        const selected = event.data.date;
+        window.parent.location.search = '?selected=' + selected;
+    }
+});
+</script>
+""", unsafe_allow_html=True)
+
 # --- カレンダー描画ロジック ---
 today = dt.date.today()
-selected_date = params.get("selected")
-if isinstance(selected_date, list): selected_date = selected_date[0]
+if "month_offset" not in st.session_state:
+    st.session_state.month_offset = 0
+if "selected_date" not in st.session_state:
+    st.session_state.selected_date = None
+if "show_graph" not in st.session_state:
+    st.session_state.show_graph = True
 
-# --- 月送りナビ（PC中央寄せ、スマホ横並び） ---
-nav_html = """
-<div class="nav-button-container">
-    <a href="?nav=prev" target="_self" class="custom-button"><span class="icon">⬅️</span>前月</a>
-    <a href="?nav=today" target="_self" class="custom-button"><span class="icon">📅</span>当月</a>
-    <a href="?nav=next" target="_self" class="custom-button"><span class="icon">➡️</span>次月</a>
-</div>
-"""
+selected_date = st.session_state.selected_date
+
+# --- 月送りナビ（PC中央寄せ、スマホ横並び、st.button利用） ---
 nav_left, nav_center, nav_right = st.columns([3, 4, 3])
 with nav_center:
-    st.markdown(nav_html, unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col1:
+        if st.button("⬅️ 前月", key="prev_month", help="前月へ"):
+            st.session_state.month_offset = max(st.session_state.month_offset - 1, -12)
+            st.session_state.show_graph = False
+            st.session_state.selected_date = None
+            st.rerun()
+    with col2:
+        if st.button("📅 当月", key="this_month", help="当月"):
+            st.session_state.month_offset = 0
+            st.session_state.show_graph = False
+            st.session_state.selected_date = None
+            st.rerun()
+    with col3:
+        if st.button("➡️ 次月", key="next_month", help="次月へ"):
+            st.session_state.month_offset = min(st.session_state.month_offset + 1, 12)
+            st.session_state.show_graph = False
+            st.session_state.selected_date = None
+            st.rerun()
 
 base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
 month1 = base_month
@@ -244,48 +244,79 @@ def load_historical_data():
     return {}
 historical_data = load_historical_data()
 
-if "show_graph" not in st.session_state:
-    st.session_state["show_graph"] = True
-
-if selected_date and st.session_state["show_graph"]:
-    # グラフとカレンダーのレイアウト
+# --- グラフ表示エリア ---
+if st.session_state.selected_date and st.session_state.show_graph:
     left, right = st.columns([3, 7])
     with left:
-        prev_day = (pd.to_datetime(selected_date).date() - dt.timedelta(days=1)).isoformat()
-        next_day = (pd.to_datetime(selected_date).date() + dt.timedelta(days=1)).isoformat()
-        close_href = "?" + "&".join([f"{k}={v}" for k, v in params.items() if k != 'selected'])
-        if close_href == "?": close_href = "."
-        graph_nav_html = f"""
-        <div class="graph-button-container">
-            <a href="{close_href}" target="_self" class="custom-button"><span class="icon">❌</span>グラフを閉じる</a>
-            <a href="?selected={prev_day}" target="_self" class="custom-button">&lt;前日</a>
-            <a href="?selected={next_day}" target="_self" class="custom-button">翌日&gt;</a>
-        </div>
-        """
-        st.markdown(graph_nav_html, unsafe_allow_html=True)
-        st.markdown(f"#### {selected_date} の在庫・価格推移")
+        prev_day = (pd.to_datetime(st.session_state.selected_date).date() - dt.timedelta(days=1)).isoformat()
+        next_day = (pd.to_datetime(st.session_state.selected_date).date() + dt.timedelta(days=1)).isoformat()
 
-        if (selected_date not in historical_data or not historical_data[selected_date] or len(historical_data[selected_date]) == 0):
+        col_close, col_prev, col_next = st.columns([1, 1, 1])
+        with col_close:
+            if st.button("❌ グラフを閉じる", key="close_graph"):
+                st.session_state.show_graph = False
+                st.session_state.selected_date = None
+                st.rerun()
+        with col_prev:
+            if st.button("＜前日", key="prev_day"):
+                st.session_state.selected_date = prev_day
+                st.session_state.show_graph = True
+                st.rerun()
+        with col_next:
+            if st.button("翌日＞", key="next_day"):
+                st.session_state.selected_date = next_day
+                st.session_state.show_graph = True
+                st.rerun()
+
+        st.markdown(f"#### {st.session_state.selected_date} の在庫・価格推移")
+
+        if (
+            st.session_state.selected_date not in historical_data or
+            not historical_data[st.session_state.selected_date] or
+            len(historical_data[st.session_state.selected_date]) == 0
+        ):
             st.info("この日付の履歴データがありません")
         else:
-            df = pd.DataFrame(sorted(({"取得日": hist_date, "在庫数": rec["vacancy"], "平均単価": rec["avg_price"]}
-                                    for hist_date, rec in historical_data[selected_date].items()), key=lambda x: x["取得日"]))
+            df = pd.DataFrame(
+                sorted(
+                    (
+                        {
+                            "取得日": hist_date,
+                            "在庫数": rec["vacancy"],
+                            "平均単価": rec["avg_price"],
+                        }
+                        for hist_date, rec in historical_data[st.session_state.selected_date].items()
+                    ),
+                    key=lambda x: x["取得日"]
+                )
+            )
             df["取得日"] = pd.to_datetime(df["取得日"])
             if df.empty:
                 st.info("この日付の履歴データがありません")
             else:
                 st.write("##### 在庫数")
-                chart_vac = (alt.Chart(df).mark_line(point=True)
-                             .encode(x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
-                                     y=alt.Y("在庫数:Q", axis=alt.Axis(title=None), scale=alt.Scale(domain=[0, 350])))
-                             .properties(height=320, width=600))
+                chart_vac = (
+                    alt.Chart(df)
+                    .mark_line(point=True)
+                    .encode(
+                        x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
+                        y=alt.Y("在庫数:Q", axis=alt.Axis(title=None), scale=alt.Scale(domain=[0, 350]))
+                    )
+                    .properties(height=320, width=600)
+                )
                 st.altair_chart(chart_vac, use_container_width=True)
                 st.write("##### 平均単価 (円)")
-                chart_price = (alt.Chart(df).mark_line(point=True, color="#e15759")
-                               .encode(x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
-                                       y=alt.Y("平均単価:Q", axis=alt.Axis(title=None), scale=alt.Scale(domain=[0, 35000])))
-                               .properties(height=320, width=600))
+                chart_price = (
+                    alt.Chart(df)
+                    .mark_line(point=True, color="#e15759")
+                    .encode(
+                        x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
+                        y=alt.Y("平均単価:Q", axis=alt.Axis(title=None), scale=alt.Scale(domain=[0, 35000]))
+                    )
+                    .properties(height=320, width=600)
+                )
                 st.altair_chart(chart_price, use_container_width=True)
+
     with right:
         cal1, cal2 = st.columns(2)
         with cal1:
@@ -305,7 +336,7 @@ else:
 
 # --- カレンダー下部の案内など ---
 st.markdown("<hr>", unsafe_allow_html=True)
-if not selected_date:
+if not st.session_state.selected_date:
     st.markdown("<div style='font-size:17px; color:#296;'>日付を選択すると推移グラフが表示されます</div>", unsafe_allow_html=True)
 try:
     mtime = os.path.getmtime(CACHE_FILE)
