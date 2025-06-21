@@ -30,6 +30,16 @@ st.markdown("""
     box-shadow: 0 1.5px 7px rgba(0,0,0,0.03);
     transition: background 0.18s, color 0.18s, border 0.18s;
 }
+/* ★ここに下線消し・色強制のCSSを追加！★ */
+.custom-button, .custom-button:visited, .custom-button:active {
+    text-decoration: none !important;
+    color: #1a1a1a !important;
+}
+.custom-button:hover {
+    background: #f3f3fa;
+    border-color: #e53939;
+    color: #e53939 !important;
+}
 .custom-button .icon {
     font-size: 1.0em;
     margin-right: 11px;
