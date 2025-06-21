@@ -242,7 +242,7 @@ else:
             .mark_line(point=True)
             .encode(
                 x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
-                y=alt.Y("在庫数:Q", axis=alt.Axis(title=None), scale=alt.Scale(domain=[0, 400]))
+                y=alt.Y("在庫数:Q", axis=alt.Axis(title=None), scale=alt.Scale(domain=[0, 350]))
             )
             .properties(height=320, width=600)
         )
@@ -254,7 +254,7 @@ else:
             .mark_line(point=True, color="#e15759")
             .encode(
                 x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
-                y=alt.Y("平均単価:Q", axis=alt.Axis(title=None), scale=alt.Scale(domain=[0, 40000]))
+                y=alt.Y("平均単価:Q", axis=alt.Axis(title=None), scale=alt.Scale(domain=[0, 35000]))
             )
             .properties(height=320, width=600)
         )
