@@ -9,28 +9,42 @@ import altair as alt
 
 st.set_page_config(page_title="テスト版【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
 
-# 🔻 ナビゲーション共通 CSS（このブロックをコピペ）
+# 🔻スマホ専用カレンダーCSS  ★←ここをそっくり置き換え
 st.markdown("""
 <style>
-/* ===== スマホ幅 (～700px) ===== */
+/* ===== スマホ幅 (～700px) のみ ===== */
 @media (max-width: 700px) {
-    /* ナビ行を横並びに */
-    .pc-nav-row {
-        display: flex !important;
-        justify-content: center;
-        gap: 6px;
-        margin-bottom: 12px;
+
+    /* ▼セルの幅制限を外す → 文字切れ解消 */
+    .calendar-wrapper td,
+    .calendar-wrapper th {
+        min-width: 48px !important;   /* ←小さ過ぎない程度に広げる */
+        max-width: none !important;   /* ←上限を外す */
+        font-size: 10px !important;
+        padding: 2px 0 !important;
     }
-    /* ボタン見た目をテキスト風に（サイズ調整） */
-    .pc-nav-row button {
-        font-size: 1.1rem !important;
-        padding: 6px 10px !important;
-        min-width: 70px !important;
-        border-radius: 9px !important;
+
+    .calendar-wrapper td div,
+    .calendar-wrapper td span {
+        font-size: 10px !important;
+        line-height: 1.15 !important; /* 高さ少し広げて詰まり防止 */
+        white-space: nowrap;          /* 改行せず 1 行で表示 */
     }
-    /* ボタン先頭の絵文字だけ非表示 → テキストっぽく見せる */
-    .pc-nav-row button::first-letter {
-        color: transparent;
+
+    .calendar-wrapper td > div > div:nth-child(2),
+    .calendar-wrapper td > div > div:nth-child(3) {
+        display: block !important;
+        width: 100% !important;
+        text-align: left !important;
+    }
+
+    /* バナーはこれまで通り */
+    .main-banner {
+        width: 100% !important;
+        max-width: 98vw !important;
+        height: auto !important;
+        display: block;
+        margin: 0 auto;
     }
 }
 /* ===== PC幅 (701px～) ===== */
