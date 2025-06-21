@@ -6,69 +6,58 @@ import calendar
 import pandas as pd
 import os, json, pytz, jpholiday
 import altair as alt
-from streamlit_js_eval import streamlit_js_eval # 変更点①：ライブラリをインポート
 
 st.set_page_config(page_title="テスト版【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
 
-# 🔻スマホ専用カレンダーCSS (元の状態に戻しました)
+# ==== ボタンCSS ====（コピペでOK）
 st.markdown("""
 <style>
-@media (max-width: 700px) {
-    .calendar-wrapper td, .calendar-wrapper th {
-        min-width: 32px !important;
-        max-width: 38px !important;
-        font-size: 9px !important;
-        padding: 1px 0 1px 0 !important;
-    }
-    .calendar-wrapper td div,
-    .calendar-wrapper td span {
-        font-size: 9px !important;
-        line-height: 1.05 !important;
-    }
-    .calendar-wrapper td > div > div:nth-child(2),
-    .calendar-wrapper td > div > div:nth-child(3) {
-        display: block !important;
-        width: 100% !important;
-        text-align: left !important;
-    }
-    .main-banner {
-        width: 100% !important;
-        max-width: 98vw !important;
-        height: auto !important;
-        display: block;
-        margin: 0 auto;
-    }
-    .icon { display: none !important; }
-    .text { display: inline !important; }
-    .nav-btn { font-size: 1.1rem !important; min-width: 70px !important;}
+/* カレンダー上部・グラフ用ボタン共通 */
+.nav-btns {
+  display: flex; justify-content: center; gap: 18px; margin-bottom: 20px;
 }
-/* PCはデフォルト */
+.nav-btn {
+  display: inline-block; padding: 9px 20px;
+  border: 1px solid #bbb; border-radius: 9px; font-size: 1.09rem;
+  background: #fff; color: #222; text-decoration: none; min-width: 80px;
+  transition: 0.2s;
+}
+.nav-btn:hover { background: #f1f7ff; color: #0072C6; border-color: #0072C6; }
+@media (max-width: 700px) {
+  .nav-btns { gap: 4px; }
+  .nav-btn { min-width: 0; font-size: 1rem; flex: 1; padding: 7px 0; }
+  .calendar-wrapper td, .calendar-wrapper th {
+      min-width:32px!important;max-width:38px!important;font-size:9px!important;padding:1px 0!important;
+  }
+  .calendar-wrapper td div, .calendar-wrapper td span {font-size:9px!important;line-height:1.05!important;}
+  .calendar-wrapper td>div>div:nth-child(2),.calendar-wrapper td>div>div:nth-child(3){
+      display:block!important;width:100%!important;text-align:left!important;
+  }
+  .main-banner{width:100%!important;max-width:98vw!important;height:auto!important;display:block;margin:0 auto;}
+  .icon{display:none!important;}
+}
 @media (min-width: 701px) {
-    .icon { display: inline !important; }
-    .text { display: inline !important; }
-    .nav-btn { font-size: 1.1rem !important; min-width: 80px !important;}
+  .icon { display: inline!important; }
 }
 </style>
 """, unsafe_allow_html=True)
 
-# 変更点②：画面の横幅を取得 (初回読み込み時のみ実行)
-# 初回実行で値が取れない場合を考慮し、デフォルト値をPCの幅(701)に設定
-screen_width = streamlit_js_eval(js_expressions='window.innerWidth', key='SCR_WIDTH') or 701
-
 # --- クエリ対応 ---
-nav_action = st.query_params.get("nav")
+params = st.query_params
+nav_action = params.get("nav")
+if "month_offset" not in st.session_state: st.session_state.month_offset = 0
 MAX_MONTH_OFFSET = 12
-if nav_action == "prev":
-    st.session_state.month_offset = max(st.session_state.get("month_offset", 0) - 1, -MAX_MONTH_OFFSET)
-    st.query_params.pop("nav")
-    st.rerun()
-elif nav_action == "today":
-    st.session_state.month_offset = 0
-    st.query_params.pop("nav")
-    st.rerun()
-elif nav_action == "next":
-    st.session_state.month_offset = min(st.session_state.get("month_offset", 0) + 1, MAX_MONTH_OFFSET)
-    st.query_params.pop("nav")
+
+if nav_action:
+    if nav_action == "prev":
+        st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
+    elif nav_action == "today":
+        st.session_state.month_offset = 0
+    elif nav_action == "next":
+        st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
+    # nav処理後、URLをクリーンに
+    new_params = {k: v for k, v in params.items() if k != 'nav'}
+    st.query_params.from_dict(new_params)
     st.rerun()
 
 # --- バナー表示 ---
@@ -104,8 +93,7 @@ def load_json(path):
     return {}
 
 def load_event_data_from_excel(filepath=EVENT_EXCEL):
-    if not os.path.exists(filepath):
-        return {}
+    if not os.path.exists(filepath): return {}
     df = pd.read_excel(filepath).dropna(subset=["date", "icon", "name"])
     ev = {}
     for _, row in df.iterrows():
@@ -131,14 +119,8 @@ def draw_calendar(month_date: dt.date) -> str:
     html = '<div class="calendar-wrapper"><table style="border-collapse:collapse;width:100%;table-layout:fixed;text-align:center;">'
     html += """
     <style>
-    .calendar-wrapper td {
-        padding-top: 30px !important;
-        transition: background-color 0.2s ease;
-    }
-    .calendar-wrapper td:hover {
-        background-color: #f5faff !important;
-        cursor: pointer;
-    }
+    .calendar-wrapper td { padding-top: 30px !important; transition: background-color 0.2s ease; }
+    .calendar-wrapper td:hover { background-color: #f5faff !important; cursor: pointer; }
     </style>
     """
     html += '<thead style="background:#f4f4f4;color:#333;font-weight:bold;"><tr>'
@@ -185,56 +167,27 @@ def draw_calendar(month_date: dt.date) -> str:
     html += '</tbody></table></div>'
     return html
 
-# --- カレンダー描画ロジック ---
+# === カレンダー描画ロジック ===
 today = dt.date.today()
-params = st.query_params
 selected_date = params.get("selected")
 if isinstance(selected_date, list): selected_date = selected_date[0]
 
-if "month_offset" not in st.session_state:
-    st.session_state.month_offset = 0
-MAX_MONTH_OFFSET = 12
-
-# --- 変更点③：画面幅に応じてボタンのレイアウトを切り替える ---
-if screen_width > 700:
-    # PC表示の場合：元のレイアウトを完全に維持
-    nav_left, nav_center, nav_right = st.columns([3, 2, 3])
-    with nav_center:
-        col1, col2, col3 = st.columns([1, 1, 1])
-        with col1:
-            if st.button("⬅️ 前月"):
-                st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
-                st.rerun()
-        with col2:
-            if st.button("📅 当月"):
-                st.session_state.month_offset = 0
-                st.rerun()
-        with col3:
-            if st.button("➡️ 次月"):
-                st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
-                st.rerun()
-else:
-    # スマホ表示の場合：横並びのレイアウト
-    mcol1, mcol2, mcol3 = st.columns(3)
-    with mcol1:
-        if st.button("⬅️ 前月", use_container_width=True):
-            st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
-            st.rerun()
-    with mcol2:
-        if st.button("📅 当月", use_container_width=True):
-            st.session_state.month_offset = 0
-            st.rerun()
-    with mcol3:
-        if st.button("➡️ 次月", use_container_width=True):
-            st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
-            st.rerun()
-
+# === 月送りナビ（HTML/CSSのみ） ===
+nav_html = """
+<div class="nav-btns">
+  <a href="?nav=prev"  class="nav-btn" target="_self">⬅️ 前月</a>
+  <a href="?nav=today" class="nav-btn" target="_self">📅 当月</a>
+  <a href="?nav=next"  class="nav-btn" target="_self">➡️ 次月</a>
+</div>
+"""
+nav_left, nav_center, nav_right = st.columns([3, 4, 3])
+with nav_center:
+    st.markdown(nav_html, unsafe_allow_html=True)
 
 base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
 month1 = base_month
 month2 = base_month + relativedelta(months=1)
 
-# --- グラフ履歴 ---
 def load_historical_data():
     if os.path.exists(HISTORICAL_FILE):
         with open(HISTORICAL_FILE, "r", encoding="utf-8") as f:
@@ -248,43 +201,17 @@ if "show_graph" not in st.session_state:
 if selected_date and st.session_state["show_graph"]:
     left, right = st.columns([3, 7])
     with left:
-        # グラフ操作ボタンも同様に画面幅で分岐
-        if screen_width > 700:
-            # PC表示の場合：元のレイアウト
-            btn_cols = st.columns(3)
-            with btn_cols[0]:
-                if st.button("❌ 閉じる"):
-                    st.query_params.clear()
-                    st.session_state["show_graph"] = False
-                    st.rerun()
-            with btn_cols[1]:
-                if st.button("＜前日"):
-                    new_dt = pd.to_datetime(selected_date).date() - dt.timedelta(days=1)
-                    st.query_params["selected"] = new_dt.isoformat()
-                    st.rerun()
-            with btn_cols[2]:
-                if st.button("翌日＞"):
-                    new_dt = pd.to_datetime(selected_date).date() + dt.timedelta(days=1)
-                    st.query_params["selected"] = new_dt.isoformat()
-                    st.rerun()
-        else:
-            # スマホ表示の場合：横並びレイアウト
-            mbtn_cols = st.columns(3)
-            with mbtn_cols[0]:
-                if st.button("❌ 閉じる", use_container_width=True):
-                    st.query_params.clear()
-                    st.session_state["show_graph"] = False
-                    st.rerun()
-            with mbtn_cols[1]:
-                if st.button("＜前日", use_container_width=True):
-                    new_dt = pd.to_datetime(selected_date).date() - dt.timedelta(days=1)
-                    st.query_params["selected"] = new_dt.isoformat()
-                    st.rerun()
-            with mbtn_cols[2]:
-                if st.button("翌日＞", use_container_width=True):
-                    new_dt = pd.to_datetime(selected_date).date() + dt.timedelta(days=1)
-                    st.query_params["selected"] = new_dt.isoformat()
-                    st.rerun()
+        prev_dt = (pd.to_datetime(selected_date).date() - dt.timedelta(days=1)).isoformat()
+        next_dt = (pd.to_datetime(selected_date).date() + dt.timedelta(days=1)).isoformat()
+        close_href = "."  # 閉じる＝トップ
+
+        st.markdown(f"""
+        <div class="nav-btns" style="justify-content:flex-start;">
+          <a href="{close_href}" class="nav-btn" target="_self">❌ 閉じる</a>
+          <a href="?selected={prev_dt}" class="nav-btn" target="_self">&lt;前日</a>
+          <a href="?selected={next_dt}" class="nav-btn" target="_self">翌日&gt;</a>
+        </div>
+        """, unsafe_allow_html=True)
 
         st.markdown(f"#### {selected_date} の在庫・価格推移")
         if (
@@ -370,10 +297,10 @@ st.markdown("""
     - 平均価格の<span style="color:red;">↑</span>／<span style="color:blue;">↓</span>は、前回巡回時点との平均価格の上昇／下降を示します。<br>
     - 会場アイコン：🔴京セラドーム / 🔵ヤンマースタジアム / ★その他会場<br>
     - 炎マーク（需要シンボル）の内訳：<br>
-        ・🔥1：残室 ≤250 または 価格 ≥25,000円<br>
-        ・🔥2：残室 ≤200 または 価格 ≥30,000円<br>
-        ・🔥3：残室 ≤150 または 価格 ≥35,000円<br>
-        ・🔥4：残室 ≤100 または 価格 ≥40,000円<br>
-        ・🔥5：残室 ≤70 または 価格 ≥50,000円<br>
+      &nbsp;&nbsp;・🔥1：残室 ≤250 または 価格 ≥25,000円<br>
+      &nbsp;&nbsp;・🔥2：残室 ≤200 または 価格 ≥30,000円<br>
+      &nbsp;&nbsp;・🔥3：残室 ≤150 または 価格 ≥35,000円<br>
+      &nbsp;&nbsp;・🔥4：残室 ≤100 または 価格 ≥40,000円<br>
+      &nbsp;&nbsp;・🔥5：残室 ≤70 または 価格 ≥50,000円<br>
     </div>
     """, unsafe_allow_html=True)
