@@ -9,14 +9,13 @@ import altair as alt
 
 st.set_page_config(page_title="テスト版【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
 
-# ==== ボタンCSS ====（コピペでOK）
+# --- PC/スマホ兼用 カスタムボタンCSS ---
 st.markdown("""
 <style>
-/* --- 共通ボタン --- */
 .custom-button {
     display: flex;
     align-items: center;
-    justify-content: center;   /* ←中央寄せ */
+    justify-content: center;
     padding: 11px 26px;
     min-width: 125px;
     max-width: 200px;
@@ -51,8 +50,7 @@ st.markdown("""
     width: 100%;
     margin-bottom: 1.6rem;
 }
-
-/* --- スマホだけ小さめに --- */
+/* スマホは小さめ */
 @media (max-width: 700px) {
     .nav-button-container, .graph-button-container {
         gap: 3.5px;
@@ -68,6 +66,7 @@ st.markdown("""
         font-size: 1.18em !important;
         margin-right: 5px !important;
     }
+    /* 以下カレンダー等スマホ調整 */
     .calendar-wrapper td, .calendar-wrapper th {
         min-width: 32px !important; max-width: 38px !important;
         font-size: 9px !important; padding: 1px 0 1px 0 !important;
@@ -86,8 +85,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-
-
 # --- クエリ対応 ---
 params = st.query_params
 nav_action = params.get("nav")
@@ -101,7 +98,7 @@ if nav_action:
         st.session_state.month_offset = 0
     elif nav_action == "next":
         st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
-    # nav処理後、URLをクリーンに
+    # クエリパラメータクリア
     new_params = {k: v for k, v in params.items() if k != 'nav'}
     st.query_params.from_dict(new_params)
     st.rerun()
@@ -180,45 +177,39 @@ def draw_calendar(month_date: dt.date) -> str:
                 continue
             bg = '#ddd' if current < today else ('#ffecec' if (current in HOLIDAYS or current.weekday() == 6) else ('#e0f7ff' if current.weekday() == 5 else '#fff'))
             iso = current.isoformat()
+            # URL生成（パラメータ維持）
+            current_params = st.query_params.to_dict()
+            new_params = {**current_params, "selected": iso}
+            href = "?" + "&".join([f"{k}={v}" for k, v in new_params.items()])
             rec = cache_data.get(iso, {"vacancy": 0, "avg_price": 0})
             vac = rec["vacancy"]
             price = int(rec["avg_price"])
             diff_v = rec.get("vacancy_diff", 0)
             diff_p = rec.get("avg_price_diff", 0)
             vac_html = f'<div style="font-size:16px;font-weight:bold;">{vac}件'
-            if diff_v > 0:
-                vac_html += f'<span style="color:blue;font-size:12px;">（+{diff_v}）</span>'
-            elif diff_v < 0:
-                vac_html += f'<span style="color:red;font-size:12px;">（{diff_v}）</span>'
+            if diff_v > 0: vac_html += f'<span style="color:blue;font-size:12px;">（+{diff_v}）</span>'
+            elif diff_v < 0: vac_html += f'<span style="color:red;font-size:12px;">（{diff_v}）</span>'
             vac_html += '</div>'
             price_html = f'<div style="font-size:16px;font-weight:bold;">￥{price:,}'
-            if diff_p > 0:
-                price_html += '<span style="color:red;"> ↑</span>'
-            elif diff_p < 0:
-                price_html += '<span style="color:blue;"> ↓</span>'
+            if diff_p > 0: price_html += '<span style="color:red;"> ↑</span>'
+            elif diff_p < 0: price_html += '<span style="color:blue;"> ↓</span>'
             price_html += '</div>'
             icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:16px;">{get_demand_icon(vac, price)}</div>' if current >= today else ''
             event_html = '<div style="font-size:12px;margin-top:4px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data.get(iso, [])) + '</div>'
-            html += (
-                f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
-                f'<a href="?selected={iso}" target="_self" '
-                f'style="display:block;width:100%;height:100%;text-decoration:none;color:inherit;">'
-                f'{icon_html}'
-                f'<div style="position:absolute; top:4px; left:4px; font-size:14px; font-weight:bold;">{current.day}</div>'
-                f'{vac_html}{price_html}{event_html}'
-                f'</a>'
-                f'</td>'
-            )
+            html += (f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
+                     f'<a href="{href}" target="_self" style="display:block;width:100%;height:100%;text-decoration:none;color:inherit;">'
+                     f'{icon_html}<div style="position:absolute; top:4px; left:4px; font-size:14px; font-weight:bold;">{current.day}</div>'
+                     f'{vac_html}{price_html}{event_html}</a></td>')
         html += '</tr>'
     html += '</tbody></table></div>'
     return html
 
-# === カレンダー描画ロジック ===
+# --- カレンダー描画ロジック ---
 today = dt.date.today()
 selected_date = params.get("selected")
 if isinstance(selected_date, list): selected_date = selected_date[0]
 
-# === 月送りナビ（HTML/CSSのみ） ===
+# --- 月送りナビ（PC中央寄せ、スマホ横並び） ---
 nav_html = """
 <div class="nav-button-container">
     <a href="?nav=prev" target="_self" class="custom-button"><span class="icon">⬅️</span>前月</a>
@@ -226,7 +217,6 @@ nav_html = """
     <a href="?nav=next" target="_self" class="custom-button"><span class="icon">➡️</span>次月</a>
 </div>
 """
-
 nav_left, nav_center, nav_right = st.columns([3, 4, 3])
 with nav_center:
     st.markdown(nav_html, unsafe_allow_html=True)
@@ -246,68 +236,44 @@ if "show_graph" not in st.session_state:
     st.session_state["show_graph"] = True
 
 if selected_date and st.session_state["show_graph"]:
+    # グラフとカレンダーのレイアウト
     left, right = st.columns([3, 7])
     with left:
-        prev_dt = (pd.to_datetime(selected_date).date() - dt.timedelta(days=1)).isoformat()
-        next_dt = (pd.to_datetime(selected_date).date() + dt.timedelta(days=1)).isoformat()
-        close_href = "."  # 閉じる＝トップ
-
-        st.markdown(f"""
-        <div class="nav-btns" style="justify-content:flex-start;">
-          <a href="{close_href}" class="nav-btn" target="_self">❌ 閉じる</a>
-          <a href="?selected={prev_dt}" class="nav-btn" target="_self">&lt;前日</a>
-          <a href="?selected={next_dt}" class="nav-btn" target="_self">翌日&gt;</a>
+        prev_day = (pd.to_datetime(selected_date).date() - dt.timedelta(days=1)).isoformat()
+        next_day = (pd.to_datetime(selected_date).date() + dt.timedelta(days=1)).isoformat()
+        close_href = "?" + "&".join([f"{k}={v}" for k, v in params.items() if k != 'selected'])
+        if close_href == "?": close_href = "."
+        graph_nav_html = f"""
+        <div class="graph-button-container">
+            <a href="{close_href}" target="_self" class="custom-button"><span class="icon">❌</span>閉じる</a>
+            <a href="?selected={prev_day}" target="_self" class="custom-button">&lt;前日</a>
+            <a href="?selected={next_day}" target="_self" class="custom-button">翌日&gt;</a>
         </div>
-        """, unsafe_allow_html=True)
-
+        """
+        st.markdown(graph_nav_html, unsafe_allow_html=True)
         st.markdown(f"#### {selected_date} の在庫・価格推移")
-        if (
-            selected_date not in historical_data or
-            not historical_data[selected_date] or
-            len(historical_data[selected_date]) == 0
-        ):
+
+        if (selected_date not in historical_data or not historical_data[selected_date] or len(historical_data[selected_date]) == 0):
             st.info("この日付の履歴データがありません")
         else:
-            df = pd.DataFrame(
-                sorted(
-                    (
-                        {
-                            "取得日": hist_date,
-                            "在庫数": rec["vacancy"],
-                            "平均単価": rec["avg_price"],
-                        }
-                        for hist_date, rec in historical_data[selected_date].items()
-                    ),
-                    key=lambda x: x["取得日"]
-                )
-            )
+            df = pd.DataFrame(sorted(({"取得日": hist_date, "在庫数": rec["vacancy"], "平均単価": rec["avg_price"]}
+                                    for hist_date, rec in historical_data[selected_date].items()), key=lambda x: x["取得日"]))
             df["取得日"] = pd.to_datetime(df["取得日"])
             if df.empty:
                 st.info("この日付の履歴データがありません")
             else:
                 st.write("##### 在庫数")
-                chart_vac = (
-                    alt.Chart(df)
-                    .mark_line(point=True)
-                    .encode(
-                        x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
-                        y=alt.Y("在庫数:Q", axis=alt.Axis(title=None), scale=alt.Scale(domain=[0, 350]))
-                    )
-                    .properties(height=320, width=600)
-                )
+                chart_vac = (alt.Chart(df).mark_line(point=True)
+                             .encode(x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
+                                     y=alt.Y("在庫数:Q", axis=alt.Axis(title=None), scale=alt.Scale(domain=[0, 350])))
+                             .properties(height=320, width=600))
                 st.altair_chart(chart_vac, use_container_width=True)
                 st.write("##### 平均単価 (円)")
-                chart_price = (
-                    alt.Chart(df)
-                    .mark_line(point=True, color="#e15759")
-                    .encode(
-                        x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
-                        y=alt.Y("平均単価:Q", axis=alt.Axis(title=None), scale=alt.Scale(domain=[0, 35000]))
-                    )
-                    .properties(height=320, width=600)
-                )
+                chart_price = (alt.Chart(df).mark_line(point=True, color="#e15759")
+                               .encode(x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
+                                       y=alt.Y("平均単価:Q", axis=alt.Axis(title=None), scale=alt.Scale(domain=[0, 35000])))
+                               .properties(height=320, width=600))
                 st.altair_chart(chart_price, use_container_width=True)
-
     with right:
         cal1, cal2 = st.columns(2)
         with cal1:
@@ -326,10 +292,9 @@ else:
         st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
 # --- カレンダー下部の案内など ---
-st.markdown(
-    "<div style='font-size:17px; color:#296;'>日付を選択すると推移グラフが表示されます</div>",
-    unsafe_allow_html=True
-)
+st.markdown("<hr>", unsafe_allow_html=True)
+if not selected_date:
+    st.markdown("<div style='font-size:17px; color:#296;'>日付を選択すると推移グラフが表示されます</div>", unsafe_allow_html=True)
 try:
     mtime = os.path.getmtime(CACHE_FILE)
     last_run = dt.datetime.fromtimestamp(mtime, pytz.timezone('Asia/Tokyo'))
@@ -344,10 +309,10 @@ st.markdown("""
     - 平均価格の<span style="color:red;">↑</span>／<span style="color:blue;">↓</span>は、前回巡回時点との平均価格の上昇／下降を示します。<br>
     - 会場アイコン：🔴京セラドーム / 🔵ヤンマースタジアム / ★その他会場<br>
     - 炎マーク（需要シンボル）の内訳：<br>
-      &nbsp;&nbsp;・🔥1：残室 ≤250 または 価格 ≥25,000円<br>
-      &nbsp;&nbsp;・🔥2：残室 ≤200 または 価格 ≥30,000円<br>
-      &nbsp;&nbsp;・🔥3：残室 ≤150 または 価格 ≥35,000円<br>
-      &nbsp;&nbsp;・🔥4：残室 ≤100 または 価格 ≥40,000円<br>
-      &nbsp;&nbsp;・🔥5：残室 ≤70 または 価格 ≥50,000円<br>
+        ・🔥1：残室 ≤250 または 価格 ≥25,000円<br>
+        ・🔥2：残室 ≤200 または 価格 ≥30,000円<br>
+        ・🔥3：残室 ≤150 または 価格 ≥35,000円<br>
+        ・🔥4：残室 ≤100 または 価格 ≥40,000円<br>
+        ・🔥5：残室 ≤70 または 価格 ≥50,000円<br>
     </div>
     """, unsafe_allow_html=True)
