@@ -6,41 +6,60 @@ import calendar
 import pandas as pd
 import os, json, pytz, jpholiday
 import altair as alt
+from streamlit_js_eval import streamlit_js_eval # 変更点①：ライブラリをインポート
 
 st.set_page_config(page_title="テスト版【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
 
-# --- PC/スマホ判定 ---
-def is_mobile():
-    # Streamlit公式: User-Agent判定はできないが横幅で仮判定
-    return st.get_option("client.viewportWidth", 800) <= 700
-
-# --- ナビボタンCSS ---
+# 🔻スマホ専用カレンダーCSS (元の状態に戻しました)
 st.markdown("""
 <style>
-/* 横並びHTMLボタン共通デザイン */
-.nav-btn-row {
-  display: flex; justify-content: space-between; gap: 8px; margin: 16px 0 22px 0;
+@media (max-width: 700px) {
+    .calendar-wrapper td, .calendar-wrapper th {
+        min-width: 32px !important;
+        max-width: 38px !important;
+        font-size: 9px !important;
+        padding: 1px 0 1px 0 !important;
+    }
+    .calendar-wrapper td div,
+    .calendar-wrapper td span {
+        font-size: 9px !important;
+        line-height: 1.05 !important;
+    }
+    .calendar-wrapper td > div > div:nth-child(2),
+    .calendar-wrapper td > div > div:nth-child(3) {
+        display: block !important;
+        width: 100% !important;
+        text-align: left !important;
+    }
+    .main-banner {
+        width: 100% !important;
+        max-width: 98vw !important;
+        height: auto !important;
+        display: block;
+        margin: 0 auto;
+    }
+    .icon { display: none !important; }
+    .text { display: inline !important; }
+    .nav-btn { font-size: 1.1rem !important; min-width: 70px !important;}
 }
-.nav-btn-row a {
-  flex:1; display:inline-block; padding:14px 0; border:1px solid #bbb; border-radius:12px;
-  background:#fff; color:#222; text-decoration:none; text-align:center; font-size:1.19rem; font-weight:500;
-  transition: background 0.15s, color 0.15s;
-}
-.nav-btn-row a:active { background:#eee; color:#ff4b4b; }
-@media (max-width:700px) {
-  .calendar-wrapper td, .calendar-wrapper th {min-width:32px!important;max-width:38px!important;font-size:9px!important;padding:1px 0!important;}
-  .calendar-wrapper td div,.calendar-wrapper td span{font-size:9px!important;line-height:1.05!important;}
-  .calendar-wrapper td>div>div:nth-child(2),.calendar-wrapper td>div>div:nth-child(3){display:block!important;width:100%!important;text-align:left!important;}
-  .main-banner{width:100%!important;max-width:98vw!important;height:auto!important;display:block;margin:0 auto;}
+/* PCはデフォルト */
+@media (min-width: 701px) {
+    .icon { display: inline !important; }
+    .text { display: inline !important; }
+    .nav-btn { font-size: 1.1rem !important; min-width: 80px !important;}
 }
 </style>
 """, unsafe_allow_html=True)
+
+# 変更点②：画面の横幅を取得 (初回読み込み時のみ実行)
+# 初回実行で値が取れない場合を考慮し、デフォルト値をPCの幅(701)に設定
+screen_width = streamlit_js_eval(js_expressions='window.innerWidth', key='SCR_WIDTH') or 701
 
 # --- クエリ対応 ---
 nav_action = st.query_params.get("nav")
 MAX_MONTH_OFFSET = 12
 if nav_action == "prev":
-    st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
+    st.session_state.month_offset = max(st.session_state.get("month_offset", 0) - 1, -MAX_MONTH_OFFSET)
     st.query_params.pop("nav")
     st.rerun()
 elif nav_action == "today":
@@ -48,11 +67,11 @@ elif nav_action == "today":
     st.query_params.pop("nav")
     st.rerun()
 elif nav_action == "next":
-    st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
+    st.session_state.month_offset = min(st.session_state.get("month_offset", 0) + 1, MAX_MONTH_OFFSET)
     st.query_params.pop("nav")
     st.rerun()
 
-# --- バナー ---
+# --- バナー表示 ---
 if os.path.exists("バナー画像3.png"):
     with open("バナー画像3.png", "rb") as f:
         img_bytes = f.read()
@@ -176,18 +195,9 @@ if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
 MAX_MONTH_OFFSET = 12
 
-# ======= ここが重要！PC/スマホで分岐して表示 ===========
-if is_mobile():
-    # スマホ：横並びHTMLボタンだけ
-    st.markdown("""
-    <div class="nav-btn-row">
-      <a href="?nav=prev" target="_self">前月</a>
-      <a href="?nav=today" target="_self">当月</a>
-      <a href="?nav=next" target="_self">次月</a>
-    </div>
-    """, unsafe_allow_html=True)
-else:
-    # PC：従来のst.button（中央寄せ）
+# --- 変更点③：画面幅に応じてボタンのレイアウトを切り替える ---
+if screen_width > 700:
+    # PC表示の場合：元のレイアウトを完全に維持
     nav_left, nav_center, nav_right = st.columns([3, 2, 3])
     with nav_center:
         col1, col2, col3 = st.columns([1, 1, 1])
@@ -203,6 +213,22 @@ else:
             if st.button("➡️ 次月"):
                 st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
                 st.rerun()
+else:
+    # スマホ表示の場合：横並びのレイアウト
+    mcol1, mcol2, mcol3 = st.columns(3)
+    with mcol1:
+        if st.button("⬅️ 前月", use_container_width=True):
+            st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
+            st.rerun()
+    with mcol2:
+        if st.button("📅 当月", use_container_width=True):
+            st.session_state.month_offset = 0
+            st.rerun()
+    with mcol3:
+        if st.button("➡️ 次月", use_container_width=True):
+            st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
+            st.rerun()
+
 
 base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
 month1 = base_month
@@ -222,18 +248,9 @@ if "show_graph" not in st.session_state:
 if selected_date and st.session_state["show_graph"]:
     left, right = st.columns([3, 7])
     with left:
-        # ===== スマホだけグラフ操作ナビもHTML横並び化 =====
-        if is_mobile():
-            prev_dt = (pd.to_datetime(selected_date).date() - dt.timedelta(days=1)).isoformat()
-            next_dt = (pd.to_datetime(selected_date).date() + dt.timedelta(days=1)).isoformat()
-            st.markdown(f"""
-            <div class="nav-btn-row">
-              <a href="." target="_self">❌ 閉じる</a>
-              <a href="?selected={prev_dt}" target="_self">&lt;前日</a>
-              <a href="?selected={next_dt}" target="_self">翌日&gt;</a>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
+        # グラフ操作ボタンも同様に画面幅で分岐
+        if screen_width > 700:
+            # PC表示の場合：元のレイアウト
             btn_cols = st.columns(3)
             with btn_cols[0]:
                 if st.button("❌ 閉じる"):
@@ -247,6 +264,24 @@ if selected_date and st.session_state["show_graph"]:
                     st.rerun()
             with btn_cols[2]:
                 if st.button("翌日＞"):
+                    new_dt = pd.to_datetime(selected_date).date() + dt.timedelta(days=1)
+                    st.query_params["selected"] = new_dt.isoformat()
+                    st.rerun()
+        else:
+            # スマホ表示の場合：横並びレイアウト
+            mbtn_cols = st.columns(3)
+            with mbtn_cols[0]:
+                if st.button("❌ 閉じる", use_container_width=True):
+                    st.query_params.clear()
+                    st.session_state["show_graph"] = False
+                    st.rerun()
+            with mbtn_cols[1]:
+                if st.button("＜前日", use_container_width=True):
+                    new_dt = pd.to_datetime(selected_date).date() - dt.timedelta(days=1)
+                    st.query_params["selected"] = new_dt.isoformat()
+                    st.rerun()
+            with mbtn_cols[2]:
+                if st.button("翌日＞", use_container_width=True):
                     new_dt = pd.to_datetime(selected_date).date() + dt.timedelta(days=1)
                     st.query_params["selected"] = new_dt.isoformat()
                     st.rerun()
@@ -335,10 +370,10 @@ st.markdown("""
     - 平均価格の<span style="color:red;">↑</span>／<span style="color:blue;">↓</span>は、前回巡回時点との平均価格の上昇／下降を示します。<br>
     - 会場アイコン：🔴京セラドーム / 🔵ヤンマースタジアム / ★その他会場<br>
     - 炎マーク（需要シンボル）の内訳：<br>
-      &nbsp;&nbsp;・🔥1：残室 ≤250 または 価格 ≥25,000円<br>
-      &nbsp;&nbsp;・🔥2：残室 ≤200 または 価格 ≥30,000円<br>
-      &nbsp;&nbsp;・🔥3：残室 ≤150 または 価格 ≥35,000円<br>
-      &nbsp;&nbsp;・🔥4：残室 ≤100 または 価格 ≥40,000円<br>
-      &nbsp;&nbsp;・🔥5：残室 ≤70 または 価格 ≥50,000円<br>
+        ・🔥1：残室 ≤250 または 価格 ≥25,000円<br>
+        ・🔥2：残室 ≤200 または 価格 ≥30,000円<br>
+        ・🔥3：残室 ≤150 または 価格 ≥35,000円<br>
+        ・🔥4：残室 ≤100 または 価格 ≥40,000円<br>
+        ・🔥5：残室 ≤70 または 価格 ≥50,000円<br>
     </div>
     """, unsafe_allow_html=True)
