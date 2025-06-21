@@ -182,6 +182,15 @@ def draw_calendar(month_date: dt.date):
     html += '</tbody></table></div>'
     return html
 
+# 例：カレンダー2か月分
+cal1, cal2 = st.columns(2)
+with cal1:
+    st.subheader(f"{month1.year}年 {month1.month}月")
+    st.markdown(draw_calendar(month1), unsafe_allow_html=True)
+with cal2:
+    st.subheader(f"{month2.year}年 {month2.month}月")
+    st.markdown(draw_calendar(month2), unsafe_allow_html=True)
+
 
 # --- セッション状態の初期化 ---
 today = dt.date.today()
