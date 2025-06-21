@@ -13,41 +13,29 @@ st.set_page_config(page_title="テスト版【めちゃいいツール】ミナ�
 st.markdown("""
 <style>
 @media (max-width: 700px) {
-    /* カレンダーセル縮小はこのまま */
-    .calendar-wrapper td, .calendar-wrapper th {
-        min-width: 32px !important;
-        max-width: 38px !important;
-        font-size: 9px !important;
-        padding: 1px 0 1px 0 !important;
-    }
-    .calendar-wrapper td div,
-    .calendar-wrapper td span {
-        font-size: 9px !important;
-        line-height: 1.05 !important;
-    }
-    /* バナー */
     .main-banner {
-        width: 100% !important;
+        width: 98vw !important;
         max-width: 98vw !important;
         height: auto !important;
         display: block;
         margin: 0 auto;
     }
-    /* ボタン群を横並び&中央寄せに変更（PC非干渉） */
-    section[data-testid="stHorizontalBlock"] > div[tabindex="0"] > div {
-        display: flex !important;
+    /* 必要に応じてクラス名を修正してください */
+    .st-emotion-cache-1kyxreq, .st-emotion-cache-1fcdlh2, .st-emotion-cache-ocqkz7, .st-emotion-cache-1v0mbdj {
         flex-direction: row !important;
         justify-content: center !important;
-        gap: 10px !important;
-        width: 100%;
+        align-items: center !important;
+        gap: 6px !important;
     }
-    .stButton button {
-        min-width: 74px !important;
+    .stButton > button {
+        min-width: 80px !important;
         font-size: 1rem !important;
         padding: 8px 0 !important;
+        margin: 2px 0 !important;
     }
 }
 </style>
+
 """, unsafe_allow_html=True)
 
 
