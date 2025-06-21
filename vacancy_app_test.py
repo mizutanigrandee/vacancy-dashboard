@@ -9,7 +9,7 @@ import altair as alt
 
 st.set_page_config(page_title="テスト版【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
 
-# --- PC/スマホ兼用 カスタムボタンCSS（スマホはテキストのみ・小さめ） ---
+# --- PC/スマホ兼用 カスタムボタンCSS ---
 st.markdown("""
 <style>
 .custom-button {
@@ -30,6 +30,16 @@ st.markdown("""
     box-shadow: 0 1.5px 7px rgba(0,0,0,0.03);
     transition: background 0.18s, color 0.18s, border 0.18s;
 }
+.custom-button, .custom-button:visited, .custom-button:active {
+    text-decoration: none !important;
+    color: #1a1a1a !important;
+}
+.custom-button .icon {
+    font-size: 1.0em;
+    margin-right: 11px;
+    line-height: 1;
+    display: inline-block;
+}
 .custom-button:hover {
     background: #f3f3fa;
     border-color: #e53939;
@@ -44,17 +54,23 @@ st.markdown("""
     width: 100%;
     margin-bottom: 1.6rem;
 }
-/* スマホは小さめ・アイコン非表示・テキストのみ */
+/* スマホは小さめ */
 @media (max-width: 700px) {
+    .nav-button-container, .graph-button-container {
+        gap: 3.5px;
+        margin-bottom: 0.65rem;
+    }
     .custom-button {
         min-width: 56px !important;
         max-width: 90vw !important;
         padding: 4.2px 1 !important;
-        font-size: 0.88rem !important;
-        font-weight: 500 !important;
+        font-size: 0.7rem !important;
     }
-    .custom-button .icon { display: none !important; }
-    .nav-button-container, .graph-button-container { gap: 3.5px; margin-bottom: 0.65rem; }
+    .custom-button .icon {
+        font-size: 1.09em !important;
+        margin-right: 8px !important;
+    }
+    /* 以下カレンダー等スマホ調整 */
     .calendar-wrapper td, .calendar-wrapper th {
         min-width: 32px !important; max-width: 38px !important;
         font-size: 9px !important; padding: 1px 0 1px 0 !important;
@@ -125,97 +141,78 @@ def get_demand_icon(vac, price):
     if vac <= 250 or price >= 25000: return "🔥1"
     return ""
 
-# --- カレンダー描画ロジック（st.button方式！） ---
-def draw_calendar(month_date: dt.date):
+def draw_calendar(month_date: dt.date) -> str:
     cal = calendar.Calendar(calendar.SUNDAY)
     weeks = cal.monthdatescalendar(month_date.year, month_date.month)
     today = dt.date.today()
     html = '<div class="calendar-wrapper"><table style="border-collapse:collapse;width:100%;table-layout:fixed;text-align:center;">'
-    # 曜日ラベル
+    html += """
+    <style>
+    .calendar-wrapper td { padding-top: 30px !important; transition: background-color 0.2s ease; }
+    .calendar-wrapper td:hover { background-color: #f5faff !important; cursor: pointer; }
+    </style>
+    """
     html += '<thead style="background:#f4f4f4;color:#333;font-weight:bold;"><tr>'
-    for d in "日月火水木金土":
-        html += f'<th style="border:1px solid #aaa;padding:4px;">{d}</th>'
+    html += ''.join(f'<th style="border:1px solid #aaa;padding:4px;">{d}</th>' for d in "日月火水木金土")
     html += '</tr></thead><tbody>'
-    # カレンダー本体
     for week in weeks:
         html += '<tr>'
         for current in week:
             if current.month != month_date.month:
                 html += '<td style="border:1px solid #aaa;padding:8px;background:#fff;"></td>'
                 continue
-            # 色分け
-            bg = '#ddd' if current < today else (
-                '#ffecec' if (current in HOLIDAYS or current.weekday() == 6) else (
-                '#e0f7ff' if current.weekday() == 5 else '#fff'))
+            bg = '#ddd' if current < today else ('#ffecec' if (current in HOLIDAYS or current.weekday() == 6) else ('#e0f7ff' if current.weekday() == 5 else '#fff'))
             iso = current.isoformat()
+            # 【ここだけaタグ方式でページ遷移（selectedセット）】
+            current_params = st.query_params.to_dict()
+            new_params = {**current_params, "selected": iso}
+            href = "?" + "&".join([f"{k}={v}" for k, v in new_params.items()])
             rec = cache_data.get(iso, {"vacancy": 0, "avg_price": 0})
             vac = rec["vacancy"]
             price = int(rec["avg_price"])
             diff_v = rec.get("vacancy_diff", 0)
             diff_p = rec.get("avg_price_diff", 0)
             vac_html = f'<div style="font-size:16px;font-weight:bold;">{vac}件'
-            if diff_v > 0:
-                vac_html += f'<span style="color:blue;font-size:12px;">（+{diff_v}）</span>'
-            elif diff_v < 0:
-                vac_html += f'<span style="color:red;font-size:12px;">（{diff_v}）</span>'
+            if diff_v > 0: vac_html += f'<span style="color:blue;font-size:12px;">（+{diff_v}）</span>'
+            elif diff_v < 0: vac_html += f'<span style="color:red;font-size:12px;">（{diff_v}）</span>'
             vac_html += '</div>'
             price_html = f'<div style="font-size:16px;font-weight:bold;">￥{price:,}'
-            if diff_p > 0:
-                price_html += '<span style="color:red;"> ↑</span>'
-            elif diff_p < 0:
-                price_html += '<span style="color:blue;"> ↓</span>'
+            if diff_p > 0: price_html += '<span style="color:red;"> ↑</span>'
+            elif diff_p < 0: price_html += '<span style="color:blue;"> ↓</span>'
             price_html += '</div>'
             icon_html = f'<div style="position:absolute;top:2px;right:4px;font-size:16px;">{get_demand_icon(vac, price)}</div>' if current >= today else ''
             event_html = '<div style="font-size:12px;margin-top:4px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data.get(iso, [])) + '</div>'
-            # カレンダーセル（aタグで選択/ページ遷移）
-            current_params = st.query_params.to_dict()
-            new_params = {**current_params, "selected": iso}
-            href = "?" + "&".join([f"{k}={v}" for k, v in new_params.items()])
-            html += (
-                f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
-                f'<a href="{href}" target="_self" style="display:block;width:100%;height:100%;text-decoration:none;color:inherit;">'
-                f'{icon_html}'
-                f'<div style="position:absolute; top:4px; left:4px; font-size:14px; font-weight:bold;">{current.day}</div>'
-                f'{vac_html}{price_html}{event_html}'
-                '</a></td>')
+            html += (f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
+                     f'<a href="{href}" target="_self" style="display:block;width:100%;height:100%;text-decoration:none;color:inherit;">'
+                     f'{icon_html}<div style="position:absolute; top:4px; left:4px; font-size:14px; font-weight:bold;">{current.day}</div>'
+                     f'{vac_html}{price_html}{event_html}</a></td>')
         html += '</tr>'
     html += '</tbody></table></div>'
     return html
 
-# 例：カレンダー2か月分
-cal1, cal2 = st.columns(2)
-with cal1:
-    st.subheader(f"{month1.year}年 {month1.month}月")
-    st.markdown(draw_calendar(month1), unsafe_allow_html=True)
-with cal2:
-    st.subheader(f"{month2.year}年 {month2.month}月")
-    st.markdown(draw_calendar(month2), unsafe_allow_html=True)
-
-
-# --- セッション状態の初期化 ---
+# --- カレンダー描画ロジック ---
 today = dt.date.today()
+params = st.query_params
+selected_date = params.get("selected")
+if isinstance(selected_date, list): selected_date = selected_date[0]
+
 if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
-if "selected_date" not in st.session_state:
-    st.session_state.selected_date = None
-if "show_graph" not in st.session_state:
-    st.session_state.show_graph = True
-
 MAX_MONTH_OFFSET = 12
 
-# --- ナビボタン横並び ---
+# --- 月送りナビ（st.button化：ページ遷移せず即座に切替） ---
 nav_left, nav_center, nav_right = st.columns([3, 4, 3])
 with nav_center:
     st.markdown('<div class="nav-button-container">', unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
-        if st.button("←前月", key="btn_prev"):
+        if st.button("⬅️ 前月", key="btn_prev"):
             st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
     with col2:
-        if st.button("当月", key="btn_today"):
+        if st.button("📅 当月", key="btn_today"):
             st.session_state.month_offset = 0
     with col3:
-        if st.button("次月→", key="btn_next"):
+        if st.button("➡️ 次月", key="btn_next"):
             st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -230,31 +227,33 @@ def load_historical_data():
     return {}
 historical_data = load_historical_data()
 
-selected_date = st.session_state.get("selected_date", None)
-show_graph = st.session_state.get("show_graph", True)
+if "show_graph" not in st.session_state:
+    st.session_state["show_graph"] = True
 
-# --- レイアウト分岐 ---
-if selected_date and show_graph:
+if selected_date and st.session_state["show_graph"]:
     left, right = st.columns([3, 7])
     with left:
         prev_day = (pd.to_datetime(selected_date).date() - dt.timedelta(days=1)).isoformat()
         next_day = (pd.to_datetime(selected_date).date() + dt.timedelta(days=1)).isoformat()
+
         st.markdown('<div class="graph-button-container">', unsafe_allow_html=True)
         col1, col2, col3 = st.columns([1, 1, 1])
         with col1:
-            if st.button("閉じる", key="btn_close"):
-                st.session_state.selected_date = None
-                st.session_state.show_graph = False
+            if st.button("❌ グラフを閉じる", key="btn_close"):
+                st.query_params.clear()
+                st.session_state["show_graph"] = False
+                st.rerun()
         with col2:
-            if st.button("←前日", key="btn_prev_day"):
-                st.session_state.selected_date = prev_day
-                st.session_state.show_graph = True
+            if st.button("＜前日", key="btn_prev_day"):
+                st.query_params["selected"] = prev_day
+                st.rerun()
         with col3:
-            if st.button("翌日→", key="btn_next_day"):
-                st.session_state.selected_date = next_day
-                st.session_state.show_graph = True
+            if st.button("翌日＞", key="btn_next_day"):
+                st.query_params["selected"] = next_day
+                st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
         st.markdown(f"#### {selected_date} の在庫・価格推移")
+
         if (selected_date not in historical_data or not historical_data[selected_date] or len(historical_data[selected_date]) == 0):
             st.info("この日付の履歴データがありません")
         else:
@@ -280,18 +279,18 @@ if selected_date and show_graph:
         cal1, cal2 = st.columns(2)
         with cal1:
             st.subheader(f"{month1.year}年 {month1.month}月")
-            draw_calendar(month1)
+            st.markdown(draw_calendar(month1), unsafe_allow_html=True)
         with cal2:
             st.subheader(f"{month2.year}年 {month2.month}月")
-            draw_calendar(month2)
+            st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 else:
     cal1, cal2 = st.columns(2)
     with cal1:
         st.subheader(f"{month1.year}年 {month1.month}月")
-        draw_calendar(month1)
+        st.markdown(draw_calendar(month1), unsafe_allow_html=True)
     with cal2:
         st.subheader(f"{month2.year}年 {month2.month}月")
-        draw_calendar(month2)
+        st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
 # --- カレンダー下部の案内など ---
 st.markdown("<hr>", unsafe_allow_html=True)
