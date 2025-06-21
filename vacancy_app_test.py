@@ -219,34 +219,49 @@ else:
                 st.query_params["selected"] = new_dt.isoformat()
                 st.rerun()
         st.markdown(f"#### {selected_date} の在庫・価格推移")
-        if selected_date not in historical_data:
-            st.info("この日付の履歴データがありません")
-        else:
-            df = pd.DataFrame(
-                sorted(
-                    (
-                        {
-                            "取得日": hist_date,
-                            "在庫数": rec["vacancy"],
-                            "平均単価": rec["avg_price"],
-                        }
-                        for hist_date, rec in historical_data[selected_date].items()
-                    ),
-                    key=lambda x: x["取得日"]
-                )
-            )
-            df["取得日"] = pd.to_datetime(df["取得日"])
+if selected_date not in historical_data or not historical_data[selected_date]:
+    st.info("この日付の履歴データがありません")
+else:
+    df = pd.DataFrame(
+        sorted(
+            (
+                {
+                    "取得日": hist_date,
+                    "在庫数": rec["vacancy"],
+                    "平均単価": rec["avg_price"],
+                }
+                for hist_date, rec in historical_data[selected_date].items()
+            ),
+            key=lambda x: x["取得日"]
+        )
+    )
+    df["取得日"] = pd.to_datetime(df["取得日"])
+    if df.empty:
+        st.info("この日付の履歴データがありません")
+    else:
         st.write("##### 在庫数")
         chart_vac = (
             alt.Chart(df)
             .mark_line(point=True)
             .encode(
                 x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
-                y=alt.Y("在庫数:Q", axis=alt.Axis(title=None), scale=alt.Scale(domain=[0, 350]))
+                y=alt.Y("在庫数:Q", axis=alt.Axis(title=None, scale=alt.Scale(domain=[0, 350])))
             )
             .properties(height=320, width=600)
         )
         st.altair_chart(chart_vac, use_container_width=True)
+        st.write("##### 平均単価 (円)")
+        chart_price = (
+            alt.Chart(df)
+            .mark_line(point=True, color="#e15759")
+            .encode(
+                x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
+                y=alt.Y("平均単価:Q", axis=alt.Axis(title=None, scale=alt.Scale(domain=[0, 35000])))
+            )
+            .properties(height=320, width=600)
+        )
+        st.altair_chart(chart_price, use_container_width=True)
+
 
         st.write("##### 平均単価 (円)")
         chart_price = (
