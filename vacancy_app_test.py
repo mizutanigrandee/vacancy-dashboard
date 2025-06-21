@@ -247,7 +247,7 @@ if selected_date and st.session_state["show_graph"]:
         if close_href == "?": close_href = "."
         graph_nav_html = f"""
         <div class="graph-button-container">
-            <a href="{close_href}" target="_self" class="custom-button"><span class="icon">❌</span>閉じる</a>
+            <a href="{close_href}" target="_self" class="custom-button"><span class="icon">❌</span>グラフを閉じる</a>
             <a href="?selected={prev_day}" target="_self" class="custom-button">&lt;前日</a>
             <a href="?selected={next_day}" target="_self" class="custom-button">翌日&gt;</a>
         </div>
