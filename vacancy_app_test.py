@@ -39,24 +39,21 @@ st.markdown("""
         display: block;
         margin: 0 auto;
     }
-    /* ナビボタン横並び */
-    .css-1kyxreq, .css-1fcdlh2, .css-ocqkz7, .css-1v0mbdj {
-        flex-direction: row !important;
-        justify-content: center !important;
-        align-items: center !important;
-        gap: 4px !important;
-    }
-    .stButton button {
-        min-width: 74px !important;
-        font-size: 1rem !important;
-        padding: 8px 0 !important;
-    }
-    /* グラフ時のボタン群も横並び */
-    .stColumns {
+    /* スマホ時のボタンは全て横並びに */
+    /* Streamlit v1.33以降: stButton/columnsの配置制御 */
+    section[data-testid="stHorizontalBlock"] > div {
         flex-direction: row !important;
         justify-content: center !important;
         align-items: center !important;
         gap: 8px !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+    }
+    /* ボタン自体も大きめにする */
+    .stButton > button {
+        min-width: 80px !important;
+        font-size: 1rem !important;
+        margin-bottom: 6px !important;
     }
 }
 </style>
