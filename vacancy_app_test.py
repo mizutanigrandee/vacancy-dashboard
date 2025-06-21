@@ -13,7 +13,7 @@ st.set_page_config(page_title="テスト版【めちゃいいツール】ミナ�
 st.markdown("""
 <style>
 @media (max-width: 700px) {
-    /* カレンダーセルとテキスト小さく・折返し */
+    /* カレンダーセル縮小はこのまま */
     .calendar-wrapper td, .calendar-wrapper th {
         min-width: 32px !important;
         max-width: 38px !important;
@@ -25,13 +25,7 @@ st.markdown("""
         font-size: 9px !important;
         line-height: 1.05 !important;
     }
-    .calendar-wrapper td > div > div:nth-child(2),
-    .calendar-wrapper td > div > div:nth-child(3) {
-        display: block !important;
-        width: 100% !important;
-        text-align: left !important;
-    }
-    /* タイトルバナーもスマホサイズで縮小 */
+    /* バナー */
     .main-banner {
         width: 100% !important;
         max-width: 98vw !important;
@@ -39,21 +33,18 @@ st.markdown("""
         display: block;
         margin: 0 auto;
     }
-    /* スマホ時のボタンは全て横並びに */
-    /* Streamlit v1.33以降: stButton/columnsの配置制御 */
-    section[data-testid="stHorizontalBlock"] > div {
+    /* ボタン群を横並び&中央寄せに変更（PC非干渉） */
+    section[data-testid="stHorizontalBlock"] > div[tabindex="0"] > div {
+        display: flex !important;
         flex-direction: row !important;
         justify-content: center !important;
-        align-items: center !important;
-        gap: 8px !important;
-        display: flex !important;
-        flex-wrap: wrap !important;
+        gap: 10px !important;
+        width: 100%;
     }
-    /* ボタン自体も大きめにする */
-    .stButton > button {
-        min-width: 80px !important;
+    .stButton button {
+        min-width: 74px !important;
         font-size: 1rem !important;
-        margin-bottom: 6px !important;
+        padding: 8px 0 !important;
     }
 }
 </style>
