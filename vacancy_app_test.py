@@ -12,35 +12,72 @@ st.set_page_config(page_title="テスト版【めちゃいいツール】ミナ�
 # ==== ボタンCSS ====（コピペでOK）
 st.markdown("""
 <style>
-/* カレンダー上部・グラフ用ボタン共通 */
-.nav-btns {
-  display: flex; justify-content: center; gap: 18px; margin-bottom: 20px;
+/* 共通ボタンスタイル */
+.custom-button {
+    display: flex;
+    justify-content: center;        /* ←中央ぞろえ */
+    align-items: center;
+    padding: 6px 10px;              /* ←小さめ */
+    min-width: 88px;
+    max-width: 150px;
+    border: 1px solid #c9c9d1;
+    border-radius: 8px;
+    background-color: white;
+    color: #0c0c0d;
+    text-decoration: none;
+    text-align: center;
+    font-size: 1.07rem;
+    font-weight: 400;
+    margin: 0 3px;
+    transition: background-color 0.2s, color 0.2s;
 }
-.nav-btn {
-  display: inline-block; padding: 9px 20px;
-  border: 1px solid #bbb; border-radius: 9px; font-size: 1.09rem;
-  background: #fff; color: #222; text-decoration: none; min-width: 80px;
-  transition: 0.2s;
+.custom-button .icon {
+    margin-right: 7px;           /* アイコンとテキストの間隔 */
+    font-size: 1.23em;
 }
-.nav-btn:hover { background: #f1f7ff; color: #0072C6; border-color: #0072C6; }
+.custom-button:hover {
+    border-color: #ff4b4b;
+    color: #ff4b4b;
+}
+
+.nav-button-container, .graph-button-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
 @media (max-width: 700px) {
-  .nav-btns { gap: 4px; }
-  .nav-btn { min-width: 0; font-size: 1rem; flex: 1; padding: 7px 0; }
-  .calendar-wrapper td, .calendar-wrapper th {
-      min-width:32px!important;max-width:38px!important;font-size:9px!important;padding:1px 0!important;
-  }
-  .calendar-wrapper td div, .calendar-wrapper td span {font-size:9px!important;line-height:1.05!important;}
-  .calendar-wrapper td>div>div:nth-child(2),.calendar-wrapper td>div>div:nth-child(3){
-      display:block!important;width:100%!important;text-align:left!important;
-  }
-  .main-banner{width:100%!important;max-width:98vw!important;height:auto!important;display:block;margin:0 auto;}
-  .icon{display:none!important;}
-}
-@media (min-width: 701px) {
-  .icon { display: inline!important; }
+    .nav-button-container, .graph-button-container {
+        gap: 4px;
+        margin-bottom: 7px;
+    }
+    .custom-button {
+        min-width: 60px !important;   /* スマホはもっと小さく */
+        font-size: 1.04rem !important;
+        padding: 4px 0 !important;
+        max-width: 100vw;
+    }
+    .calendar-wrapper td, .calendar-wrapper th {
+        min-width: 32px !important; max-width: 38px !important;
+        font-size: 9px !important; padding: 1px 0 1px 0 !important;
+    }
+    .calendar-wrapper td div, .calendar-wrapper td span {
+        font-size: 9px !important; line-height: 1.05 !important;
+    }
+    .calendar-wrapper td > div > div:nth-child(2), .calendar-wrapper td > div > div:nth-child(3) {
+        display: block !important; width: 100% !important; text-align: left !important;
+    }
+    .main-banner {
+        width: 100% !important; max-width: 98vw !important; height: auto !important;
+        display: block; margin: 0 auto;
+    }
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 # --- クエリ対応 ---
 params = st.query_params
