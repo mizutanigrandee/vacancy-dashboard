@@ -13,6 +13,7 @@ st.set_page_config(page_title="テスト版【めちゃいいツール】ミナ�
 st.markdown("""
 <style>
 @media (max-width: 700px) {
+    /* カレンダーセルとテキスト小さく・折返し */
     .calendar-wrapper td, .calendar-wrapper th {
         min-width: 32px !important;
         max-width: 38px !important;
@@ -30,6 +31,7 @@ st.markdown("""
         width: 100% !important;
         text-align: left !important;
     }
+    /* タイトルバナーもスマホサイズで縮小 */
     .main-banner {
         width: 100% !important;
         max-width: 98vw !important;
@@ -37,7 +39,7 @@ st.markdown("""
         display: block;
         margin: 0 auto;
     }
-    /* ナビゲーションボタンを横並びに */
+    /* ナビボタン横並び */
     .css-1kyxreq, .css-1fcdlh2, .css-ocqkz7, .css-1v0mbdj {
         flex-direction: row !important;
         justify-content: center !important;
@@ -49,7 +51,7 @@ st.markdown("""
         font-size: 1rem !important;
         padding: 8px 0 !important;
     }
-    /* グラフ時のボタン群も横並びに */
+    /* グラフ時のボタン群も横並び */
     .stColumns {
         flex-direction: row !important;
         justify-content: center !important;
@@ -59,6 +61,7 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 # --- バナー表示は本稼働のまま
