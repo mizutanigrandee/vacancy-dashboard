@@ -67,7 +67,7 @@ st.markdown("""
         font-size: 0.7rem !important;
     }
     .custom-button .icon {
-        font-size: 0.8em !important;     /* ←ここでさらに小さく */
+        font-size: 0.4em !important;     /* ←ここでさらに小さく */
         margin-right: 5px !important;
     }
     /* 以下カレンダー等スマホ調整 */
