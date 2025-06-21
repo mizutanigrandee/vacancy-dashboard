@@ -12,53 +12,57 @@ st.set_page_config(page_title="テスト版【めちゃいいツール】ミナ�
 # ==== ボタンCSS ====（コピペでOK）
 st.markdown("""
 <style>
-/* 共通ボタンスタイル */
+/* --- 共通ボタンスタイル --- */
 .custom-button {
     display: flex;
-    justify-content: center;        /* ←中央ぞろえ */
+    justify-content: center;
     align-items: center;
-    padding: 6px 10px;              /* ←小さめ */
-    min-width: 88px;
-    max-width: 150px;
+    padding: 8px 15px;
+    min-width: 110px;
+    max-width: 180px;
     border: 1px solid #c9c9d1;
     border-radius: 8px;
     background-color: white;
     color: #0c0c0d;
     text-decoration: none;
     text-align: center;
-    font-size: 1.07rem;
+    font-size: 1.15rem;
     font-weight: 400;
-    margin: 0 3px;
+    margin: 0 5px;
     transition: background-color 0.2s, color 0.2s;
 }
 .custom-button .icon {
-    margin-right: 7px;           /* アイコンとテキストの間隔 */
-    font-size: 1.23em;
+    margin-right: 7px;
+    font-size: 1.18em;
 }
 .custom-button:hover {
     border-color: #ff4b4b;
     color: #ff4b4b;
 }
-
 .nav-button-container, .graph-button-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     width: 100%;
-    margin-bottom: 1rem;
+    margin-bottom: 1.3rem;
 }
 
+/* --- スマホだけサイズを小さく --- */
 @media (max-width: 700px) {
     .nav-button-container, .graph-button-container {
         gap: 4px;
-        margin-bottom: 7px;
+        margin-bottom: 9px;
     }
     .custom-button {
-        min-width: 60px !important;   /* スマホはもっと小さく */
-        font-size: 1.04rem !important;
+        min-width: 60px !important;
+        max-width: 90vw !important;
         padding: 4px 0 !important;
-        max-width: 100vw;
+        font-size: 1.01rem !important;
+    }
+    .custom-button .icon {
+        font-size: 1.1em;
+        margin-right: 5px;
     }
     .calendar-wrapper td, .calendar-wrapper th {
         min-width: 32px !important; max-width: 38px !important;
@@ -77,6 +81,7 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 # --- クエリ対応 ---
