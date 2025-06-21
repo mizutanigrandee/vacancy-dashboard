@@ -16,15 +16,15 @@ st.markdown("""
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 11px 26px;
-    min-width: 125px;
-    max-width: 200px;
+    padding: 12px 28px;
+    min-width: 130px;
+    max-width: 220px;
     border: 1.8px solid #b9b9c9;
     border-radius: 10px;
     background: #fff;
     color: #1a1a1a;
     text-decoration: none;
-    font-size: 0.9rem;
+    font-size: 1.09rem;
     font-weight: 500;
     margin: 0 10px 10px 0;
     box-shadow: 0 1.5px 7px rgba(0,0,0,0.03);
@@ -60,10 +60,10 @@ st.markdown("""
         min-width: 56px !important;
         max-width: 90vw !important;
         padding: 4.2px 0 !important;
-        font-size: 1.02rem !important;
+        font-size: 0.98rem !important;
     }
     .custom-button .icon {
-        font-size: 1.18em !important;
+        font-size: 1.09em !important;
         margin-right: 5px !important;
     }
     /* 以下カレンダー等スマホ調整 */
@@ -84,6 +84,8 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
+
+
 
 # --- クエリ対応 ---
 params = st.query_params
