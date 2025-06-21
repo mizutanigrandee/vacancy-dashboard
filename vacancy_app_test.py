@@ -236,28 +236,31 @@ else:
                 )
             )
             df["取得日"] = pd.to_datetime(df["取得日"])
-            st.write("##### 在庫数")
-            chart_vac = (
-                alt.Chart(df)
-                .mark_line(point=True)
-                .encode(
-                    x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
-                    y=alt.Y("在庫数:Q", axis=alt.Axis(title=None))
-                )
-                .properties(height=320, width=600)
+        st.write("##### 在庫数")
+        chart_vac = (
+            alt.Chart(df)
+            .mark_line(point=True)
+            .encode(
+                x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
+                y=alt.Y("在庫数:Q", axis=alt.Axis(title=None), scale=alt.Scale(domain=[0, 400]))
             )
-            st.altair_chart(chart_vac, use_container_width=True)
-            st.write("##### 平均単価 (円)")
-            chart_price = (
-                alt.Chart(df)
-                .mark_line(point=True, color="#e15759")
-                .encode(
-                    x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
-                    y=alt.Y("平均単価:Q", axis=alt.Axis(title=None))
-                )
-                .properties(height=320, width=600)
+            .properties(height=320, width=600)
+        )
+        st.altair_chart(chart_vac, use_container_width=True)
+
+        st.write("##### 平均単価 (円)")
+        chart_price = (
+            alt.Chart(df)
+            .mark_line(point=True, color="#e15759")
+            .encode(
+                x=alt.X("取得日:T", axis=alt.Axis(title=None, format="%m/%d")),
+                y=alt.Y("平均単価:Q", axis=alt.Axis(title=None), scale=alt.Scale(domain=[0, 50000]))
             )
-            st.altair_chart(chart_price, use_container_width=True)
+            .properties(height=320, width=600)
+        )
+        st.altair_chart(chart_price, use_container_width=True)
+
+            
     with right:
         cal1, cal2 = st.columns(2)
         with cal1:
