@@ -9,36 +9,27 @@ import altair as alt
 
 st.set_page_config(page_title="テスト版【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー", layout="wide")
 
-# 🔻スマホ専用カレンダーCSS  ★←ここをそっくり置き換え
+# 🔻スマホ専用カレンダーCSS
 st.markdown("""
 <style>
-/* ===== スマホ幅 (～700px) のみ ===== */
 @media (max-width: 700px) {
-
-    /* ▼セルの幅制限を外す → 文字切れ解消 */
-    .calendar-wrapper td,
-    .calendar-wrapper th {
-        min-width: 48px !important;   /* ←小さ過ぎない程度に広げる */
-        max-width: none !important;   /* ←上限を外す */
-        font-size: 10px !important;
-        padding: 2px 0 !important;
+    .calendar-wrapper td, .calendar-wrapper th {
+        min-width: 32px !important;
+        max-width: 38px !important;
+        font-size: 9px !important;
+        padding: 1px 0 1px 0 !important;
     }
-
     .calendar-wrapper td div,
     .calendar-wrapper td span {
-        font-size: 10px !important;
-        line-height: 1.15 !important; /* 高さ少し広げて詰まり防止 */
-        white-space: nowrap;          /* 改行せず 1 行で表示 */
+        font-size: 9px !important;
+        line-height: 1.05 !important;
     }
-
     .calendar-wrapper td > div > div:nth-child(2),
     .calendar-wrapper td > div > div:nth-child(3) {
         display: block !important;
         width: 100% !important;
         text-align: left !important;
     }
-
-    /* バナーはこれまで通り */
     .main-banner {
         width: 100% !important;
         max-width: 98vw !important;
@@ -46,48 +37,18 @@ st.markdown("""
         display: block;
         margin: 0 auto;
     }
-
+    .icon { display: none !important; }
+    .text { display: inline !important; }
+    .nav-btn { font-size: 1.1rem !important; min-width: 70px !important;}
+}
+/* PCはデフォルト */
+@media (min-width: 701px) {
+    .icon { display: inline !important; }
+    .text { display: inline !important; }
+    .nav-btn { font-size: 1.1rem !important; min-width: 80px !important;}
 }
 </style>
 """, unsafe_allow_html=True)
-
-
-
-st.markdown("""
-<style>
-/* 共通デザイン（PC/スマホどちらも） */
-.nav-row {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin: 12px 0 18px;
-}
-.nav-btn {
-    display: block;
-    padding: 6px 14px;
-    font-size: 1.05rem;
-    border: 1px solid #aaa;
-    border-radius: 9px;
-    text-decoration: none;
-    color: inherit;
-}
-
-/* スマホ幅だけ微調整 */
-@media (max-width: 700px) {
-    .nav-btn { min-width: 68px; }          /* 押しやすい幅 */
-    .nav-btn::first-letter { color: transparent; }  /* 絵文字を透明化＝テキスト風 */
-}
-</style>
-""", unsafe_allow_html=True)
-
-
-st.markdown("""
-<style>
-.date-link, .nav-btn { cursor:pointer; }   /* クリックカーソルだけ維持 */
-</style>
-""", unsafe_allow_html=True)
-
-
 
 # --- クエリ対応 ---
 nav_action = st.query_params.get("nav")
@@ -105,8 +66,7 @@ elif nav_action == "next":
     st.query_params.pop("nav")
     st.rerun()
 
-
-# --- バナー表示は本稼働のまま
+# --- バナー表示 ---
 if os.path.exists("バナー画像3.png"):
     with open("バナー画像3.png", "rb") as f:
         img_bytes = f.read()
@@ -116,7 +76,6 @@ if os.path.exists("バナー画像3.png"):
             <img class="main-banner" src="data:image/png;base64,{img_base64}" style="max-width: 1000px; height: auto;">
         </div><br>
     """, unsafe_allow_html=True)
-
 
 APP_ID = st.secrets["RAKUTEN_APP_ID"]
 CACHE_FILE = "vacancy_price_cache.json"
@@ -152,7 +111,6 @@ def load_event_data_from_excel(filepath=EVENT_EXCEL):
 event_data = load_event_data_from_excel()
 cache_data = load_json(CACHE_FILE)
 
-# 祝日等の色分けロジック（draw_calendarは本稼働のまま）
 def get_demand_icon(vac, price):
     if vac <= 70 or price >= 50000: return "🔥5"
     if vac <= 100 or price >= 40000: return "🔥4"
@@ -210,8 +168,8 @@ def draw_calendar(month_date: dt.date) -> str:
             event_html = '<div style="font-size:12px;margin-top:4px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data.get(iso, [])) + '</div>'
             html += (
                 f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
-                f'<a href="javascript:window.location.search=\'?selected={iso}\';" '
-                f'class="date-link" style="display:block;width:100%;height:100%;text-decoration:none;color:inherit;">'
+                f'<a href="?selected={iso}" target="_self" '
+                f'style="display:block;width:100%;height:100%;text-decoration:none;color:inherit;">'
                 f'{icon_html}'
                 f'<div style="position:absolute; top:4px; left:4px; font-size:14px; font-weight:bold;">{current.day}</div>'
                 f'{vac_html}{price_html}{event_html}'
@@ -222,55 +180,29 @@ def draw_calendar(month_date: dt.date) -> str:
     html += '</tbody></table></div>'
     return html
 
-
 # --- カレンダー描画ロジック ---
 today = dt.date.today()
 params = st.query_params
 selected_date = params.get("selected")
 if isinstance(selected_date, list): selected_date = selected_date[0]
 
-# --- ナビゲーションUI ---
 if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
 MAX_MONTH_OFFSET = 12
 
-
-
-# --- ナビゲーション（PC・スマホ共通：HTML で横 3 つ） ---
-if "month_offset" not in st.session_state:
-    st.session_state.month_offset = 0
-MAX_MONTH_OFFSET = 12
-
-nav_html = """
-<div class='nav-row'>
-  <a onclick="window.location.search='?nav=prev';"  class='nav-btn'>⬅️ 前月</a>
-  <a onclick="window.location.search='?nav=today';" class='nav-btn'>📅 当月</a>
-  <a onclick="window.location.search='?nav=next';"  class='nav-btn'>➡️ 次月</a>
-</div>
-"""
-
-
-st.markdown(nav_html, unsafe_allow_html=True)
-
-
-
-
-
-# --- クエリ対応 ---
-nav_action = st.query_params.get("nav")
-if nav_action == "prev":
-    st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
-    st.query_params.pop("nav")
-    st.rerun()
-elif nav_action == "today":
-    st.session_state.month_offset = 0
-    st.query_params.pop("nav")
-    st.rerun()
-elif nav_action == "next":
-    st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
-    st.query_params.pop("nav")
-    st.rerun()
-
+# 旧ナビゲーション（st.button）
+nav_left, nav_center, nav_right = st.columns([3, 2, 3])
+with nav_center:
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col1:
+        if st.button("⬅️ 前月"):
+            st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
+    with col2:
+        if st.button("📅 当月"):
+            st.session_state.month_offset = 0
+    with col3:
+        if st.button("➡️ 次月"):
+            st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
 
 base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
 month1 = base_month
@@ -287,12 +219,7 @@ historical_data = load_historical_data()
 if "show_graph" not in st.session_state:
     st.session_state["show_graph"] = True
 
-# --- 日付未選択 または グラフ閉じた場合 → カレンダーのみ
-if "show_graph" not in st.session_state:
-    st.session_state["show_graph"] = True
-
 if selected_date and st.session_state["show_graph"]:
-    # --- 日付選択中 → グラフ＋カレンダー2枚
     left, right = st.columns([3, 7])
     with left:
         btn_cols = st.columns(3)
@@ -313,8 +240,6 @@ if selected_date and st.session_state["show_graph"]:
                 st.rerun()
 
         st.markdown(f"#### {selected_date} の在庫・価格推移")
-
-        # --- 履歴データの有無チェック ---
         if (
             selected_date not in historical_data or
             not historical_data[selected_date] or
@@ -371,7 +296,6 @@ if selected_date and st.session_state["show_graph"]:
             st.subheader(f"{month2.year}年 {month2.month}月")
             st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 else:
-    # --- 日付未選択 またはグラフ閉じた場合 → カレンダー2枚のみ
     cal1, cal2 = st.columns(2)
     with cal1:
         st.subheader(f"{month1.year}年 {month1.month}月")
@@ -380,9 +304,7 @@ else:
         st.subheader(f"{month2.year}年 {month2.month}月")
         st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
-
-
-# --- カレンダー下部の案内・注釈・巡回時刻 ---
+# --- カレンダー下部の案内など ---
 st.markdown(
     "<div style='font-size:17px; color:#296;'>日付を選択すると推移グラフが表示されます</div>",
     unsafe_allow_html=True
