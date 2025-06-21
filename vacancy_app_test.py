@@ -50,6 +50,23 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<style>
+/* スマホ専用ナビ：表示（PCでは非表示） */
+@media (max-width: 700px) {
+    .mobile-nav-row { display: flex !important; flex-direction: row; gap: 5px; margin-bottom: 10px; }
+    .mobile-nav-row button { width: 100%; font-size: 1.1rem; min-width: 68px; padding: 5px 0; border-radius: 9px; border: 1px solid #aaa;}
+    .pc-nav-row { display: none !important; }
+}
+/* PC専用ナビ：表示（スマホでは非表示） */
+@media (min-width: 701px) {
+    .mobile-nav-row { display: none !important; }
+    .pc-nav-row { display: block !important; }
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 
 
 # --- クエリ対応 ---
