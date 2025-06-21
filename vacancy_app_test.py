@@ -59,12 +59,12 @@ st.markdown("""
     .custom-button {
         min-width: 56px !important;
         max-width: 90vw !important;
-        padding: 2px 0 !important;
+        padding: 4.2px 0 !important;
         font-size: 0.7rem !important;
     }
     .custom-button .icon {
         font-size: 1.09em !important;
-        margin-right: 5px !important;
+        margin-right: 8px !important;
     }
     /* 以下カレンダー等スマホ調整 */
     .calendar-wrapper td, .calendar-wrapper th {
