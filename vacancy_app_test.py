@@ -209,21 +209,37 @@ params = st.query_params
 selected_date = params.get("selected")
 if isinstance(selected_date, list): selected_date = selected_date[0]
 
-# ナビゲーションUI
-if "month_offset" not in st.session_state: st.session_state.month_offset = 0
-MAX_MONTH_OFFSET = 12
-nav_left, nav_center, nav_right = st.columns([3, 2, 3])
-with nav_center:
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col1:
-        if st.button("⬅️ 前月"):
-            st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
-    with col2:
-        if st.button("📅 当月"):
-            st.session_state.month_offset = 0
-    with col3:
-        if st.button("➡️ 次月"):
-            st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
+# --- ナビゲーションUI：スマホ用＋PC用同居 ---
+# モバイル（スマホ）用：テキスト＆横並びボタン
+st.markdown('<div class="mobile-nav-row">', unsafe_allow_html=True)
+col_a, col_b, col_c = st.columns(3)
+with col_a:
+    if st.button("前月", key="mob_prev"):
+        st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
+with col_b:
+    if st.button("当月", key="mob_today"):
+        st.session_state.month_offset = 0
+with col_c:
+    if st.button("次月", key="mob_next"):
+        st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
+st.markdown('</div>', unsafe_allow_html=True)
+
+# PC用：従来のアイコン付ボタン＋横並び
+with st.container():
+    st.markdown('<div class="pc-nav-row">', unsafe_allow_html=True)
+    nav_left, nav_center, nav_right = st.columns([3, 2, 3])
+    with nav_center:
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col1:
+            if st.button("⬅️ 前月", key="pc_prev"):
+                st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
+        with col2:
+            if st.button("📅 当月", key="pc_today"):
+                st.session_state.month_offset = 0
+        with col3:
+            if st.button("➡️ 次月", key="pc_next"):
+                st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 
