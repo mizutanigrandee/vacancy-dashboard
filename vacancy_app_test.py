@@ -16,7 +16,7 @@ st.markdown("""
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 12px 28px;
+    padding: 9px 22px;
     min-width: 130px;
     max-width: 220px;
     border: 1.8px solid #b9b9c9;
