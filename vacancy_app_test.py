@@ -50,26 +50,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- ナビゲーションボタン（HTML＋form） ---
-st.markdown("""
-<div id="nav-btns" style="display:flex;flex-direction:row;justify-content:center;gap:10px;flex-wrap:wrap;">
-  <form action="" method="get" style="margin:0;">
-    <button class="nav-btn" name="nav" value="prev" type="submit">
-      <span class="icon">⬅️</span><span class="text">← 前月</span>
-    </button>
-  </form>
-  <form action="" method="get" style="margin:0;">
-    <button class="nav-btn" name="nav" value="today" type="submit">
-      <span class="icon">📅</span><span class="text">● 当月</span>
-    </button>
-  </form>
-  <form action="" method="get" style="margin:0;">
-    <button class="nav-btn" name="nav" value="next" type="submit">
-      <span class="icon">➡️</span><span class="text">次月 →</span>
-    </button>
-  </form>
-</div>
-""", unsafe_allow_html=True)
+
 
 # --- クエリ対応 ---
 nav_action = st.query_params.get("nav")
@@ -228,6 +209,7 @@ with nav_center:
             st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
 
 
+
 # --- クエリ対応 ---
 nav_action = st.query_params.get("nav")
 if nav_action == "prev":
@@ -275,21 +257,22 @@ else:
     left, right = st.columns([3, 7])
     with left:
         btn_cols = st.columns(3)
-        with btn_cols[0]:
-            if st.button("❌ 閉じる"):
-                st.query_params.clear()
-                st.session_state["show_graph"] = False
-                st.rerun()
-        with btn_cols[1]:
-            if st.button('<span class="icon">⬅️</span><span class="text">＜前日</span>', unsafe_allow_html=True):
-                new_dt = pd.to_datetime(selected_date).date() - dt.timedelta(days=1)
-                st.query_params["selected"] = new_dt.isoformat()
-                st.rerun()
-        with btn_cols[2]:
-            if st.button('<span class="icon">➡️</span><span class="text">翌日＞</span>', unsafe_allow_html=True):
-                new_dt = pd.to_datetime(selected_date).date() + dt.timedelta(days=1)
-                st.query_params["selected"] = new_dt.isoformat()
-                st.rerun()
+with btn_cols[0]:
+    if st.button("❌ 閉じる"):
+        st.query_params.clear()
+        st.session_state["show_graph"] = False
+        st.rerun()
+with btn_cols[1]:
+    if st.button("＜前日"):
+        new_dt = pd.to_datetime(selected_date).date() - dt.timedelta(days=1)
+        st.query_params["selected"] = new_dt.isoformat()
+        st.rerun()
+with btn_cols[2]:
+    if st.button("翌日＞"):
+        new_dt = pd.to_datetime(selected_date).date() + dt.timedelta(days=1)
+        st.query_params["selected"] = new_dt.isoformat()
+        st.rerun()
+
         st.markdown(f"#### {selected_date} の在庫・価格推移")
         
 
