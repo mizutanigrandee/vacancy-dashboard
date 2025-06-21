@@ -60,22 +60,24 @@ st.markdown("""
 /* スマホは小さめ */
 @media (max-width: 700px) {
     .nav-button-container, .graph-button-container {
-        gap: 3.5px;
-        margin-bottom: 0.65rem;
+        gap: 2px;
+        margin-bottom: 0.4rem;
     }
     .custom-button {
-        min-width: 56px !important;
-        max-width: 90vw !important;
-        padding: 4.2px 1 !important;
-        font-size: 0.7rem !important;
-        flex-direction: row !important;   /* ← 横並び強制 */
-        flex-wrap: nowrap !important;     /* ← 折返し禁止 */
-        white-space: nowrap !important;   /* ← テキスト改行禁止 */
+        min-width: 34px !important;
+        max-width: 32vw !important;
+        padding: 3px 0 !important;
+        font-size: 0.88rem !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        white-space: nowrap !important;
     }
     .custom-button .icon {
-        font-size: 1.09em !important;
-        margin-right: 8px !important;
+        font-size: 1.1em !important;
+        margin-right: 3px !important;
     }
+}
+
     /* 以下カレンダー等スマホ調整 */
     .calendar-wrapper td, .calendar-wrapper th {
         min-width: 32px !important; max-width: 38px !important;
