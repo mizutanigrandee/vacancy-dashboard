@@ -14,8 +14,6 @@ st.markdown("""
 <style>
 .custom-button {
     display: flex;
-    flex-direction: row;       /* ← 横並び強制 */
-    flex-wrap: nowrap;         /* ← 折返し禁止 */
     align-items: center;
     justify-content: center;
     padding: 9px 0px;
@@ -31,7 +29,6 @@ st.markdown("""
     margin: 0 10px 10px 0;
     box-shadow: 0 1.5px 7px rgba(0,0,0,0.03);
     transition: background 0.18s, color 0.18s, border 0.18s;
-    white-space: nowrap;       /* ← テキスト改行禁止 */
 }
 .custom-button, .custom-button:visited, .custom-button:active {
     text-decoration: none !important;
@@ -60,24 +57,19 @@ st.markdown("""
 /* スマホは小さめ */
 @media (max-width: 700px) {
     .nav-button-container, .graph-button-container {
-        gap: 2px;
-        margin-bottom: 0.4rem;
+        gap: 3.5px;
+        margin-bottom: 0.65rem;
     }
     .custom-button {
-        min-width: 34px !important;
-        max-width: 32vw !important;
-        padding: 3px 0 !important;
-        font-size: 0.88rem !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        white-space: nowrap !important;
+        min-width: 56px !important;
+        max-width: 90vw !important;
+        padding: 4.2px 1 !important;
+        font-size: 0.7rem !important;
     }
     .custom-button .icon {
-        font-size: 1.1em !important;
-        margin-right: 3px !important;
+        font-size: 1.09em !important;
+        margin-right: 8px !important;
     }
-}
-
     /* 以下カレンダー等スマホ調整 */
     .calendar-wrapper td, .calendar-wrapper th {
         min-width: 32px !important; max-width: 38px !important;
@@ -96,6 +88,7 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 # --- バナー表示 ---
