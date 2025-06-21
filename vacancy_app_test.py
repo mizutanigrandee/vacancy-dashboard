@@ -60,7 +60,7 @@ st.markdown("""
         min-width: 56px !important;
         max-width: 90vw !important;
         padding: 4.2px 0 !important;
-        font-size: 0.98rem !important;
+        font-size: 0.7rem !important;
     }
     .custom-button .icon {
         font-size: 1.09em !important;
