@@ -31,7 +31,7 @@ st.markdown("""
     transition: background 0.18s, color 0.18s, border 0.18s;
 }
 .custom-button .icon {
-    font-size: 1.55em;
+    font-size: 1.0em;
     margin-right: 11px;
     line-height: 1;
     display: inline-block;
