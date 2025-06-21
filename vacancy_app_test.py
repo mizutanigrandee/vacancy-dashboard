@@ -12,57 +12,61 @@ st.set_page_config(page_title="テスト版【めちゃいいツール】ミナ�
 # ==== ボタンCSS ====（コピペでOK）
 st.markdown("""
 <style>
-/* --- 共通ボタンスタイル --- */
+/* --- 共通ボタン --- */
 .custom-button {
     display: flex;
-    justify-content: center;
     align-items: center;
-    padding: 8px 15px;
-    min-width: 110px;
-    max-width: 180px;
-    border: 1px solid #c9c9d1;
-    border-radius: 8px;
-    background-color: white;
-    color: #0c0c0d;
+    justify-content: center;   /* ←中央寄せ */
+    padding: 11px 26px;
+    min-width: 125px;
+    max-width: 200px;
+    border: 1.8px solid #b9b9c9;
+    border-radius: 10px;
+    background: #fff;
+    color: #1a1a1a;
     text-decoration: none;
-    text-align: center;
-    font-size: 1.15rem;
-    font-weight: 400;
-    margin: 0 5px;
-    transition: background-color 0.2s, color 0.2s;
+    font-size: 1.30rem;
+    font-weight: 500;
+    margin: 0 10px 10px 0;
+    box-shadow: 0 1.5px 7px rgba(0,0,0,0.03);
+    transition: background 0.18s, color 0.18s, border 0.18s;
 }
 .custom-button .icon {
-    margin-right: 7px;
-    font-size: 1.18em;
+    font-size: 1.55em;
+    margin-right: 11px;
+    line-height: 1;
+    display: inline-block;
 }
 .custom-button:hover {
-    border-color: #ff4b4b;
-    color: #ff4b4b;
+    background: #f3f3fa;
+    border-color: #e53939;
+    color: #e53939;
 }
 .nav-button-container, .graph-button-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 12px;
+    gap: 18px;
+    flex-wrap: wrap;
     width: 100%;
-    margin-bottom: 1.3rem;
+    margin-bottom: 1.6rem;
 }
 
-/* --- スマホだけサイズを小さく --- */
+/* --- スマホだけ小さめに --- */
 @media (max-width: 700px) {
     .nav-button-container, .graph-button-container {
-        gap: 4px;
-        margin-bottom: 9px;
+        gap: 3.5px;
+        margin-bottom: 0.65rem;
     }
     .custom-button {
-        min-width: 60px !important;
+        min-width: 56px !important;
         max-width: 90vw !important;
-        padding: 4px 0 !important;
-        font-size: 1.01rem !important;
+        padding: 4.2px 0 !important;
+        font-size: 1.02rem !important;
     }
     .custom-button .icon {
-        font-size: 1.1em;
-        margin-right: 5px;
+        font-size: 1.18em !important;
+        margin-right: 5px !important;
     }
     .calendar-wrapper td, .calendar-wrapper th {
         min-width: 32px !important; max-width: 38px !important;
@@ -216,12 +220,13 @@ if isinstance(selected_date, list): selected_date = selected_date[0]
 
 # === 月送りナビ（HTML/CSSのみ） ===
 nav_html = """
-<div class="nav-btns">
-  <a href="?nav=prev"  class="nav-btn" target="_self">⬅️ 前月</a>
-  <a href="?nav=today" class="nav-btn" target="_self">📅 当月</a>
-  <a href="?nav=next"  class="nav-btn" target="_self">➡️ 次月</a>
+<div class="nav-button-container">
+    <a href="?nav=prev" target="_self" class="custom-button"><span class="icon">⬅️</span>前月</a>
+    <a href="?nav=today" target="_self" class="custom-button"><span class="icon">📅</span>当月</a>
+    <a href="?nav=next" target="_self" class="custom-button"><span class="icon">➡️</span>次月</a>
 </div>
 """
+
 nav_left, nav_center, nav_right = st.columns([3, 4, 3])
 with nav_center:
     st.markdown(nav_html, unsafe_allow_html=True)
