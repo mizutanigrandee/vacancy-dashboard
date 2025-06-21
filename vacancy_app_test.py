@@ -210,8 +210,8 @@ def draw_calendar(month_date: dt.date) -> str:
             event_html = '<div style="font-size:12px;margin-top:4px;">' + "<br>".join(f'{e["icon"]} {e["name"]}' for e in event_data.get(iso, [])) + '</div>'
             html += (
                 f'<td style="border:1px solid #aaa;padding:8px;background:{bg};position:relative;vertical-align:top;">'
-                f'<a href="javascript:window.location.search=\'?selected={iso}\';" class="date-link">'
-                f'style="display:block;width:100%;height:100%;text-decoration:none;color:inherit;">'
+                f'<a href="javascript:window.location.search=\'?selected={iso}\';" '
+                f'class="date-link" style="display:block;width:100%;height:100%;text-decoration:none;color:inherit;">'
                 f'{icon_html}'
                 f'<div style="position:absolute; top:4px; left:4px; font-size:14px; font-weight:bold;">{current.day}</div>'
                 f'{vac_html}{price_html}{event_html}'
@@ -241,13 +241,14 @@ if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
 MAX_MONTH_OFFSET = 12
 
-nav_html = f"""
+nav_html = """
 <div class='nav-row'>
-  <a onclick='window.location.search=\"?nav=prev\";'  class='nav-btn'>⬅️ 前月</a>
-  <a onclick='window.location.search=\"?nav=today\";' class='nav-btn'>📅 当月</a>
-  <a onclick='window.location.search=\"?nav=next\";'  class='nav-btn'>➡️ 次月</a>
+  <a onclick="window.location.search='?nav=prev';"  class='nav-btn'>⬅️ 前月</a>
+  <a onclick="window.location.search='?nav=today';" class='nav-btn'>📅 当月</a>
+  <a onclick="window.location.search='?nav=next';"  class='nav-btn'>➡️ 次月</a>
 </div>
 """
+
 
 st.markdown(nav_html, unsafe_allow_html=True)
 
