@@ -37,39 +37,45 @@ st.markdown("""
         display: block;
         margin: 0 auto;
     }
-    /* ▼HTMLボタン用カスタム */
     .icon { display: none !important; }
+    .text { display: inline !important; }
     .nav-btn { font-size: 1.1rem !important; min-width: 70px !important;}
 }
-/* PC版はそのままアイコン＋テキスト */
+/* PCはデフォルト */
+@media (min-width: 701px) {
+    .icon { display: inline !important; }
+    .text { display: inline !important; }
+    .nav-btn { font-size: 1.1rem !important; min-width: 80px !important;}
+}
 </style>
 """, unsafe_allow_html=True)
 
-# --- ナビゲーションボタン（HTML＋form版） ---
+# --- ナビゲーションボタン（HTML＋form） ---
 st.markdown("""
 <div id="nav-btns" style="display:flex;flex-direction:row;justify-content:center;gap:10px;flex-wrap:wrap;">
   <form action="" method="get" style="margin:0;">
     <button class="nav-btn" name="nav" value="prev" type="submit">
-      <span class="icon">⬅️</span><span class="text">前月</span>
+      <span class="icon">⬅️</span><span class="text">← 前月</span>
     </button>
   </form>
   <form action="" method="get" style="margin:0;">
     <button class="nav-btn" name="nav" value="today" type="submit">
-      <span class="icon">📅</span><span class="text">当月</span>
+      <span class="icon">📅</span><span class="text">● 当月</span>
     </button>
   </form>
   <form action="" method="get" style="margin:0;">
     <button class="nav-btn" name="nav" value="next" type="submit">
-      <span class="icon">➡️</span><span class="text">次月</span>
+      <span class="icon">➡️</span><span class="text">次月 →</span>
     </button>
   </form>
 </div>
 """, unsafe_allow_html=True)
 
-# --- クエリ対応（元のPythonロジックはそのまま使えます） ---
+# --- クエリ対応 ---
 nav_action = st.query_params.get("nav")
+MAX_MONTH_OFFSET = 12
 if nav_action == "prev":
-    st.session_state.month_offset = max(st.session_state.month_offset - 1, -12)
+    st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
     st.query_params.pop("nav")
     st.rerun()
 elif nav_action == "today":
@@ -77,11 +83,9 @@ elif nav_action == "today":
     st.query_params.pop("nav")
     st.rerun()
 elif nav_action == "next":
-    st.session_state.month_offset = min(st.session_state.month_offset + 1, 12)
+    st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
     st.query_params.pop("nav")
     st.rerun()
-
-
 
 
 # --- バナー表示は本稼働のまま
@@ -270,7 +274,6 @@ if not selected_date or not st.session_state["show_graph"]:
 else:
     left, right = st.columns([3, 7])
     with left:
-        # ここを修正！
         btn_cols = st.columns(3)
         with btn_cols[0]:
             if st.button("❌ 閉じる"):
@@ -278,18 +281,17 @@ else:
                 st.session_state["show_graph"] = False
                 st.rerun()
         with btn_cols[1]:
-            if st.button("＜前日"):
+            if st.button('<span class="icon">⬅️</span><span class="text">＜前日</span>', unsafe_allow_html=True):
                 new_dt = pd.to_datetime(selected_date).date() - dt.timedelta(days=1)
                 st.query_params["selected"] = new_dt.isoformat()
                 st.rerun()
         with btn_cols[2]:
-            if st.button("翌日＞"):
+            if st.button('<span class="icon">➡️</span><span class="text">翌日＞</span>', unsafe_allow_html=True):
                 new_dt = pd.to_datetime(selected_date).date() + dt.timedelta(days=1)
                 st.query_params["selected"] = new_dt.isoformat()
                 st.rerun()
-
-
         st.markdown(f"#### {selected_date} の在庫・価格推移")
+        
 
         # --- 履歴データの有無チェック ---
         if (
