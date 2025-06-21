@@ -40,6 +40,9 @@ st.markdown("""
     line-height: 1;
     display: inline-block;
 }
+.custom-button .sp-text {
+    display: none;
+}
 .custom-button:hover {
     background: #f3f3fa;
     border-color: #e53939;
@@ -54,8 +57,11 @@ st.markdown("""
     width: 100%;
     margin-bottom: 1.6rem;
 }
-/* スマホは小さめ */
+/* スマホはテキストだけ表示 */
 @media (max-width: 700px) {
+    .custom-button .icon { display: none !important; }
+    .custom-button .sp-text { display: inline !important; font-weight: 600; font-size: 1.04em;}
+    .custom-button .pc-text { display: none !important; }
     .nav-button-container, .graph-button-container {
         gap: 3.5px;
         margin-bottom: 0.65rem;
@@ -64,11 +70,7 @@ st.markdown("""
         min-width: 56px !important;
         max-width: 90vw !important;
         padding: 4.2px 1 !important;
-        font-size: 0.7rem !important;
-    }
-    .custom-button .icon {
-        font-size: 0.4em !important;     /* ←ここでさらに小さく */
-        margin-right: 5px !important;
+        font-size: 0.93rem !important;
     }
     /* 以下カレンダー等スマホ調整 */
     .calendar-wrapper td, .calendar-wrapper th {
@@ -88,8 +90,6 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
-
-
 
 # --- バナー表示 ---
 if os.path.exists("バナー画像3.png"):
@@ -165,7 +165,7 @@ def draw_calendar(month_date: dt.date) -> str:
                 continue
             bg = '#ddd' if current < today else ('#ffecec' if (current in HOLIDAYS or current.weekday() == 6) else ('#e0f7ff' if current.weekday() == 5 else '#fff'))
             iso = current.isoformat()
-            # 【ここだけaタグ方式でページ遷移（selectedセット）】
+            # 【aタグ方式でページ遷移（selectedセット）】
             current_params = st.query_params.to_dict()
             new_params = {**current_params, "selected": iso}
             href = "?" + "&".join([f"{k}={v}" for k, v in new_params.items()])
@@ -202,21 +202,29 @@ if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
 MAX_MONTH_OFFSET = 12
 
-# --- 月送りナビ（st.button化：ページ遷移せず即座に切替） ---
+# --- 月送りナビ ---
+nav_html = """
+<div class="nav-button-container">
+    <a href="?nav=prev" target="_self" class="custom-button">
+      <span class="icon">⬅️</span>
+      <span class="pc-text">前月</span>
+      <span class="sp-text">←前月</span>
+    </a>
+    <a href="?nav=today" target="_self" class="custom-button">
+      <span class="icon">📅</span>
+      <span class="pc-text">当月</span>
+      <span class="sp-text">当月</span>
+    </a>
+    <a href="?nav=next" target="_self" class="custom-button">
+      <span class="icon">➡️</span>
+      <span class="pc-text">次月</span>
+      <span class="sp-text">次月→</span>
+    </a>
+</div>
+"""
 nav_left, nav_center, nav_right = st.columns([3, 4, 3])
 with nav_center:
-    st.markdown('<div class="nav-button-container">', unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col1:
-        if st.button("⬅️ 前月", key="btn_prev"):
-            st.session_state.month_offset = max(st.session_state.month_offset - 1, -MAX_MONTH_OFFSET)
-    with col2:
-        if st.button("📅 当月", key="btn_today"):
-            st.session_state.month_offset = 0
-    with col3:
-        if st.button("➡️ 次月", key="btn_next"):
-            st.session_state.month_offset = min(st.session_state.month_offset + 1, MAX_MONTH_OFFSET)
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown(nav_html, unsafe_allow_html=True)
 
 base_month = today.replace(day=1) + relativedelta(months=st.session_state.month_offset)
 month1 = base_month
@@ -237,23 +245,27 @@ if selected_date and st.session_state["show_graph"]:
     with left:
         prev_day = (pd.to_datetime(selected_date).date() - dt.timedelta(days=1)).isoformat()
         next_day = (pd.to_datetime(selected_date).date() + dt.timedelta(days=1)).isoformat()
-
-        st.markdown('<div class="graph-button-container">', unsafe_allow_html=True)
-        col1, col2, col3 = st.columns([1, 1, 1])
-        with col1:
-            if st.button("❌ グラフを閉じる", key="btn_close"):
-                st.query_params.clear()
-                st.session_state["show_graph"] = False
-                st.rerun()
-        with col2:
-            if st.button("＜前日", key="btn_prev_day"):
-                st.query_params["selected"] = prev_day
-                st.rerun()
-        with col3:
-            if st.button("翌日＞", key="btn_next_day"):
-                st.query_params["selected"] = next_day
-                st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+        # グラフナビも同じルール
+        graph_nav_html = f"""
+        <div class="graph-button-container">
+            <a href="?" target="_self" class="custom-button">
+                <span class="icon">❌</span>
+                <span class="pc-text">グラフを閉じる</span>
+                <span class="sp-text">閉じる</span>
+            </a>
+            <a href="?selected={prev_day}" target="_self" class="custom-button">
+                <span class="icon">&lt;</span>
+                <span class="pc-text">前日</span>
+                <span class="sp-text">←前日</span>
+            </a>
+            <a href="?selected={next_day}" target="_self" class="custom-button">
+                <span class="icon">&gt;</span>
+                <span class="pc-text">翌日</span>
+                <span class="sp-text">翌日→</span>
+            </a>
+        </div>
+        """
+        st.markdown(graph_nav_html, unsafe_allow_html=True)
         st.markdown(f"#### {selected_date} の在庫・価格推移")
 
         if (selected_date not in historical_data or not historical_data[selected_date] or len(historical_data[selected_date]) == 0):
