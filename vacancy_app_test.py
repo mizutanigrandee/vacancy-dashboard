@@ -67,8 +67,8 @@ st.markdown("""
         font-size: 0.7rem !important;
     }
     .custom-button .icon {
-        font-size: 1.09em !important;
-        margin-right: 8px !important;
+        font-size: 0.8em !important;     /* ←ここでさらに小さく */
+        margin-right: 5px !important;
     }
     /* 以下カレンダー等スマホ調整 */
     .calendar-wrapper td, .calendar-wrapper th {
