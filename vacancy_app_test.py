@@ -37,35 +37,49 @@ st.markdown("""
         display: block;
         margin: 0 auto;
     }
-    @media (max-width: 700px) {
-  /* stButtonが直接並ぶ場合 */
-  .stButton {
-    display: inline-block !important;
-    margin-right: 4px !important;
-    margin-bottom: 0 !important;
-    vertical-align: middle !important;
-  }
-  /* stButton複数個を囲む親要素 */
-  .stButton + .stButton, 
-  div[data-testid="stHorizontalBlock"] > div:has(.stButton) {
-    display: flex !important;
-    flex-direction: row !important;
-    justify-content: center !important;
-    align-items: center !important;
-    gap: 8px !important;
-    width: 100% !important;
-  }
-  /* グラフ用など、stColumnsで並ぶボタンも一応横並びに */
-  .stColumns {
-    flex-direction: row !important;
-    justify-content: center !important;
-    align-items: center !important;
-    gap: 8px !important;
-  }
-
+    /* ▼HTMLボタン用カスタム */
+    .icon { display: none !important; }
+    .nav-btn { font-size: 1.1rem !important; min-width: 70px !important;}
 }
+/* PC版はそのままアイコン＋テキスト */
 </style>
 """, unsafe_allow_html=True)
+
+# --- ナビゲーションボタン（HTML＋form版） ---
+st.markdown("""
+<div id="nav-btns" style="display:flex;flex-direction:row;justify-content:center;gap:10px;flex-wrap:wrap;">
+  <form action="" method="get" style="margin:0;">
+    <button class="nav-btn" name="nav" value="prev" type="submit">
+      <span class="icon">⬅️</span><span class="text">前月</span>
+    </button>
+  </form>
+  <form action="" method="get" style="margin:0;">
+    <button class="nav-btn" name="nav" value="today" type="submit">
+      <span class="icon">📅</span><span class="text">当月</span>
+    </button>
+  </form>
+  <form action="" method="get" style="margin:0;">
+    <button class="nav-btn" name="nav" value="next" type="submit">
+      <span class="icon">➡️</span><span class="text">次月</span>
+    </button>
+  </form>
+</div>
+""", unsafe_allow_html=True)
+
+# --- クエリ対応（元のPythonロジックはそのまま使えます） ---
+nav_action = st.query_params.get("nav")
+if nav_action == "prev":
+    st.session_state.month_offset = max(st.session_state.month_offset - 1, -12)
+    st.query_params.pop("nav")
+    st.rerun()
+elif nav_action == "today":
+    st.session_state.month_offset = 0
+    st.query_params.pop("nav")
+    st.rerun()
+elif nav_action == "next":
+    st.session_state.month_offset = min(st.session_state.month_offset + 1, 12)
+    st.query_params.pop("nav")
+    st.rerun()
 
 
 
