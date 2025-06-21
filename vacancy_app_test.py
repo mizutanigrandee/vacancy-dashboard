@@ -228,23 +228,24 @@ if not selected_date or not st.session_state["show_graph"]:
 else:
     left, right = st.columns([3, 7])
     with left:
-        # 横並びボタン
-        button_cols = st.columns([5, 5, 5])
-        with button_cols[0]:
+        # ここを修正！
+        btn_cols = st.columns(3)
+        with btn_cols[0]:
             if st.button("❌ 閉じる"):
                 st.query_params.clear()
                 st.session_state["show_graph"] = False
                 st.rerun()
-        with button_cols[1]:
+        with btn_cols[1]:
             if st.button("＜前日"):
                 new_dt = pd.to_datetime(selected_date).date() - dt.timedelta(days=1)
                 st.query_params["selected"] = new_dt.isoformat()
                 st.rerun()
-        with button_cols[2]:
+        with btn_cols[2]:
             if st.button("翌日＞"):
                 new_dt = pd.to_datetime(selected_date).date() + dt.timedelta(days=1)
                 st.query_params["selected"] = new_dt.isoformat()
                 st.rerun()
+
 
         st.markdown(f"#### {selected_date} の在庫・価格推移")
 
