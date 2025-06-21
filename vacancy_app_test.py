@@ -242,39 +242,31 @@ if "show_graph" not in st.session_state:
     st.session_state["show_graph"] = True
 
 # --- 日付未選択 または グラフ閉じた場合 → カレンダーのみ
-if not selected_date or not st.session_state["show_graph"]:
+if "show_graph" not in st.session_state:
     st.session_state["show_graph"] = True
-    cal1, cal2 = st.columns(2)
-    with cal1:
-        st.subheader(f"{month1.year}年 {month1.month}月")
-        st.markdown(draw_calendar(month1), unsafe_allow_html=True)
-    with cal2:
-        st.subheader(f"{month2.year}年 {month2.month}月")
-        st.markdown(draw_calendar(month2), unsafe_allow_html=True)
 
-# --- 日付選択中 → 推移グラフ＋カレンダー2枚
-else:
+if selected_date and st.session_state["show_graph"]:
+    # --- 日付選択中 → グラフ＋カレンダー2枚
     left, right = st.columns([3, 7])
     with left:
         btn_cols = st.columns(3)
-with btn_cols[0]:
-    if st.button("❌ 閉じる"):
-        st.query_params.clear()
-        st.session_state["show_graph"] = False
-        st.rerun()
-with btn_cols[1]:
-    if st.button("＜前日"):
-        new_dt = pd.to_datetime(selected_date).date() - dt.timedelta(days=1)
-        st.query_params["selected"] = new_dt.isoformat()
-        st.rerun()
-with btn_cols[2]:
-    if st.button("翌日＞"):
-        new_dt = pd.to_datetime(selected_date).date() + dt.timedelta(days=1)
-        st.query_params["selected"] = new_dt.isoformat()
-        st.rerun()
+        with btn_cols[0]:
+            if st.button("❌ 閉じる"):
+                st.query_params.clear()
+                st.session_state["show_graph"] = False
+                st.rerun()
+        with btn_cols[1]:
+            if st.button("＜前日"):
+                new_dt = pd.to_datetime(selected_date).date() - dt.timedelta(days=1)
+                st.query_params["selected"] = new_dt.isoformat()
+                st.rerun()
+        with btn_cols[2]:
+            if st.button("翌日＞"):
+                new_dt = pd.to_datetime(selected_date).date() + dt.timedelta(days=1)
+                st.query_params["selected"] = new_dt.isoformat()
+                st.rerun()
 
         st.markdown(f"#### {selected_date} の在庫・価格推移")
-        
 
         # --- 履歴データの有無チェック ---
         if (
@@ -332,6 +324,16 @@ with btn_cols[2]:
         with cal2:
             st.subheader(f"{month2.year}年 {month2.month}月")
             st.markdown(draw_calendar(month2), unsafe_allow_html=True)
+else:
+    # --- 日付未選択 またはグラフ閉じた場合 → カレンダー2枚のみ
+    cal1, cal2 = st.columns(2)
+    with cal1:
+        st.subheader(f"{month1.year}年 {month1.month}月")
+        st.markdown(draw_calendar(month1), unsafe_allow_html=True)
+    with cal2:
+        st.subheader(f"{month2.year}年 {month2.month}月")
+        st.markdown(draw_calendar(month2), unsafe_allow_html=True)
+
 
 
 # --- カレンダー下部の案内・注釈・巡回時刻 ---
