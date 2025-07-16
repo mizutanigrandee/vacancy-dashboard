@@ -6,8 +6,7 @@
   <style>
     body {
       background: #f8f8fb;
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
       font-family: 'Segoe UI', 'Meiryo', sans-serif;
     }
     .container {
@@ -18,91 +17,70 @@
       border-radius: 36px;
       box-shadow: 0 4px 24px rgba(60,80,120,0.10);
     }
-    .banner {
-      width: 380px;
-      height: auto;
-      margin-bottom: 16px;
-    }
-    h1 {
-      font-size: 2.8rem;
-      font-weight: bold;
-      margin-top: 0;
-      margin-bottom: 14px;
-      letter-spacing: 1.2px;
-    }
-    .updated {
-      font-size: 1.1rem;
-      color: #18bb8a;
-      margin-bottom: 24px;
-      font-weight: 500;
-    }
+    .banner { width: 320px; height: auto; margin-bottom: 8px; }
+    h1 { font-size: 2.6rem; font-weight: bold; margin-top: 0; margin-bottom: 18px; letter-spacing: 1.1px;}
+    .updated { font-size: 1.13rem; color: #18bb8a; margin-bottom: 20px; font-weight: 500;}
+    .calendar-title { font-size: 1.42rem; font-weight: bold; margin: 32px 0 7px 0; }
     .calendar-flex {
       display: flex;
-      gap: 44px;
+      gap: 54px;
       justify-content: flex-start;
-      margin-bottom: 26px;
+      margin-bottom: 16px;
     }
     .calendar {
       background: #fafbfc;
-      border-radius: 22px;
-      box-shadow: 0 2px 8px rgba(60,80,120,0.05);
+      border-radius: 19px;
+      box-shadow: 0 2px 8px rgba(60,80,120,0.06);
       overflow: hidden;
-      min-width: 525px;
-      max-width: 680px;
-      flex: 1 1 0;
+      min-width: 520px; max-width: 710px; flex: 1 1 0;
     }
     .calendar th, .calendar td {
       border: 1px solid #d4dae3;
       text-align: center;
-      min-width: 64px;
-      padding: 3.5px 0;
-      font-size: 1.02rem;
+      min-width: 68px;
+      padding: 4.5px 0;
+      font-size: 1.05rem;
     }
-    .calendar th {
-      background: #eaeef6;
-      font-weight: bold;
-      color: #2c2a32;
-    }
+    .calendar th { background: #eaeef6; font-weight: bold; color: #2c2a32;}
     .calendar .sunday { color: #c33; }
     .calendar .saturday { color: #247fd7; }
     .calendar .event { font-size: 0.93rem; color: #b42; margin-top: 2px;}
-    .calendar .icon { font-size: 1.17em; vertical-align: -0.15em; }
-    .calendar .vacancy { font-weight: bold; font-size: 1.06rem;}
-    .calendar .price { font-size: 1.01rem;}
+    .calendar .icon { font-size: 1.1em; vertical-align: -0.15em;}
+    .calendar .vacancy { font-weight: bold; font-size: 1.05rem;}
+    .calendar .price { font-size: 1.00rem;}
     .calendar .up { color: #e53939; font-size: 0.93em;}
     .calendar .down { color: #247fd7; font-size: 0.93em;}
     .calendar .demand { font-size: 1.10em; margin-left: 2px;}
     .calendar .holiday { background: #fdecec;}
     .calendar .sat-bg { background: #e5f2fc;}
     .calendar .today { background: #eaf6e5 !important; }
-    .calendar .cell { min-height: 61px; }
+    .calendar .cell { min-height: 62px; }
     .calendar caption {
-      font-size: 1.45rem;
+      font-size: 1.28rem;
       font-weight: bold;
-      margin: 10px 0 16px 0;
+      margin: 10px 0 13px 0;
       color: #222;
-      letter-spacing: 1px;
       background: none;
       text-align: left;
-      padding-bottom: 7px;
+      padding-bottom: 5px;
     }
     @media (max-width: 1200px) {
       .container { padding: 12px; }
-      .calendar-flex { flex-direction: column; gap: 24px;}
+      .calendar-flex { flex-direction: column; gap: 18px;}
       .calendar { max-width: 99vw;}
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- バナー画像（例: ローカル or 直リンク推奨） -->
+    <!-- バナー画像 -->
     <img src="バナー画像3.png" alt="バナー画像" class="banner">
 
     <h1>空室＆平均価格カレンダー</h1>
     <div class="updated">最終巡回時刻：2025-07-16 17:39:40</div>
 
     <div class="calendar-flex">
-      <!-- 左カレンダー：7月 -->
+      <!-- ▼ 2025年7月 -->
       <table class="calendar" cellspacing="0">
         <caption>2025年 7月</caption>
         <thead>
@@ -117,11 +95,10 @@
           <tr>
             <td class="cell">5<br><span class="vacancy">251件 <span class="down">(-15)</span></span><br><span class="price">￥14,018 <span class="down">↓</span></span></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td>
           </tr>
-          <!-- ...（2週目以降、現行データをコピペ） -->
         </tbody>
       </table>
 
-      <!-- 右カレンダー：8月 -->
+      <!-- ▼ 2025年8月 -->
       <table class="calendar" cellspacing="0">
         <caption>2025年 8月</caption>
         <thead>
@@ -133,12 +110,11 @@
           <tr>
             <td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell">1<br><span class="vacancy">293件</span><br><span class="price">￥13,350 <span class="up">↑</span></span></td><td class="cell">2<br><span class="vacancy">216件 <span class="up">(+2)</span></span><br><span class="price">￥24,221 <span class="down">↓</span></span></td>
           </tr>
-          <!-- ...（2週目以降、現行データをコピペ） -->
         </tbody>
       </table>
     </div>
 
-    <div style="margin-top:12px;font-size:1.13rem;color:#168963;font-weight:500;">
+    <div style="margin-top:18px;font-size:1.13rem;color:#168963;font-weight:500;">
       日付を選択すると推移グラフが表示されます（上部テキストボックスに日付を入力してください）
     </div>
     <div style="margin-top:6px;font-size:1.02rem;color:#444;">
@@ -158,4 +134,3 @@
   </div>
 </body>
 </html>
-
