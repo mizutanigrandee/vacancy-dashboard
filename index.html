@@ -1,136 +1,29 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>空室＆平均価格カレンダー</title>
-  <style>
-    body {
-      background: #f8f8fb;
-      margin: 0; padding: 0;
-      font-family: 'Segoe UI', 'Meiryo', sans-serif;
-    }
-    .container {
-      max-width: 1460px;
-      margin: 40px auto;
-      padding: 40px;
-      background: #fff;
-      border-radius: 36px;
-      box-shadow: 0 4px 24px rgba(60,80,120,0.10);
-    }
-    .banner { width: 320px; height: auto; margin-bottom: 8px; }
-    h1 { font-size: 2.6rem; font-weight: bold; margin-top: 0; margin-bottom: 18px; letter-spacing: 1.1px;}
-    .updated { font-size: 1.13rem; color: #18bb8a; margin-bottom: 20px; font-weight: 500;}
-    .calendar-title { font-size: 1.42rem; font-weight: bold; margin: 32px 0 7px 0; }
-    .calendar-flex {
-      display: flex;
-      gap: 54px;
-      justify-content: flex-start;
-      margin-bottom: 16px;
-    }
-    .calendar {
-      background: #fafbfc;
-      border-radius: 19px;
-      box-shadow: 0 2px 8px rgba(60,80,120,0.06);
-      overflow: hidden;
-      min-width: 520px; max-width: 710px; flex: 1 1 0;
-    }
-    .calendar th, .calendar td {
-      border: 1px solid #d4dae3;
-      text-align: center;
-      min-width: 68px;
-      padding: 4.5px 0;
-      font-size: 1.05rem;
-    }
-    .calendar th { background: #eaeef6; font-weight: bold; color: #2c2a32;}
-    .calendar .sunday { color: #c33; }
-    .calendar .saturday { color: #247fd7; }
-    .calendar .event { font-size: 0.93rem; color: #b42; margin-top: 2px;}
-    .calendar .icon { font-size: 1.1em; vertical-align: -0.15em;}
-    .calendar .vacancy { font-weight: bold; font-size: 1.05rem;}
-    .calendar .price { font-size: 1.00rem;}
-    .calendar .up { color: #e53939; font-size: 0.93em;}
-    .calendar .down { color: #247fd7; font-size: 0.93em;}
-    .calendar .demand { font-size: 1.10em; margin-left: 2px;}
-    .calendar .holiday { background: #fdecec;}
-    .calendar .sat-bg { background: #e5f2fc;}
-    .calendar .today { background: #eaf6e5 !important; }
-    .calendar .cell { min-height: 62px; }
-    .calendar caption {
-      font-size: 1.28rem;
-      font-weight: bold;
-      margin: 10px 0 13px 0;
-      color: #222;
-      background: none;
-      text-align: left;
-      padding-bottom: 5px;
-    }
-    @media (max-width: 1200px) {
-      .container { padding: 12px; }
-      .calendar-flex { flex-direction: column; gap: 18px;}
-      .calendar { max-width: 99vw;}
-    }
-  </style>
 </head>
 <body>
-  <div class="container">
-    <!-- バナー画像 -->
-    <img src="バナー画像3.png" alt="バナー画像" class="banner">
+<h2>空室＆平均価格カレンダー</h2>
+<p>最終巡回時刻：2025-07-16</p>
+<table border="1">
+  <tr>
+    <th>日付</th>
+    <th>在庫数</th>
+    <th>平均価格</th>
+  </tr>
+<tr><td>2025-04-16</td><td>0</td><td>0.0</td></tr>
+<tr><td>2025-04-17</td><td>0</td><td>0.0</td></tr>
+<tr><td>2025-04-18</td><td>0</td><td>0.0</td></tr>
+<tr><td>2025-04-19</td><td>0</td><td>0.0</td></tr>
+<tr><td>2025-04-20</td><td>0</td><td>0.0</td></tr>
+<tr><td>2025-04-21</td><td>0</td><td>0.0</td></tr>
+<tr><td>2025-04-22</td><td>0</td><td>0.0</td></tr>
+<tr><td>2025-04-23</td><td>0</td><td>0.0</td></tr>
+<tr><td>2025-04-24</td><td>0</td><td>0.0</td></tr>
+<tr><td>2025-04-25</td><td>0</td><td>0.0</td></tr>
 
-    <h1>空室＆平均価格カレンダー</h1>
-    <div class="updated">最終巡回時刻：2025-07-16 17:39:40</div>
-
-    <div class="calendar-flex">
-      <!-- ▼ 2025年7月 -->
-      <table class="calendar" cellspacing="0">
-        <caption>2025年 7月</caption>
-        <thead>
-          <tr>
-            <th class="sunday">日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th class="saturday">土</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell">1<br><span class="vacancy">293件 <span class="down">(-8)</span></span><br><span class="price">￥8,913 <span class="down">↓</span></span></td><td class="cell">2<br><span class="vacancy">285件 <span class="down">(-8)</span></span><br><span class="price">￥10,042 <span class="down">↓</span></span></td><td class="cell">3<br><span class="vacancy">291件 <span class="down">(-7)</span></span><br><span class="price">￥10,863 <span class="down">↓</span></span></td><td class="cell">4<br><span class="vacancy">280件 <span class="down">(-12)</span></span><br><span class="price">￥10,543 <span class="down">↓</span></span></td>
-          </tr>
-          <tr>
-            <td class="cell">5<br><span class="vacancy">251件 <span class="down">(-15)</span></span><br><span class="price">￥14,018 <span class="down">↓</span></span></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- ▼ 2025年8月 -->
-      <table class="calendar" cellspacing="0">
-        <caption>2025年 8月</caption>
-        <thead>
-          <tr>
-            <th class="sunday">日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th class="saturday">土</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell"></td><td class="cell">1<br><span class="vacancy">293件</span><br><span class="price">￥13,350 <span class="up">↑</span></span></td><td class="cell">2<br><span class="vacancy">216件 <span class="up">(+2)</span></span><br><span class="price">￥24,221 <span class="down">↓</span></span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div style="margin-top:18px;font-size:1.13rem;color:#168963;font-weight:500;">
-      日付を選択すると推移グラフが表示されます（上部テキストボックスに日付を入力してください）
-    </div>
-    <div style="margin-top:6px;font-size:1.02rem;color:#444;">
-      <b>《注釈》</b><br>
-      - 在庫数、平均価格は「なんば・心斎橋・天王寺・阿倍野・長居」エリアから抽出しています。<br>
-      - 表示される「平均価格」は、楽天トラベル検索上位90施設の平均最低価格です。<br>
-      - 空室数の <span style="color:#247fd7;">（+N）</span>／<span style="color:#e53939;">（−N）</span> は、前回巡回時点との在庫数の増減を示します。<br>
-      - 平均価格の <span style="color:#e53939;">↑</span>／<span style="color:#247fd7;">↓</span> は、前回巡回時点との平均価格の上昇／下降を示します。<br>
-      - 会場アイコン：<span class="icon" style="color:#e53939;">🔴</span> 京セラドーム／<span class="icon" style="color:#247fd7;">🔵</span>ヤンマースタジアム／<span class="icon" style="color:#eebb33;">★</span>その他会場<br>
-      - 炎マーク（需要シンボル）の内訳：<br>
-        <span class="icon" style="color:#e96a0c;">🔥1</span>：残室 ≤250 または 価格 ≥25,000円<br>
-        <span class="icon" style="color:#e96a0c;">🔥2</span>：残室 ≤200 または 価格 ≥30,000円<br>
-        <span class="icon" style="color:#e96a0c;">🔥3</span>：残室 ≤150 または 価格 ≥35,000円<br>
-        <span class="icon" style="color:#e96a0c;">🔥4</span>：残室 ≤100 または 価格 ≥40,000円<br>
-        <span class="icon" style="color:#e96a0c;">🔥5</span>：残室 ≤70 または 価格 ≥50,000円<br>
-    </div>
-  </div>
+</table>
 </body>
 </html>
