@@ -2,10 +2,75 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>GitHub Pages サンプル</title>
+  <title>空室＆平均価格カレンダー</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body { background: #f8f8fb; font-family: "Segoe UI", "Yu Gothic", "Hiragino Kaku Gothic ProN", sans-serif; margin: 0; }
+    .main-wrap { max-width: 1600px; margin: 40px auto 0 auto; background: #fff; border-radius: 32px; box-shadow: 0 0 18px rgba(180,200,220,0.13); padding: 25px 28px 32px 28px; }
+    .banner { width: 540px; max-width: 95vw; margin-bottom: 6px; }
+    h1 { font-size: 2.7rem; margin-bottom: 0.4em; font-weight: 700; letter-spacing: 0.08em; color: #333; }
+    .calendar-wrap { display: flex; gap: 32px; justify-content: center; }
+    .calendar { border-collapse: collapse; width: 550px; background: #fafbfc; border-radius: 18px; overflow: hidden; box-shadow: 0 0 4px #ececec; }
+    .calendar th, .calendar td { border: 1px solid #bbb; text-align: center; min-width: 64px; height: 58px; font-size: 1.05em; padding: 4px 0; }
+    .calendar th { background: #eef1f6; font-size: 1.2em; }
+    .calendar .sunday { color: #c71c1c; }
+    .calendar .saturday { color: #3377cc; }
+    .calendar .holiday { background: #fbeaea; }
+    .calendar .event { font-size: 0.95em; margin-top: 4px; display: block; color: #b06; }
+    .calendar .hot { color: #e53939; font-weight: bold; }
+    .info { font-size: 1.06em; margin: 22px 0 9px 0; color: #296; }
+    .desc { font-size: 0.96em; color: #444; margin-bottom: 2.2em; }
+    @media (max-width: 1200px) {
+      .calendar-wrap { flex-direction: column; align-items: center; }
+      .main-wrap { padding: 6vw 1.7vw; }
+    }
+  </style>
 </head>
 <body>
-  <h1>祝！GitHub Pages 公開テスト</h1>
-  <p>このページはGitHub Pagesから配信されています。</p>
+  <div class="main-wrap">
+    <img src="img/banner.png" class="banner" alt="バナー画像">
+    <h1>空室＆平均価格カレンダー</h1>
+    <div class="info">最終巡回時刻：2025-07-16 17:39:40</div>
+    <div class="calendar-wrap">
+      <!-- ▼カレンダー1 -->
+      <table class="calendar">
+        <tr>
+          <th class="sunday">日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th class="saturday">土</th>
+        </tr>
+        <tr>
+          <td></td><td></td><td>1<br>293件<br>¥8,913 <span style="color:blue;">↓</span></td>
+          <td>2<br>285件<br>¥10,042 <span style="color:blue;">↓</span></td>
+          <td>3<br>291件<br>¥10,863 <span style="color:red;">↑</span></td>
+          <td>4<br>280件<br>¥10,543 <span style="color:blue;">↓</span></td>
+          <td class="saturday">5<br>251件<br>¥14,018 <span style="color:blue;">↓</span></td>
+        </tr>
+        <!-- ...（省略。必要な分だけ続けてください） -->
+      </table>
+
+      <!-- ▼カレンダー2（翌月） -->
+      <table class="calendar">
+        <tr>
+          <th class="sunday">日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th class="saturday">土</th>
+        </tr>
+        <!-- 必要な分だけ行を追加 -->
+      </table>
+    </div>
+    <div class="desc">
+      日付を選択すると推移グラフが表示されます（上部テキストボックスに日付を入力してください）<br>
+      <br>
+      <b>《注釈》</b><br>
+      - 在庫数、平均価格は「なんば・心斎橋・天王寺・阿倍野・長居」エリアから抽出しています。<br>
+      - 表示される「平均価格」は、楽天トラベル検索上位90施設の平均最低価格です。<br>
+      - 空室数の <span style="color:blue;">（+N）</span>／<span style="color:red;">（−N）</span>は、前回巡回時点との在庫数の増減を示します。<br>
+      - 平均価格の <span style="color:red;">↑</span>／<span style="color:blue;">↓</span>は、前回巡回時点との平均価格の上昇／下降を示します。<br>
+      - 会場アイコン：🔴京セラドーム / 🔵ヤンマースタジアム / ★その他会場<br>
+      - 炎マーク（需要シンボル）の内訳：<br>
+        ・🔥1：残室 ≤250 または 価格 ≥25,000円<br>
+        ・🔥2：残室 ≤200 または 価格 ≥30,000円<br>
+        ・🔥3：残室 ≤150 または 価格 ≥35,000円<br>
+        ・🔥4：残室 ≤100 または 価格 ≥40,000円<br>
+        ・🔥5：残室 ≤70 または 価格 ≥50,000円
+    </div>
+  </div>
 </body>
 </html>
