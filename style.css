@@ -1,0 +1,38 @@
+body { background:#f7f8fa; margin:0; font-family:'Noto Sans JP',sans-serif; }
+.main { max-width:1500px; margin:30px auto 40px auto; background:#fff; border-radius:36px; box-shadow:0 4px 32px #d9e2ef99; padding:36px 24px 36px 48px; }
+h1 { margin:0 0 8px 0; font-size:40px; }
+.banner { width:380px; margin-bottom:12px; }
+.flex { display:flex; gap:36px; flex-wrap:wrap; }
+.calendar-wrap { flex:1 1 48%; min-width:370px; }
+.calendar-title { font-size:28px; margin-bottom:4px; font-weight:700; color:#222; }
+.calendar-nav { margin:14px 0 14px 0; display:flex; justify-content:center; gap:14px; }
+.calendar-nav button { min-width:60px; font-size:18px; border-radius:12px; border:1.5px solid #c8d5e6; background:#f7f7fd; padding:8px 20px; color:#1a1a1a; cursor:pointer; transition:background .18s; }
+.calendar-nav button:hover { background:#fbe3e3; color:#e53939; border-color:#e53939; }
+table.calendar { border-collapse:collapse; border-radius:16px; overflow:hidden; margin-bottom:14px; background:#f5f7fb; width:100%; }
+.calendar th, .calendar td { width:84px; height:80px; border:1px solid #e0e4ef; text-align:center; font-size:19px; vertical-align:top; background:#fff; padding:0; position:relative; }
+.calendar th.sun, .calendar td.sun { color:#e1000a; }
+.calendar th.sat, .calendar td.sat { color:#1b6ace; }
+.calendar td.hol { background:#fff5f5; }
+.calendar td.today { background:#bdf7d3; }
+.calendar td.out { background:#f5f7fb; color:#bbb; }
+.daynum { font-weight:bold; font-size:22px; margin-bottom:2px; }
+.diff.pos { color:#2176d2; font-size:14px; margin-left:2px; }
+.diff.neg { color:#e94343; font-size:14px; margin-left:2px; }
+.price-up { color:#e03e3e; font-size:17px; margin-left:3px; }
+.price-down { color:#208ad8; font-size:17px; margin-left:3px; }
+.fire { font-size:18px; margin-left:4px; }
+.fire1 { color:#ff9800; }
+.fire2 { color:#ff5722; }
+.fire3 { color:#ff1744; }
+.fire4 { color:#c51162; }
+.fire5 { color:#6d00c4; font-weight:bold; }
+.event-kyocera { color:#b10000; font-size:15px; margin-top:2px; display:inline-block; }
+.event-yannar { color:#1976d2; font-size:15px; margin-top:2px; display:inline-block; }
+.event-other { color:#222; font-size:14px; margin-top:2px; display:inline-block; }
+#graph-container { margin:36px 0 20px 0; }
+.anno-block { margin:34px 0 0 0; color:#222; font-size:17px; }
+.anno-title { font-weight:700; color:#258ba0; font-size:20px; margin-bottom:4px; }
+.anno-list { margin:0 0 0 20px; padding:0; }
+.last-updated { color:#2baf71;font-size:18px; margin-bottom:8px; }
+@media (max-width:1100px) { .flex { flex-direction:column; } .calendar-wrap { min-width:320px; } .main { padding:18px 4px 18px 8px; } }
+@media (max-width:600px) { h1 { font-size:28px; } .calendar th, .calendar td { width:40px; height:48px; font-size:13px; } .daynum { font-size:13px; } .banner { width:98vw; max-width:340px; } }
