@@ -1,41 +1,75 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>ミナミエリア 空室＆平均価格カレンダー【GitHub Pages版】</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="UTF-8">
+<title>空室＆平均価格カレンダー（本番）</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body { background:#f7f8fa; margin:0; font-family:'Noto Sans JP',sans-serif; }
+.main { max-width:1500px; margin:30px auto 40px auto; background:#fff; border-radius:36px; box-shadow:0 4px 32px #d9e2ef99; padding:36px 24px 36px 48px; }
+h1 { margin:0 0 8px 0; font-size:40px; }
+h2 { margin:8px 0 0 0; font-size:22px; color:#444; }
+.banner { width:380px; margin-bottom:12px; }
+.flex { display:flex; gap:36px; flex-wrap:wrap; }
+.calendar-wrap { flex:1 1 48%; min-width:370px; }
+.calendar-title { font-size:28px; margin-bottom:4px; font-weight:700; color:#222; }
+table.calendar { border-collapse:collapse; border-radius:16px; overflow:hidden; margin-bottom:14px; background:#f5f7fb; }
+.calendar th, .calendar td { width:84px; height:80px; border:1px solid #e0e4ef; text-align:center; font-size:19px; vertical-align:top; background:#fff; padding:0; position:relative; }
+.calendar th.sun, .calendar td.sun { color:#e1000a; }
+.calendar th.sat, .calendar td.sat { color:#1b6ace; }
+.calendar td.hol { background:#fff5f5; }
+.calendar td.today { background:#bdf7d3; }
+.calendar td.out { background:#f5f7fb; color:#bbb; }
+.daynum { font-weight:bold; font-size:22px; margin-bottom:2px; }
+.diff.pos { color:#2176d2; font-size:14px; margin-left:2px; }
+.diff.neg { color:#e94343; font-size:14px; margin-left:2px; }
+.price-up { color:#e03e3e; font-size:17px; margin-left:3px; }
+.price-down { color:#208ad8; font-size:17px; margin-left:3px; }
+.fire { font-size:18px; margin-left:4px; }
+.fire1 { color:#ff9800; }
+.fire2 { color:#ff5722; }
+.fire3 { color:#ff1744; }
+.fire4 { color:#c51162; }
+.fire5 { color:#6d00c4; font-weight:bold; }
+.event-kyocera { display:block; color:#b10000; font-size:14px; margin-top:2px; }
+.event-other { display:block; color:#222; font-size:13px; }
+@media (max-width:1100px) { .flex { flex-direction:column; } .calendar-wrap { min-width:320px; } }
+</style>
 </head>
 <body>
-  <div class="main">
+<div class="main">
     <img src="バナー画像3.png" class="banner" alt="バナー画像">
     <h1>空室＆平均価格カレンダー</h1>
-    <div id="last-updated" class="last-updated"></div>
-    <div id="nav" class="calendar-nav"></div>
+    <div style="color:#2baf71;font-size:18px; margin-bottom:7px;">最終巡回時刻：2025-07-19 00:00:00</div>
     <div class="flex">
-      <div class="calendar-wrap" id="calendar1"></div>
-      <div class="calendar-wrap" id="calendar2"></div>
+        <div class="calendar-wrap"><div class="calendar-title">2025年 7月</div>
+    <table class="calendar">
+      <tr>
+        <th class="sun">日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th class="sat">土</th>
+      </tr>
+    <tr><td class="sun out"></td><td class="out"></td><td class=""><div class="daynum">1</div><div>293件</div><div>¥8,913.0</div></td><td class=""><div class="daynum">2</div><div>285件</div><div>¥10,042.0</div></td><td class=""><div class="daynum">3</div><div>291件</div><div>¥10,863.0</div></td><td class=""><div class="daynum">4</div><div>280件</div><div>¥10,543.0</div></td><td class="sat"><div class="daynum">5</div><div>251件</div><div>¥14,018.0</div></td></tr><tr><td class="sun"><div class="daynum">6</div><div>310件</div><div>¥8,458.0</div></td><td class=""><div class="daynum">7</div><div>294件</div><div>¥9,204.0</div></td><td class=""><div class="daynum">8</div><div>292件</div><div>¥10,221.0</div></td><td class=""><div class="daynum">9</div><div>285件</div><div>¥10,309.0</div></td><td class=""><div class="daynum">10</div><div>271件</div><div>¥11,460.0</div></td><td class=""><div class="daynum">11</div><div>269件</div><div>¥11,987.0</div></td><td class="sat"><div class="daynum">12</div><div>158件</div><div>¥25,763.0</div><span class="fire fire2">🔥2</span></td></tr><tr><td class="sun"><div class="daynum">13</div><div>286件</div><div>¥10,881.0</div></td><td class=""><div class="daynum">14</div><div>300件</div><div>¥9,303.0</div><span class="event-kyocera">🔴SEVENTEEN</span></td><td class=""><div class="daynum">15</div><div>297件</div><div>¥9,919.0</div></td><td class=""><div class="daynum">16</div><div>271件</div><div>¥11,885.0</div></td><td class=""><div class="daynum">17</div><div>271件</div><div>¥13,652.0</div></td><td class=""><div class="daynum">18</div><div>274件</div><div>¥12,016.0</div></td><td class="sat today"><div class="daynum">19</div><div>150件</div><div>¥25,836.0</div><span class="fire fire3">🔥3</span></td></tr><tr><td class="sun"><div class="daynum">20</div><div>227件</div><div>¥17,375.0</div><span class="fire fire1">🔥1</span></td><td class="hol"><div class="daynum">21</div><div>305件</div><div>¥9,509.0</div></td><td class=""><div class="daynum">22</div><div>306件</div><div>¥9,959.0</div></td><td class=""><div class="daynum">23</div><div>291件</div><div>¥11,586.0</div></td><td class=""><div class="daynum">24</div><div>283件</div><div>¥12,537.0</div></td><td class=""><div class="daynum">25</div><div>284件</div><div>¥13,351.0</div></td><td class="sat"><div class="daynum">26</div><div>225件</div><div>¥21,346.0</div><span class="fire fire1">🔥1</span></td></tr><tr><td class="sun"><div class="daynum">27</div><div>297件</div><div>¥10,974.0</div><span class="event-other">★TWICE</span></td><td class=""><div class="daynum">28</div><div>295件</div><div>¥10,907.0</div></td><td class=""><div class="daynum">29</div><div>300件</div><div>¥11,500.0</div></td><td class=""><div class="daynum">30</div><div>300件</div><div>¥11,201.0</div></td><td class=""><div class="daynum">31</div><div>297件</div><div>¥10,913.0</div></td><td class="out"></td><td class="sat out"></td></tr></table></div>
+        <div class="calendar-wrap"><div class="calendar-title">2025年 8月</div>
+    <table class="calendar">
+      <tr>
+        <th class="sun">日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th class="sat">土</th>
+      </tr>
+    <tr><td class="sun out"></td><td class="out"></td><td class="out"></td><td class="out"></td><td class="out"></td><td class=""><div class="daynum">1</div><div>290件</div><div>¥13,096.0</div></td><td class="sat"><div class="daynum">2</div><div>208件</div><div>¥24,838.0</div><span class="fire fire1">🔥1</span></td></tr><tr><td class="sun"><div class="daynum">3</div><div>286件</div><div>¥12,472.0</div></td><td class=""><div class="daynum">4</div><div>296件</div><div>¥10,904.0</div></td><td class=""><div class="daynum">5</div><div>299件</div><div>¥11,447.0</div></td><td class=""><div class="daynum">6</div><div>301件</div><div>¥11,358.0</div></td><td class=""><div class="daynum">7</div><div>304件</div><div>¥11,595.0</div></td><td class=""><div class="daynum">8</div><div>297件</div><div>¥12,845.0</div></td><td class="sat"><div class="daynum">9</div><div>234件</div><div>¥20,807.0</div><span class="fire fire1">🔥1</span></td></tr><tr><td class="sun"><div class="daynum">10</div><div>250件</div><div>¥17,985.0</div><span class="fire fire1">🔥1</span></td><td class="hol"><div class="daynum">11</div><div>279件</div><div>¥12,986.0</div></td><td class=""><div class="daynum">12</div><div>281件</div><div>¥13,068.0</div></td><td class=""><div class="daynum">13</div><div>281件</div><div>¥13,351.0</div></td><td class=""><div class="daynum">14</div><div>279件</div><div>¥13,410.0</div></td><td class=""><div class="daynum">15</div><div>291件</div><div>¥13,940.0</div></td><td class="sat"><div class="daynum">16</div><div>268件</div><div>¥17,981.0</div></td></tr><tr><td class="sun"><div class="daynum">17</div><div>305件</div><div>¥10,445.0</div></td><td class=""><div class="daynum">18</div><div>305件</div><div>¥10,239.0</div></td><td class=""><div class="daynum">19</div><div>305件</div><div>¥11,060.0</div></td><td class=""><div class="daynum">20</div><div>304件</div><div>¥11,063.0</div></td><td class=""><div class="daynum">21</div><div>294件</div><div>¥11,744.0</div></td><td class=""><div class="daynum">22</div><div>304件</div><div>¥12,686.0</div></td><td class="sat"><div class="daynum">23</div><div>247件</div><div>¥23,904.0</div><span class="fire fire1">🔥1</span></td></tr><tr><td class="sun"><div class="daynum">24</div><div>308件</div><div>¥11,656.0</div></td><td class=""><div class="daynum">25</div><div>309件</div><div>¥10,226.0</div></td><td class=""><div class="daynum">26</div><div>308件</div><div>¥10,670.0</div></td><td class=""><div class="daynum">27</div><div>307件</div><div>¥10,784.0</div></td><td class=""><div class="daynum">28</div><div>306件</div><div>¥10,860.0</div></td><td class=""><div class="daynum">29</div><div>304件</div><div>¥11,862.0</div></td><td class="sat"><div class="daynum">30</div><div>265件</div><div>¥19,397.0</div></td></tr><tr><td class="sun"><div class="daynum">31</div><div>306件</div><div>¥10,733.0</div></td><td class="out"></td><td class="out"></td><td class="out"></td><td class="out"></td><td class="out"></td><td class="sat out"></td></tr></table></div>
     </div>
-    <div id="graph-container"></div>
-    <div class="anno-block">
-      <div class="anno-title"><b>《注釈》</b></div>
-      <ul class="anno-list">
-        <li>在庫数、平均価格は「なんば・心斎橋・天王寺・阿倍野・長居」エリアから抽出しています。</li>
-        <li>表示される「平均価格」は、楽天トラベル検索上位90施設の平均最安値です。</li>
-        <li>空室数の <span class="diff pos">（+N）</span>/<span class="diff neg">（−N）</span> は、前回巡回時点との在庫数の増減を示します。</li>
-        <li>平均価格の <span class="price-up">↑</span>/<span class="price-down">↓</span> は、前回巡回時点との平均価格の上昇/下降を示します。</li>
-        <li>会場アイコン：<span class="event-kyocera">🔴京セラドーム</span>／<span class="event-yanmar">🔵ヤンマー</span>／<span class="event-other">★その他</span></li>
-        <li>炎マーク（需要シンボル）の内訳：
-          <span class="fire fire1">🔥1</span>：残室≤250/価格≥25,000円
-          <span class="fire fire2">🔥2</span>：残室≤200/価格≥30,000円
-          <span class="fire fire3">🔥3</span>：残室≤150/価格≥35,000円
-          <span class="fire fire4">🔥4</span>：残室≤100/価格≥40,000円
-          <span class="fire fire5">🔥5</span>：残室≤70/価格≥50,000円
-        </li>
-      </ul>
+    <h2>日付を選択すると推移グラフが表示されます（※HTML静的化ではグラフ省略）</h2>
+    <div style="margin:16px 0 8px 0; color:#222;">
+        <b>《注釈》</b><br>
+        ・在庫数、平均価格は「なんば・心斎橋・天王寺・阿倍野・長居」エリアから抽出しています。<br>
+        ・表示される「平均価格」は、楽天トラベル検索上位90施設の平均最安値です。<br>
+        ・空室数の（<span class="diff pos">+N</span>／<span class="diff neg">-N</span>）は、前回巡回時点との在庫数の増減を示します。<br>
+        ・平均価格の <span class="price-up">↑</span>／<span class="price-down">↓</span>は、前回巡回時点との平均価格の上昇／下降を示します。<br>
+        ・会場アイコン：<span class="event-kyocera">🔴京セラドーム</span>／<span style="color:#1976d2;">🔵ヤンマースタジアム</span>／<span class="event-other">★その他会場</span><br>
+        ・炎マーク（需要シンボル）の内訳：<br>
+        <span class="fire fire1">🔥1</span>：残室≤250 or 価格≥25,000円　
+        <span class="fire fire2">🔥2</span>：残室≤200 or 価格≥30,000円　
+        <span class="fire fire3">🔥3</span>：残室≤150 or 価格≥35,000円　
+        <span class="fire fire4">🔥4</span>：残室≤100 or 価格≥40,000円　
+        <span class="fire fire5">🔥5</span>：残室≤70 or 価格≥50,000円
     </div>
-  </div>
-  <script src="main.js"></script>
+</div>
 </body>
 </html>
