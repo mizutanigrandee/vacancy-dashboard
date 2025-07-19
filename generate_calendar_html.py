@@ -1,174 +1,278 @@
+import os
 import json
-import datetime
 import calendar
+import pandas as pd
+import datetime as dt
 
-# --- 祝日リスト（2025年の一部例：本番は全祝日を用意推奨）---
-HOLIDAYS = [
-    "2025-01-01", "2025-01-13", "2025-02-11", "2025-02-23",
-    "2025-03-20", "2025-04-29", "2025-05-03", "2025-05-04",
-    "2025-05-05", "2025-07-21", "2025-08-11", "2025-09-15",
-    "2025-09-23", "2025-10-13", "2025-11-03", "2025-11-23",
-    "2025-12-23"
-]
+# ----- ファイルパス・基本設定 -----
+CACHE_FILE = "vacancy_price_cache.json"
+HISTORICAL_FILE = "historical_data.json"
+EVENT_FILE = "event_data.xlsx"
+OUT_HTML = "index.html"
+BANNER_IMG = "バナー画像3.png"
 
-def is_holiday(date_str):
-    return date_str in HOLIDAYS
+# ----- 祝日判定 -----
+try:
+    import jpholiday
+except ImportError:
+    # Github Actions等でjpholiday未導入時
+    os.system("pip install jpholiday")
+    import jpholiday
 
-# --- データ読込 ---
-with open("vacancy_price_cache.json", encoding="utf-8") as f:
-    data = json.load(f)
+# ----- データロード -----
+def load_json(path):
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    return {}
 
-today = datetime.date.today()
-# 1か月目・2か月目を取得
-first_month = today.replace(day=1)
-second_month = (first_month + datetime.timedelta(days=32)).replace(day=1)
+def load_event_data(path):
+    if not os.path.exists(path):
+        return {}
+    df = pd.read_excel(path).dropna(subset=["date", "icon", "name"])
+    ev = {}
+    for _, row in df.iterrows():
+        key = pd.to_datetime(row["date"]).date().isoformat()
+        ev.setdefault(key, []).append({"icon": row["icon"], "name": row["name"]})
+    return ev
 
-months = [first_month, second_month]
+cache_data = load_json(CACHE_FILE)
+historical_data = load_json(HISTORICAL_FILE)
+event_data = load_event_data(EVENT_FILE)
 
-# --- HTML組立 ---
-def make_calendar(month_date):
-    year, month = month_date.year, month_date.month
-    month_str = f"{year}年 {month}月"
-    cal = calendar.Calendar(firstweekday=6)  # 日曜始まり
-    html = f"""<div class="calendar-wrap"><div class="calendar-title">{month_str}</div>
-    <table class="calendar">
-      <tr>
-        <th class="sun">日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th class="sat">土</th>
-      </tr>
-    """
-    for week in cal.monthdatescalendar(year, month):
+# ----- バナー画像（base64） -----
+def banner_base64():
+    if not os.path.exists(BANNER_IMG): return ""
+    import base64
+    with open(BANNER_IMG, "rb") as f:
+        return base64.b64encode(f.read()).decode("utf-8")
+    return ""
+
+banner64 = banner_base64()
+
+# ----- 日付リスト生成 -----
+def get_holidays(year, month):
+    hol = set()
+    for d in range(1, calendar.monthrange(year, month)[1] + 1):
+        date = dt.date(year, month, d)
+        if jpholiday.is_holiday(date):
+            hol.add(d)
+    return hol
+
+# ----- 需要シンボル -----
+def get_demand_icon(vac, price):
+    if vac <= 70 or price >= 50000: return "🔥5"
+    if vac <= 100 or price >= 40000: return "🔥4"
+    if vac <= 150 or price >= 35000: return "🔥3"
+    if vac <= 200 or price >= 30000: return "🔥2"
+    if vac <= 250 or price >= 25000: return "🔥1"
+    return ""
+
+# ----- カレンダー1枚描画 -----
+def draw_calendar(year, month, today, selected, holidays, cache_data, event_data):
+    cal = calendar.Calendar(calendar.SUNDAY)
+    weeks = cal.monthdatescalendar(year, month)
+    html = f'''
+    <div class="calendar-wrapper"><table>
+    <thead><tr>
+    <th class="sun">日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th class="sat">土</th>
+    </tr></thead><tbody>
+    '''
+    for week in weeks:
         html += "<tr>"
-        for d in week:
-            day_str = d.strftime("%Y-%m-%d")
-            is_this_month = (d.month == month)
-            is_hol = is_holiday(day_str)
-            # 曜日クラス
-            w = d.weekday()
-            td_cls = []
-            if w == 6: td_cls.append("sun")
-            if w == 5: td_cls.append("sat")
-            if is_hol: td_cls.append("hol")
-            if d == today: td_cls.append("today")
-            if not is_this_month: td_cls.append("out")
-            td_cls = " ".join(td_cls)
-            html += f'<td class="{td_cls}">'
-            if is_this_month:
-                cell = f'<div class="daynum">{d.day}</div>'
-                v = data.get(day_str)
-                if v:
-                    # 在庫
-                    vac = v.get("vacancy", "-")
-                    prev_vac = v.get("previous_vacancy", "")
-                    vac_diff = ""
-                    if prev_vac != "" and isinstance(prev_vac, int):
-                        diff = vac - prev_vac
-                        vac_diff = f'<span class="diff {"pos" if diff>0 else "neg"}">{"+" if diff>0 else ""}{diff}</span>' if diff != 0 else ""
-                    # 価格
-                    price = v.get("avg_price", "-")
-                    prev_price = v.get("previous_avg_price", "")
-                    price_icon = ""
-                    if prev_price != "" and isinstance(prev_price, (int, float)):
-                        diff = price - prev_price
-                        if diff > 0:
-                            price_icon = '<span class="price-up">↑</span>'
-                        elif diff < 0:
-                            price_icon = '<span class="price-down">↓</span>'
-                    # 仮：イベントシンボル（例として手動で特定日を装飾）
-                    event = ""
-                    if day_str == "2025-07-14":
-                        event = '<span class="event-kyocera">🔴SEVENTEEN</span>'
-                    elif day_str == "2025-07-27":
-                        event = '<span class="event-other">★TWICE</span>'
-                    # 需要シンボル
-                    fire = ""
-                    if vac != "-" and isinstance(vac, int):
-                        if vac <= 70 or price >= 50000:
-                            fire = '<span class="fire fire5">🔥5</span>'
-                        elif vac <= 100 or price >= 40000:
-                            fire = '<span class="fire fire4">🔥4</span>'
-                        elif vac <= 150 or price >= 35000:
-                            fire = '<span class="fire fire3">🔥3</span>'
-                        elif vac <= 200 or price >= 30000:
-                            fire = '<span class="fire fire2">🔥2</span>'
-                        elif vac <= 250 or price >= 25000:
-                            fire = '<span class="fire fire1">🔥1</span>'
-                    cell += f"<div>{vac}件{vac_diff}</div><div>¥{price:,}{price_icon}</div>{fire}{event}"
-                html += cell
-            html += "</td>"
+        for day in week:
+            style, txtcolor = "", ""
+            # 月外日
+            if day.month != month:
+                html += '<td class="empty"></td>'
+                continue
+            dkey = day.isoformat()
+            is_holiday = day.day in holidays
+            is_sun = day.weekday() == 6
+            is_sat = day.weekday() == 5
+
+            # 色設定
+            if is_holiday or is_sun:
+                style = "background:#ffecec;"
+                txtcolor = "color:#000;"
+            elif is_sat:
+                style = "background:#e0f7ff;"
+                txtcolor = "color:#000;"
+            else:
+                style = "background:#fff;"
+                txtcolor = "color:#000;"
+
+            cellclass = ""
+            if is_sun: cellclass = "sun"
+            elif is_sat: cellclass = "sat"
+            elif is_holiday: cellclass = "hol"
+
+            # 選択日ハイライト
+            if dkey == selected:
+                style += "box-shadow:0 0 0 3px #ff9999;"
+
+            rec = cache_data.get(dkey, {"vacancy": 0, "avg_price": 0})
+            vac = rec.get("vacancy", 0)
+            price = int(rec.get("avg_price", 0))
+            diff_v = rec.get("vacancy_diff", 0)
+            diff_p = rec.get("avg_price_diff", 0)
+
+            # デマンド
+            demand = get_demand_icon(vac, price)
+            # イベント
+            events = event_data.get(dkey, [])
+            event_html = "<br>".join(f'{e["icon"]} {e["name"]}' for e in events)
+
+            # cell
+            html += f'''
+            <td class="{cellclass}" style="{style}{txtcolor};position:relative;">
+                <div class="daynum">{day.day}</div>
+                <div class="vac">在庫: {vac}件{'<span class="diff_up">（+%d）</span>'%diff_v if diff_v>0 else (f'<span class="diff_down">（{diff_v}）</span>' if diff_v<0 else '')}</div>
+                <div class="price">￥{price:,}{'<span class="arrow_up"> ↑</span>' if diff_p>0 else ('<span class="arrow_down"> ↓</span>' if diff_p<0 else '')}</div>
+                <div class="demand">{demand}</div>
+                <div class="event">{event_html}</div>
+            </td>
+            '''
         html += "</tr>"
-    html += "</table></div>"
+    html += "</tbody></table></div>"
     return html
 
-# --- HTML全体 ---
-calendar_html = f"""<!DOCTYPE html>
+# ----- グラフ（SVG2枚、在庫・価格） -----
+def draw_graph(selected, historical_data):
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    import io, base64
+    if selected not in historical_data or not historical_data[selected]:
+        return "<div>この日付の履歴データがありません</div>"
+    df = pd.DataFrame([
+        {"取得日": hist_date, "在庫数": rec["vacancy"], "平均単価": rec["avg_price"]}
+        for hist_date, rec in historical_data[selected].items()
+    ])
+    df = df.sort_values("取得日")
+    # 在庫グラフ
+    buf1 = io.BytesIO()
+    plt.figure(figsize=(5,2.2))
+    plt.plot(pd.to_datetime(df["取得日"]), df["在庫数"], marker="o")
+    plt.title("在庫数の推移")
+    plt.xticks(rotation=30, ha="right")
+    plt.tight_layout()
+    plt.savefig(buf1, format="png")
+    plt.close()
+    g1 = base64.b64encode(buf1.getvalue()).decode()
+    # 価格グラフ
+    buf2 = io.BytesIO()
+    plt.figure(figsize=(5,2.2))
+    plt.plot(pd.to_datetime(df["取得日"]), df["平均単価"], marker="o", color="#e15759")
+    plt.title("平均単価（円）の推移")
+    plt.xticks(rotation=30, ha="right")
+    plt.tight_layout()
+    plt.savefig(buf2, format="png")
+    plt.close()
+    g2 = base64.b64encode(buf2.getvalue()).decode()
+    return f'''
+    <div class="graph">
+      <img src="data:image/png;base64,{g1}" width="97%">
+      <img src="data:image/png;base64,{g2}" width="97%">
+    </div>
+    '''
+
+# ----- メインHTML生成 -----
+def main():
+    today = dt.date.today()
+    # 選択日（初期値は当日 or 1日目）
+    selected = today.isoformat()
+    # 月送り（2か月分を表示）
+    base_month = today.replace(day=1)
+    months = [(base_month.year, base_month.month),
+              ((base_month + pd.DateOffset(months=1)).year, (base_month + pd.DateOffset(months=1)).month)]
+    holidays = [get_holidays(y, m) for y, m in months]
+
+    # 最終更新
+    try:
+        mtime = os.path.getmtime(CACHE_FILE)
+        last_run = dt.datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+    except:
+        last_run = "取得できませんでした"
+
+    # --- HTML出力 ---
+    with open(OUT_HTML, "w", encoding="utf-8") as f:
+        f.write(f'''
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>空室＆平均価格カレンダー（本番）</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8" />
+<title>ミナミエリア 空室＆平均価格カレンダー【本番版】</title>
 <style>
-body {{ background:#f7f8fa; margin:0; font-family:'Noto Sans JP',sans-serif; }}
-.main {{ max-width:1500px; margin:30px auto 40px auto; background:#fff; border-radius:36px; box-shadow:0 4px 32px #d9e2ef99; padding:36px 24px 36px 48px; }}
-h1 {{ margin:0 0 8px 0; font-size:40px; }}
-h2 {{ margin:8px 0 0 0; font-size:22px; color:#444; }}
-.banner {{ width:380px; margin-bottom:12px; }}
-.flex {{ display:flex; gap:36px; flex-wrap:wrap; }}
-.calendar-wrap {{ flex:1 1 48%; min-width:370px; }}
-.calendar-title {{ font-size:28px; margin-bottom:4px; font-weight:700; color:#222; }}
-table.calendar {{ border-collapse:collapse; border-radius:16px; overflow:hidden; margin-bottom:14px; background:#f5f7fb; }}
-.calendar th, .calendar td {{ width:84px; height:80px; border:1px solid #e0e4ef; text-align:center; font-size:19px; vertical-align:top; background:#fff; padding:0; position:relative; }}
-.calendar th.sun, .calendar td.sun {{ color:#e1000a; }}
-.calendar th.sat, .calendar td.sat {{ color:#1b6ace; }}
-.calendar td.hol {{ background:#fff5f5; }}
-.calendar td.today {{ background:#bdf7d3; }}
-.calendar td.out {{ background:#f5f7fb; color:#bbb; }}
-.daynum {{ font-weight:bold; font-size:22px; margin-bottom:2px; }}
-.diff.pos {{ color:#2176d2; font-size:14px; margin-left:2px; }}
-.diff.neg {{ color:#e94343; font-size:14px; margin-left:2px; }}
-.price-up {{ color:#e03e3e; font-size:17px; margin-left:3px; }}
-.price-down {{ color:#208ad8; font-size:17px; margin-left:3px; }}
-.fire {{ font-size:18px; margin-left:4px; }}
-.fire1 {{ color:#ff9800; }}
-.fire2 {{ color:#ff5722; }}
-.fire3 {{ color:#ff1744; }}
-.fire4 {{ color:#c51162; }}
-.fire5 {{ color:#6d00c4; font-weight:bold; }}
-.event-kyocera {{ display:block; color:#b10000; font-size:14px; margin-top:2px; }}
-.event-other {{ display:block; color:#222; font-size:13px; }}
-@media (max-width:1100px) {{ .flex {{ flex-direction:column; }} .calendar-wrap {{ min-width:320px; }} }}
+body {{ font-family: 'Segoe UI', 'Hiragino Sans', 'Meiryo', sans-serif; background:#f5f5f8; }}
+.main-banner {{
+    width:98%; max-width:1800px; display:block; margin:32px auto 18px auto; background:#e4f0f4; border-radius:30px;
+}}
+.calendar-wrapper table {{
+    border-collapse:collapse; width:100%; table-layout:fixed; background:#fff; border-radius:24px; box-shadow:0 4px 16px #eee;
+    margin-bottom:18px;
+}}
+.calendar-wrapper th, .calendar-wrapper td {{
+    font-size:16px; padding:6px 0 6px 0; border:1px solid #ccc; text-align:center; min-width:48px; position:relative;
+}}
+.calendar-wrapper th.sun, .calendar-wrapper td.sun {{ color:#d9534f; }}
+.calendar-wrapper th.sat, .calendar-wrapper td.sat {{ color:#2176d3; }}
+.calendar-wrapper td.hol {{ color:#d9534f; }}
+.calendar-wrapper td.empty {{ background:#f9f9fb; border:none; }}
+.daynum {{ font-size:20px; font-weight:bold; margin-bottom:2px; }}
+.vac, .price, .event {{ font-size:15px; line-height:1.25; }}
+.demand {{ position:absolute; bottom:2px; right:8px; font-size:21px; }}
+.diff_up {{ color:blue; font-size:12px; }}
+.diff_down {{ color:red; font-size:12px; }}
+.arrow_up {{ color:red; font-size:16px; font-weight:bold; }}
+.arrow_down {{ color:blue; font-size:16px; font-weight:bold; }}
+.graph img {{ margin: 14px auto; display: block; border-radius:10px; box-shadow:0 2px 8px #e7e7f7; background:#fff; }}
+@media (max-width: 900px) {{
+    .main-banner {{ max-width:95vw; }}
+    .calendar-wrapper th, .calendar-wrapper td {{ font-size:13px; min-width:24px; }}
+    .daynum {{ font-size:14px; }}
+    .vac, .price, .event {{ font-size:12px; }}
+    .demand {{ font-size:15px; right:2px; }}
+}}
 </style>
 </head>
 <body>
-<div class="main">
-    <img src="バナー画像3.png" class="banner" alt="バナー画像">
-    <h1>空室＆平均価格カレンダー</h1>
-    <div style="color:#2baf71;font-size:18px; margin-bottom:7px;">最終巡回時刻：{today:%Y-%m-%d %H:%M:%S}</div>
-    <div class="flex">
-        {make_calendar(months[0])}
-        {make_calendar(months[1])}
-    </div>
-    <h2>日付を選択すると推移グラフが表示されます（※HTML静的化ではグラフ省略）</h2>
-    <div style="margin:16px 0 8px 0; color:#222;">
-        <b>《注釈》</b><br>
-        ・在庫数、平均価格は「なんば・心斎橋・天王寺・阿倍野・長居」エリアから抽出しています。<br>
-        ・表示される「平均価格」は、楽天トラベル検索上位90施設の平均最安値です。<br>
-        ・空室数の（<span class="diff pos">+N</span>／<span class="diff neg">-N</span>）は、前回巡回時点との在庫数の増減を示します。<br>
-        ・平均価格の <span class="price-up">↑</span>／<span class="price-down">↓</span>は、前回巡回時点との平均価格の上昇／下降を示します。<br>
-        ・会場アイコン：<span class="event-kyocera">🔴京セラドーム</span>／<span style="color:#1976d2;">🔵ヤンマースタジアム</span>／<span class="event-other">★その他会場</span><br>
-        ・炎マーク（需要シンボル）の内訳：<br>
-        <span class="fire fire1">🔥1</span>：残室≤250 or 価格≥25,000円　
-        <span class="fire fire2">🔥2</span>：残室≤200 or 価格≥30,000円　
-        <span class="fire fire3">🔥3</span>：残室≤150 or 価格≥35,000円　
-        <span class="fire fire4">🔥4</span>：残室≤100 or 価格≥40,000円　
-        <span class="fire fire5">🔥5</span>：残室≤70 or 価格≥50,000円
-    </div>
+<div style="width:100%;text-align:left;">
+    <img class="main-banner" src="data:image/png;base64,{banner64}" />
 </div>
-</body>
-</html>
-"""
+<div style="margin:8px 0 18px 0; color:#555; font-size:18px;">
+    <b>最終更新日：</b>{last_run}
+</div>
+<div style="display:flex;gap:30px;flex-wrap:wrap;">
+  <div style="width:48%;min-width:340px;">
+    <div style="font-size:22px;font-weight:bold;margin-bottom:4px;">{months[0][0]}年{months[0][1]}月</div>
+    {draw_calendar(months[0][0], months[0][1], today, selected, holidays[0], cache_data, event_data)}
+  </div>
+  <div style="width:48%;min-width:340px;">
+    <div style="font-size:22px;font-weight:bold;margin-bottom:4px;">{months[1][0]}年{months[1][1]}月</div>
+    {draw_calendar(months[1][0], months[1][1], today, selected, holidays[1], cache_data, event_data)}
+  </div>
+</div>
+<div style="margin:32px 0 0 0;">
+  <div style="font-size:20px;font-weight:bold;color:#2176d3;margin-bottom:2px;">日付を選択すると推移グラフが表示されます（今後拡張）</div>
+  {draw_graph(selected, historical_data)}
+</div>
+<hr>
+<div style='font-size:16px; color:#555;'><strong>《注釈》</strong><br>
+- 在庫数、平均価格は『なんば・心斎橋・天王寺・阿倍野・長居』エリアから抽出しています。<br>
+- 表示される「平均価格」は、楽天トラベル検索上位90施設の平均最低価格です。<br>
+- 空室数の<span style="color:blue;">（+N）</span>／<span style="color:red;">（−N）</span>は、前回巡回時点との在庫数の増減を示します。<br>
+- 平均価格の<span style="color:red;">↑</span>／<span style="color:blue;">↓</span>は、前回巡回時点との平均価格の上昇／下降を示します。<br>
+- 会場アイコン：🔴京セラドーム / 🔵ヤンマースタジアム / ★その他会場<br>
+- 炎マーク（需要シンボル）の内訳：<br>
+  ・🔥1：残室 ≤250 または 価格 ≥25,000円<br>
+  ・🔥2：残室 ≤200 または 価格 ≥30,000円<br>
+  ・🔥3：残室 ≤150 または 価格 ≥35,000円<br>
+  ・🔥4：残室 ≤100 または 価格 ≥40,000円<br>
+  ・🔥5：残室 ≤70 または 価格 ≥50,000円<br>
+</div>
+</body></html>
+        ''')
 
-# index.htmlへ保存
-with open("index.html", "w", encoding="utf-8") as f:
-    f.write(calendar_html)
-
-print("index.html（本番仕様）を生成しました！")
+if __name__ == "__main__":
+    main()
