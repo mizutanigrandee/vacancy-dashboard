@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>空室＆平均価格カレンダー（本番）</title>
+<title>空室＆平均価格カレンダー（本番・動的版）</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 body { background:#f7f8fa; margin:0; font-family:'Noto Sans JP',sans-serif; }
@@ -25,7 +25,7 @@ table.calendar { border-collapse:collapse; border-radius:16px; overflow:hidden; 
 .diff.neg { color:#e94343; font-size:14px; margin-left:2px; }
 .price-up { color:#e03e3e; font-size:17px; margin-left:3px; }
 .price-down { color:#208ad8; font-size:17px; margin-left:3px; }
-.fire { font-size:18px; margin-left:4px; }
+.fire { font-size:18px; margin-left:4px; position:absolute; right:6px; top:4px; }
 .fire1 { color:#ff9800; }
 .fire2 { color:#ff5722; }
 .fire3 { color:#ff1744; }
@@ -33,6 +33,9 @@ table.calendar { border-collapse:collapse; border-radius:16px; overflow:hidden; 
 .fire5 { color:#6d00c4; font-weight:bold; }
 .event-kyocera { display:block; color:#b10000; font-size:14px; margin-top:2px; }
 .event-other { display:block; color:#222; font-size:13px; }
+.nav { display:flex; gap:20px; margin-bottom:20px; }
+.nav button { background:#fff; border:1.5px solid #b9b9c9; border-radius:10px; padding:8px 18px; font-size:18px; font-weight:500; cursor:pointer; }
+.nav button:hover { background:#f3f3fa; border-color:#e53939; color:#e53939; }
 @media (max-width:1100px) { .flex { flex-direction:column; } .calendar-wrap { min-width:320px; } }
 </style>
 </head>
@@ -40,22 +43,15 @@ table.calendar { border-collapse:collapse; border-radius:16px; overflow:hidden; 
 <div class="main">
     <img src="バナー画像3.png" class="banner" alt="バナー画像">
     <h1>空室＆平均価格カレンダー</h1>
-    <div style="color:#2baf71;font-size:18px; margin-bottom:7px;">最終巡回時刻：2025-07-19 00:00:00</div>
-    <div class="flex">
-        <div class="calendar-wrap"><div class="calendar-title">2025年 7月</div>
-    <table class="calendar">
-      <tr>
-        <th class="sun">日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th class="sat">土</th>
-      </tr>
-    <tr><td class="sun out"></td><td class="out"></td><td class=""><div class="daynum">1</div><div>293件</div><div>¥8,913.0</div></td><td class=""><div class="daynum">2</div><div>285件</div><div>¥10,042.0</div></td><td class=""><div class="daynum">3</div><div>291件</div><div>¥10,863.0</div></td><td class=""><div class="daynum">4</div><div>280件</div><div>¥10,543.0</div></td><td class="sat"><div class="daynum">5</div><div>251件</div><div>¥14,018.0</div></td></tr><tr><td class="sun"><div class="daynum">6</div><div>310件</div><div>¥8,458.0</div></td><td class=""><div class="daynum">7</div><div>294件</div><div>¥9,204.0</div></td><td class=""><div class="daynum">8</div><div>292件</div><div>¥10,221.0</div></td><td class=""><div class="daynum">9</div><div>285件</div><div>¥10,309.0</div></td><td class=""><div class="daynum">10</div><div>271件</div><div>¥11,460.0</div></td><td class=""><div class="daynum">11</div><div>269件</div><div>¥11,987.0</div></td><td class="sat"><div class="daynum">12</div><div>158件</div><div>¥25,763.0</div><span class="fire fire2">🔥2</span></td></tr><tr><td class="sun"><div class="daynum">13</div><div>286件</div><div>¥10,881.0</div></td><td class=""><div class="daynum">14</div><div>300件</div><div>¥9,303.0</div><span class="event-kyocera">🔴SEVENTEEN</span></td><td class=""><div class="daynum">15</div><div>297件</div><div>¥9,919.0</div></td><td class=""><div class="daynum">16</div><div>271件</div><div>¥11,885.0</div></td><td class=""><div class="daynum">17</div><div>271件</div><div>¥13,652.0</div></td><td class=""><div class="daynum">18</div><div>274件</div><div>¥12,016.0</div></td><td class="sat today"><div class="daynum">19</div><div>150件</div><div>¥25,836.0</div><span class="fire fire3">🔥3</span></td></tr><tr><td class="sun"><div class="daynum">20</div><div>227件</div><div>¥17,375.0</div><span class="fire fire1">🔥1</span></td><td class="hol"><div class="daynum">21</div><div>305件</div><div>¥9,509.0</div></td><td class=""><div class="daynum">22</div><div>306件</div><div>¥9,959.0</div></td><td class=""><div class="daynum">23</div><div>291件</div><div>¥11,586.0</div></td><td class=""><div class="daynum">24</div><div>283件</div><div>¥12,537.0</div></td><td class=""><div class="daynum">25</div><div>284件</div><div>¥13,351.0</div></td><td class="sat"><div class="daynum">26</div><div>225件</div><div>¥21,346.0</div><span class="fire fire1">🔥1</span></td></tr><tr><td class="sun"><div class="daynum">27</div><div>297件</div><div>¥10,974.0</div><span class="event-other">★TWICE</span></td><td class=""><div class="daynum">28</div><div>295件</div><div>¥10,907.0</div></td><td class=""><div class="daynum">29</div><div>300件</div><div>¥11,500.0</div></td><td class=""><div class="daynum">30</div><div>300件</div><div>¥11,201.0</div></td><td class=""><div class="daynum">31</div><div>297件</div><div>¥10,913.0</div></td><td class="out"></td><td class="sat out"></td></tr></table></div>
-        <div class="calendar-wrap"><div class="calendar-title">2025年 8月</div>
-    <table class="calendar">
-      <tr>
-        <th class="sun">日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th class="sat">土</th>
-      </tr>
-    <tr><td class="sun out"></td><td class="out"></td><td class="out"></td><td class="out"></td><td class="out"></td><td class=""><div class="daynum">1</div><div>290件</div><div>¥13,096.0</div></td><td class="sat"><div class="daynum">2</div><div>208件</div><div>¥24,838.0</div><span class="fire fire1">🔥1</span></td></tr><tr><td class="sun"><div class="daynum">3</div><div>286件</div><div>¥12,472.0</div></td><td class=""><div class="daynum">4</div><div>296件</div><div>¥10,904.0</div></td><td class=""><div class="daynum">5</div><div>299件</div><div>¥11,447.0</div></td><td class=""><div class="daynum">6</div><div>301件</div><div>¥11,358.0</div></td><td class=""><div class="daynum">7</div><div>304件</div><div>¥11,595.0</div></td><td class=""><div class="daynum">8</div><div>297件</div><div>¥12,845.0</div></td><td class="sat"><div class="daynum">9</div><div>234件</div><div>¥20,807.0</div><span class="fire fire1">🔥1</span></td></tr><tr><td class="sun"><div class="daynum">10</div><div>250件</div><div>¥17,985.0</div><span class="fire fire1">🔥1</span></td><td class="hol"><div class="daynum">11</div><div>279件</div><div>¥12,986.0</div></td><td class=""><div class="daynum">12</div><div>281件</div><div>¥13,068.0</div></td><td class=""><div class="daynum">13</div><div>281件</div><div>¥13,351.0</div></td><td class=""><div class="daynum">14</div><div>279件</div><div>¥13,410.0</div></td><td class=""><div class="daynum">15</div><div>291件</div><div>¥13,940.0</div></td><td class="sat"><div class="daynum">16</div><div>268件</div><div>¥17,981.0</div></td></tr><tr><td class="sun"><div class="daynum">17</div><div>305件</div><div>¥10,445.0</div></td><td class=""><div class="daynum">18</div><div>305件</div><div>¥10,239.0</div></td><td class=""><div class="daynum">19</div><div>305件</div><div>¥11,060.0</div></td><td class=""><div class="daynum">20</div><div>304件</div><div>¥11,063.0</div></td><td class=""><div class="daynum">21</div><div>294件</div><div>¥11,744.0</div></td><td class=""><div class="daynum">22</div><div>304件</div><div>¥12,686.0</div></td><td class="sat"><div class="daynum">23</div><div>247件</div><div>¥23,904.0</div><span class="fire fire1">🔥1</span></td></tr><tr><td class="sun"><div class="daynum">24</div><div>308件</div><div>¥11,656.0</div></td><td class=""><div class="daynum">25</div><div>309件</div><div>¥10,226.0</div></td><td class=""><div class="daynum">26</div><div>308件</div><div>¥10,670.0</div></td><td class=""><div class="daynum">27</div><div>307件</div><div>¥10,784.0</div></td><td class=""><div class="daynum">28</div><div>306件</div><div>¥10,860.0</div></td><td class=""><div class="daynum">29</div><div>304件</div><div>¥11,862.0</div></td><td class="sat"><div class="daynum">30</div><div>265件</div><div>¥19,397.0</div></td></tr><tr><td class="sun"><div class="daynum">31</div><div>306件</div><div>¥10,733.0</div></td><td class="out"></td><td class="out"></td><td class="out"></td><td class="out"></td><td class="out"></td><td class="sat out"></td></tr></table></div>
+    <div id="last-update" style="color:#2baf71;font-size:18px; margin-bottom:7px;">最終巡回時刻：-</div>
+    <div class="nav">
+        <button onclick="prevMonth()">⬅️ 前月</button>
+        <button onclick="goToday()">📅 当月</button>
+        <button onclick="nextMonth()">➡️ 次月</button>
     </div>
-    <h2>日付を選択すると推移グラフが表示されます（※HTML静的化ではグラフ省略）</h2>
+    <div class="flex" id="calendar-blocks"></div>
+    <div id="graph-block" style="margin-top:30px;"></div>
+    <h2>日付を選択すると推移グラフが表示されます</h2>
     <div style="margin:16px 0 8px 0; color:#222;">
         <b>《注釈》</b><br>
         ・在庫数、平均価格は「なんば・心斎橋・天王寺・阿倍野・長居」エリアから抽出しています。<br>
@@ -71,5 +67,155 @@ table.calendar { border-collapse:collapse; border-radius:16px; overflow:hidden; 
         <span class="fire fire5">🔥5</span>：残室≤70 or 価格≥50,000円
     </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// 設定：データファイルパス
+const CACHE_URL = "vacancy_price_cache.json";
+const EVENT_URL = "event_data.json"; // 変換済みevent_data.jsonが必要
+
+let monthOffset = 0;
+
+function getMonthFirst(offset=0) {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth()+offset);
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+}
+function prevMonth() { monthOffset--; drawCalendars(); }
+function nextMonth() { monthOffset++; drawCalendars(); }
+function goToday() { monthOffset=0; drawCalendars(); }
+
+let cacheData = {};
+let eventData = {};
+let holidays = {}; // {YYYY-MM-DD: true}
+
+fetch(CACHE_URL).then(r=>r.json()).then(data=>{
+    cacheData = data;
+    updateLastUpdate();
+    fetch(EVENT_URL)
+      .then(r=>r.json()).then(ev=>{
+          eventData = ev;
+          drawCalendars();
+      }).catch(()=>{ eventData = {}; drawCalendars(); });
+}).catch(()=>{});
+
+function updateLastUpdate() {
+    // 巡回最終日（cacheの最新日）を自動表示
+    let dates = Object.keys(cacheData).sort();
+    if(dates.length){
+        let last = dates[dates.length-1];
+        document.getElementById("last-update").textContent = "最終巡回時刻：" + last;
+    }
+}
+
+function getFire(v, p) {
+    if(v<=70 || p>=50000) return '<span class="fire fire5">🔥5</span>';
+    if(v<=100 || p>=40000) return '<span class="fire fire4">🔥4</span>';
+    if(v<=150 || p>=35000) return '<span class="fire fire3">🔥3</span>';
+    if(v<=200 || p>=30000) return '<span class="fire fire2">🔥2</span>';
+    if(v<=250 || p>=25000) return '<span class="fire fire1">🔥1</span>';
+    return "";
+}
+
+function drawCalendars() {
+    let base = getMonthFirst(monthOffset);
+    let next = getMonthFirst(monthOffset+1);
+    let html = drawCalendar(base) + drawCalendar(next);
+    document.getElementById("calendar-blocks").innerHTML = html;
+}
+
+function drawCalendar(monthDate) {
+    let y = monthDate.getFullYear(), m = monthDate.getMonth();
+    let first = new Date(y, m, 1);
+    let last = new Date(y, m+1, 0);
+    let today = (new Date()).toISOString().slice(0,10);
+    let cal = `<div class="calendar-wrap"><div class="calendar-title">${y}年 ${m+1}月</div><table class="calendar"><tr>
+        <th class="sun">日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th class="sat">土</th></tr>`;
+    let d = new Date(y, m, 1-(first.getDay()));
+    for(let w=0; w<6; w++){
+        cal += "<tr>";
+        for(let wd=0; wd<7; wd++, d.setDate(d.getDate()+1)){
+            let iso = d.toISOString().slice(0,10);
+            let isOut = (d.getMonth()!=m);
+            let cellClass = [];
+            if(wd==0) cellClass.push("sun");
+            if(wd==6) cellClass.push("sat");
+            if(isOut) cellClass.push("out");
+            if(iso==today) cellClass.push("today");
+            // TODO: 祝日判定（今は省略）
+            if(eventData[iso] && eventData[iso].length>0){
+                cellClass.push("hol");
+            }
+            cal += `<td class="${cellClass.join(" ")}" data-date="${iso}" onclick="showGraph('${iso}')">`;
+            if(isOut){
+                cal += "</td>";
+                continue;
+            }
+            cal += `<div class="daynum">${d.getDate()}</div>`;
+            let rec = cacheData[iso] || {};
+            if(rec.vacancy!==undefined){
+                cal += `<div>${rec.vacancy}件</div>`;
+                cal += `<div>¥${rec.avg_price}</div>`;
+                if(rec.vacancy_diff>0) cal += `<span class="diff pos">+${rec.vacancy_diff}</span>`;
+                if(rec.vacancy_diff<0) cal += `<span class="diff neg">${rec.vacancy_diff}</span>`;
+                if(rec.avg_price_diff>0) cal += `<span class="price-up">↑</span>`;
+                if(rec.avg_price_diff<0) cal += `<span class="price-down">↓</span>`;
+                cal += getFire(rec.vacancy, rec.avg_price);
+            }
+            // イベント表示
+            if(eventData[iso]){
+                for(let ev of eventData[iso]){
+                    if(ev.icon=="🔴") cal += `<span class="event-kyocera">${ev.icon}${ev.name}</span>`;
+                    else if(ev.icon=="★") cal += `<span class="event-other">${ev.icon}${ev.name}</span>`;
+                    else cal += `<span class="event-other">${ev.icon}${ev.name}</span>`;
+                }
+            }
+            cal += "</td>";
+        }
+        cal += "</tr>";
+    }
+    cal += "</table></div>";
+    return cal;
+}
+
+// グラフ描画
+function showGraph(date) {
+    // 履歴データ対応の場合のみ。サンプルなのでランダムデータ
+    let rec = cacheData[date];
+    if(!rec) return;
+    let dates = [], vacs = [], prices = [];
+    // 仮データ生成
+    for(let i=0;i<10;i++){
+        let d = new Date(new Date(date).getTime() - (9-i)*24*3600*1000);
+        let iso = d.toISOString().slice(0,10);
+        dates.push(iso);
+        let v = cacheData[iso]?.vacancy ?? Math.floor(Math.random()*300+100);
+        let p = cacheData[iso]?.avg_price ?? Math.floor(Math.random()*20000+8000);
+        vacs.push(v);
+        prices.push(p);
+    }
+    let ctx = document.createElement("canvas");
+    ctx.id = "graph-canvas";
+    document.getElementById("graph-block").innerHTML = `<div><canvas id="graph-canvas"></canvas></div>`;
+    new Chart(ctx, {
+        type:'line',
+        data: {
+            labels:dates,
+            datasets:[
+                { label:'在庫数', data:vacs, borderColor:'#2275e7', yAxisID:'y', fill:false },
+                { label:'平均価格', data:prices, borderColor:'#e15759', yAxisID:'y2', fill:false }
+            ]
+        },
+        options:{
+            responsive:true,
+            plugins:{ legend:{ display:true } },
+            scales:{
+                y:{ type:'linear', position:'left', min:0 },
+                y2:{ type:'linear', position:'right', min:0, grid:{ drawOnChartArea:false } }
+            }
+        }
+    });
+}
+</script>
 </body>
 </html>
