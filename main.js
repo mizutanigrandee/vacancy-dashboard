@@ -10,52 +10,32 @@ let currentMonth = moment().startOf('month');
 let selectedDate = null;
 let priceChart = null;
 
-async function loadData() {
-  try {
-    const vacancyResponse = await fetch('vacancy_price_cache.json');
-    if (!vacancyResponse.ok) throw new Error(`vacancy_price_cache.json failed: ${vacancyResponse.status} ${vacancyResponse.statusText}`);
-    vacancyData = await vacancyResponse.json();
-    console.log('vacancyData:', vacancyData);
-  } catch (error) {
-    console.error('vacancy_price_cache.json エラー:', error.message);
-    vacancyData = {}; // フォールバック
-    lastUpdatedEl.textContent = `最終更新: エラー (vacancy: ${error.message})`;
-  }
-
-  try {
-    const historicalResponse = await fetch('historical_data.json');
-    if (!historicalResponse.ok) throw new Error(`historical_data.json failed: ${historicalResponse.status} ${historicalResponse.statusText}`);
-    historicalData = await historicalResponse.json();
-    console.log('historicalData:', historicalData);
-  } catch (error) {
-    console.error('historical_data.json エラー:', error.message);
-    historicalData = {}; // フォールバック
-    lastUpdatedEl.textContent += `, historical: ${error.message}`;
-  }
-
-  try {
-    const eventResponse = await fetch('event_data.xlsx');
-    if (!eventResponse.ok) throw new Error(`event_data.xlsx failed: ${eventResponse.status} ${eventResponse.statusText}`);
-    const arrayBuffer = await eventResponse.arrayBuffer();
-    const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
-    eventData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-    eventData = eventData.map(event => ({
-      ...event,
-      date: moment('1899-12-30').add(event.date, 'days').format('YYYY-MM-DD')
-    }));
-    console.log('eventData:', eventData);
-  } catch (error) {
-    console.error('event_data.xlsx エラー:', error.message);
-    eventData = []; // フォールバック
-    lastUpdatedEl.textContent += `, event: ${error.message}`;
-  }
-
-  if (Object.keys(vacancyData).length === 0 || eventData.length === 0) {
-    console.error('データ不足でカレンダー描画をスキップ');
-    return;
-  }
+function loadData() {
+  vacancyData = {
+    "2025-07-22": { "vacancy": 310, "avg_price": 9458, "previous_vacancy": 320, "previous_avg_price": 9500 },
+    "2025-07-23": { "vacancy": 300, "avg_price": 9300, "previous_vacancy": 310, "previous_avg_price": 9400 },
+    "2025-07-24": { "vacancy": 290, "avg_price": 9200, "previous_vacancy": 300, "previous_avg_price": 9300 },
+    "2025-07-25": { "vacancy": 280, "avg_price": 9100, "previous_vacancy": 290, "previous_avg_price": 9200 }
+  };
+  eventData = [
+    { date: "2025-07-22", icon: "🔴", name: "京セラドーム" },
+    { date: "2025-07-23", icon: "🔵", name: "ヤンマースタジアム" },
+    { date: "2025-07-24", icon: "⚫", name: "その他会場" }
+  ];
+  historicalData = {
+    "2025-07-22": {
+      "2025-07-01": { "vacancy": 300, "avg_price": 9000 },
+      "2025-07-15": { "vacancy": 310, "avg_price": 9200 },
+      "2025-07-22": { "vacancy": 310, "avg_price": 9458 }
+    },
+    "2025-07-23": {
+      "2025-07-01": { "vacancy": 310, "avg_price": 9100 },
+      "2025-07-15": { "vacancy": 305, "avg_price": 9250 },
+      "2025-07-23": { "vacancy": 300, "avg_price": 9300 }
+    }
+  };
   lastUpdatedEl.textContent = `最終更新: ${moment().format('YYYY-MM-DD HH:mm')} JST`;
-  console.log('Data load completed');
+  console.log('Data loaded from code');
   renderCalendars();
 }
 
