@@ -13,15 +13,29 @@ let priceChart = null;
 async function loadData() {
   try {
     const vacancyResponse = await fetch('vacancy_price_cache.json');
-    if (!vacancyResponse.ok) throw new Error('vacancy_price_cache.json not found or invalid');
+    if (!vacancyResponse.ok) throw new Error(`vacancy_price_cache.json failed: ${vacancyResponse.status} ${vacancyResponse.statusText}`);
     vacancyData = await vacancyResponse.json();
+    console.log('vacancyData:', vacancyData);
+  } catch (error) {
+    console.error('vacancy_price_cache.json エラー:', error.message);
+    vacancyData = {}; // フォールバック
+    lastUpdatedEl.textContent = `最終更新: エラー (vacancy: ${error.message})`;
+  }
 
+  try {
     const historicalResponse = await fetch('historical_data.json');
-    if (!historicalResponse.ok) throw new Error('historical_data.json not found or invalid');
+    if (!historicalResponse.ok) throw new Error(`historical_data.json failed: ${historicalResponse.status} ${historicalResponse.statusText}`);
     historicalData = await historicalResponse.json();
+    console.log('historicalData:', historicalData);
+  } catch (error) {
+    console.error('historical_data.json エラー:', error.message);
+    historicalData = {}; // フォールバック
+    lastUpdatedEl.textContent += `, historical: ${error.message}`;
+  }
 
+  try {
     const eventResponse = await fetch('event_data.xlsx');
-    if (!eventResponse.ok) throw new Error('event_data.xlsx not found or invalid');
+    if (!eventResponse.ok) throw new Error(`event_data.xlsx failed: ${eventResponse.status} ${eventResponse.statusText}`);
     const arrayBuffer = await eventResponse.arrayBuffer();
     const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
     eventData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
@@ -29,12 +43,19 @@ async function loadData() {
       ...event,
       date: moment('1899-12-30').add(event.date, 'days').format('YYYY-MM-DD')
     }));
-    lastUpdatedEl.textContent = `最終更新: ${moment().format('YYYY-MM-DD HH:mm')} JST`;
-    console.log('Data loaded successfully');
+    console.log('eventData:', eventData);
   } catch (error) {
-    console.error('データ読み込みエラー:', error.message);
-    lastUpdatedEl.textContent = `最終更新: エラー (${error.message})`;
+    console.error('event_data.xlsx エラー:', error.message);
+    eventData = []; // フォールバック
+    lastUpdatedEl.textContent += `, event: ${error.message}`;
   }
+
+  if (Object.keys(vacancyData).length === 0 || eventData.length === 0) {
+    console.error('データ不足でカレンダー描画をスキップ');
+    return;
+  }
+  lastUpdatedEl.textContent = `最終更新: ${moment().format('YYYY-MM-DD HH:mm')} JST`;
+  console.log('Data load completed');
   renderCalendars();
 }
 
@@ -103,13 +124,14 @@ function renderCalendar(el, month) {
 
 function renderCalendars() {
   if (!vacancyData || !eventData) {
-    console.error('Data not loaded yet');
+    console.error('データ不足でカレンダー描画をスキップ:', { vacancyData: Object.keys(vacancyData).length, eventData: eventData.length });
     return;
   }
   const month1 = currentMonth.clone();
   const month2 = currentMonth.clone().add(1, 'month');
   renderCalendar(calendar1El, month1);
   renderCalendar(calendar2El, month2);
+  console.log('Calendars rendered for:', month1.format('YYYY-MM'), month2.format('YYYY-MM'));
 }
 
 document.getElementById('prevMonth').addEventListener('click', () => {
