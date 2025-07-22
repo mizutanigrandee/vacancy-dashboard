@@ -9,10 +9,11 @@ body {
 #calendar > div > div {
   min-height: 100px;
   font-size: 0.9rem;
+  cursor: pointer;
 }
 
-#calendar .text-red-500 {
-  color: #ef4444;
+#graph-container {
+  min-height: 300px;
 }
 
 @media (max-width: 768px) {
@@ -20,8 +21,10 @@ body {
     min-height: 120px;
     font-size: 0.7rem;
   }
-
   #calendar .text-xs {
     font-size: 0.6rem;
+  }
+  #graph-container {
+    margin-top: 1rem;
   }
 }
