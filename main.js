@@ -32,6 +32,16 @@ async function loadData() {
   renderCalendar();
 }
 
+function calculateDemand(vacancy, avgPrice) {
+  if (vacancy === '-' || avgPrice === '-') return 0;
+  if (vacancy <= 70 || avgPrice >= 50000) return 5;
+  if (vacancy <= 100 || avgPrice >= 40000) return 4;
+  if (vacancy <= 150 || avgPrice >= 35000) return 3;
+  if (vacancy <= 200 || avgPrice >= 30000) return 2;
+  if (vacancy <= 250 || avgPrice >= 25000) return 1;
+  return 0;
+}
+
 function renderCalendar() {
   const html = [];
   html.push('<div class="grid grid-cols-7 gap-1 text-center">');
@@ -54,21 +64,21 @@ function renderCalendar() {
   for (let i = 0; i < startWeek; i++) html.push('<div></div>');
   for (let day = 1; day <= daysInMonth; day++) {
     const date = currentMonth.clone().date(day).format('YYYY-MM-DD');
-    const data = vacancyData[date] || { vacancy: '-', avg_price: '-', previous_avg_price: '-', demand: 0 };
+    const data = vacancyData[date] || { vacancy: '-', avg_price: '-', previous_vacancy: '-', previous_avg_price: '-' };
+    const vacDiff = data.vacancy !== '-' && data.previous_vacancy !== '-' ? data.vacancy - data.previous_vacancy : null;
     const priceDiff = data.avg_price !== '-' && data.previous_avg_price !== '-' ? 
       Math.round(data.avg_price - data.previous_avg_price) : null;
     const events = eventData.filter(e => e.date === date);
-    const isHoliday = [0].includes(moment(date).day()) || Math.random() > 0.9; // 簡易祝日シミュレーション
+    const demand = calculateDemand(data.vacancy, data.avg_price);
+    const isHoliday = [0].includes(moment(date).day()) || Math.random() > 0.9;
 
     html.push(`
       <div class="p-2 border rounded relative hover:bg-gray-100 ${isHoliday ? 'bg-red-100' : ''}" onclick="showGraph('${date}')">
         <div class="text-right">${day}</div>
-        <div>空室: ${data.vacancy !== '-' ? data.vacancy : 'N/A'}</div>
-        <div>価格: ${data.avg_price !== '-' ? `¥${data.avg_price.toLocaleString()}` : 'N/A'}</div>
-        ${priceDiff !== null ? `<div class="${priceDiff >= 0 ? 'text-red-500' : 'text-green-500'}">
-          ${priceDiff >= 0 ? '↑' : '↓'}¥${Math.abs(priceDiff).toLocaleString()}</div>` : ''}
+        <div>空室: ${data.vacancy !== '-' ? data.vacancy : 'N/A'} ${vacDiff !== null ? `(${vacDiff >= 0 ? '↑' : '↓'}${Math.abs(vacDiff)})` : ''}</div>
+        <div>価格: ${data.avg_price !== '-' ? `¥${data.avg_price.toLocaleString()}` : 'N/A'} ${priceDiff !== null ? `(${priceDiff >= 0 ? '↑' : '↓'}¥${Math.abs(priceDiff).toLocaleString()})` : ''}</div>
         ${events.map(e => `<div class="text-xs">${e.icon} ${e.name}</div>`).join('')}
-        ${data.demand > 0 ? `<div class="text-orange-500">🔥${'★'.repeat(data.demand)}</div>` : ''}
+        ${demand > 0 ? `<div class="text-orange-500">🔥${'★'.repeat(demand)}</div>` : ''}
       </div>`);
   }
   calendarEl.innerHTML = html.join('');
