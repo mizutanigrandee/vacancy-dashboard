@@ -15,9 +15,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     fetchJson(EVENT_FILE),
     fetchJson(HIST_FILE)
   ]);
-  // 祝日データロード（API不要：祝日をJSで判定）
-  holidayList = getJapanHolidays(calendarMonth.year);
+  // ←この1行を追加
+  if (!Array.isArray(eventData)) eventData = Object.values(eventData);
 
+  holidayList = getJapanHolidays(calendarMonth.year);
   renderCalendar(calendarMonth.year, calendarMonth.month);
   setEventListeners();
   setLastUpdated();
