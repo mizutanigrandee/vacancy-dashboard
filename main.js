@@ -11,7 +11,7 @@ let selectedDate = null;
 let priceChart = null;
 
 function loadData() {
-  console.log('Loading data...');
+  console.log('Loading data...', { calendar1El, calendar2El, graphContainer, priceChartEl, lastUpdatedEl });
   vacancyData = {
     "2025-07-22": { "vacancy": 310, "avg_price": 9458, "previous_vacancy": 320, "previous_avg_price": 9500 },
     "2025-07-23": { "vacancy": 300, "avg_price": 9300, "previous_vacancy": 310, "previous_avg_price": 9400 },
@@ -60,7 +60,7 @@ function getHolidayColor(date) {
 }
 
 function renderCalendar(el, month) {
-  console.log('Rendering calendar for:', month.format('YYYY-MM'));
+  console.log('Rendering calendar for:', month.format('YYYY-MM'), 'element:', el);
   if (!el) {
     console.error('Calendar element not found:', el);
     return;
