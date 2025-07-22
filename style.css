@@ -7,12 +7,17 @@ body {
 }
 
 #calendar > div > div {
-  min-height: 100px;
+  min-height: 120px;
+  font-size: 0.9rem;
 }
 
 @media (max-width: 768px) {
   #calendar > div > div {
-    min-height: 120px;
-    font-size: 0.8rem;
+    min-height: 140px;
+    font-size: 0.7rem;
+  }
+
+  #calendar .text-xs {
+    font-size: 0.6rem;
   }
 }
