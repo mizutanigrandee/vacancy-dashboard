@@ -13,12 +13,15 @@ let priceChart = null;
 async function loadData() {
   try {
     const vacancyResponse = await fetch('vacancy_price_cache.json');
+    if (!vacancyResponse.ok) throw new Error('vacancy_price_cache.json not found or invalid');
     vacancyData = await vacancyResponse.json();
 
     const historicalResponse = await fetch('historical_data.json');
+    if (!historicalResponse.ok) throw new Error('historical_data.json not found or invalid');
     historicalData = await historicalResponse.json();
 
     const eventResponse = await fetch('event_data.xlsx');
+    if (!eventResponse.ok) throw new Error('event_data.xlsx not found or invalid');
     const arrayBuffer = await eventResponse.arrayBuffer();
     const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
     eventData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
@@ -27,8 +30,10 @@ async function loadData() {
       date: moment('1899-12-30').add(event.date, 'days').format('YYYY-MM-DD')
     }));
     lastUpdatedEl.textContent = `最終更新: ${moment().format('YYYY-MM-DD HH:mm')} JST`;
+    console.log('Data loaded successfully');
   } catch (error) {
-    console.error('データ読み込みエラー:', error);
+    console.error('データ読み込みエラー:', error.message);
+    lastUpdatedEl.textContent = `最終更新: エラー (${error.message})`;
   }
   renderCalendars();
 }
@@ -58,7 +63,7 @@ function renderCalendar(el, month) {
   cal.push('<thead style="background:#f4f4f4;color:#333;font-weight:bold;"><tr>');
   cal.push(''.join(`<th style="border:1px solid #aaa;padding:4px;">${d}</th>` for d in "日月火水木金土"));
   cal.push('</tr></thead><tbody>');
-  const weeks = month.daysInMonth();
+  const daysInMonth = month.daysInMonth();
   const startDay = month.startOf('month').day();
   const today = moment().startOf('day');
 
@@ -66,7 +71,7 @@ function renderCalendar(el, month) {
     cal.push('<tr>');
     for (let d = 0; d < 7; d++) {
       const day = w * 7 + d - startDay + 1;
-      if (day <= 0 || day > weeks) {
+      if (day <= 0 || day > daysInMonth) {
         cal.push('<td style="border:1px solid #aaa;padding:8px;background:#fff;"></td>');
         continue;
       }
@@ -97,6 +102,10 @@ function renderCalendar(el, month) {
 }
 
 function renderCalendars() {
+  if (!vacancyData || !eventData) {
+    console.error('Data not loaded yet');
+    return;
+  }
   const month1 = currentMonth.clone();
   const month2 = currentMonth.clone().add(1, 'month');
   renderCalendar(calendar1El, month1);
