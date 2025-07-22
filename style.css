@@ -1,132 +1,102 @@
 body {
-  font-family: 'Noto Sans JP', sans-serif;
+  font-family: 'Noto Sans JP', 'Arial', sans-serif;
+  background: #f6f7fa;
+  margin: 0;
+  padding: 0;
 }
-
-.custom-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 9px 0px;
-  min-width: 80px;
-  max-width: 220px;
-  border: 1.8px solid #b9b9c9;
-  border-radius: 10px;
+.container {
+  max-width: 1060px;
+  margin: 18px auto 0 auto;
   background: #fff;
-  color: #1a1a1a;
-  text-decoration: none;
-  font-size: 1.0rem;
-  font-weight: 500;
-  margin: 0 10px 10px 0;
-  box-shadow: 0 1.5px 7px rgba(0,0,0,0.03);
-  transition: background 0.18s, color 0.18s, border 0.18s;
+  border-radius: 16px;
+  box-shadow: 0 6px 32px rgba(30,70,120,0.09);
+  padding: 18px 22px 32px 22px;
 }
-
-.custom-button, .custom-button:visited, .custom-button:active {
-  text-decoration: none !important;
-  color: #1a1a1a !important;
+h1 {
+  font-size: 1.7rem;
+  margin-bottom: 4px;
+  letter-spacing: 1px;
 }
-
-.custom-button .icon {
-  font-size: 1.0em;
-  margin-right: 11px;
-  line-height: 1;
-  display: inline-block;
+.subtitle { font-size: 1.0rem; font-weight: 400; color: #222; }
+.desc { font-size: 1.08rem; margin: 10px 0 12px 0; color: #333; }
+.nav-button-container { display: flex; gap: 13px; margin-bottom: 13px; }
+.custom-button {
+  border: 1.7px solid #b5b9be;
+  border-radius: 9px;
+  background: #eef4fb;
+  color: #194066;
+  font-size: 1.04rem;
+  font-weight: 600;
+  padding: 6px 21px;
+  box-shadow: 0 1.5px 8px rgba(30,70,120,0.03);
+  cursor: pointer;
+  transition: all 0.18s;
 }
-
-.custom-button:hover {
-  background: #f3f3fa;
-  border-color: #e53939;
-  color: #e53939 !important;
+.custom-button:hover { background: #e9f0ff; border-color: #488cff; color: #0e2340; }
+#calendar-wrap { display: flex; gap: 18px; justify-content: flex-start; flex-wrap: wrap; }
+#calendar1, #calendar2 { flex: 1; min-width: 322px; }
+.calendar-wrapper { margin-bottom: 12px; }
+.calendar-wrapper table { width: 100%; border-collapse: collapse; table-layout: fixed; text-align: center; }
+.calendar-wrapper th, .calendar-wrapper td {
+  border: 1.1px solid #c3d2e3;
+  padding: 4px 0;
+  background: #fff;
+  font-size: 1.02rem;
 }
-
-.nav-button-container, .graph-button-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 18px;
-  flex-wrap: wrap;
-  width: 100%;
-  margin-bottom: 1.6rem;
+.calendar-wrapper th {
+  background: #f6f8fd;
+  font-weight: 700;
+  color: #1b3550;
+  font-size: 1.07rem;
 }
-
 .calendar-wrapper td {
-  padding-top: 30px !important;
-  transition: background-color 0.2s ease;
-}
-
-.calendar-wrapper td:hover {
-  background-color: #f5faff !important;
+  height: 70px;
+  vertical-align: top;
+  position: relative;
+  background: #fff;
+  transition: background 0.16s;
   cursor: pointer;
 }
-
-.calendar-wrapper table {
-  border-collapse: collapse;
-  width: 100%;
-  table-layout: fixed;
-  text-align: center;
-}
-
-.calendar-wrapper th {
-  border: 1px solid #aaa;
-  padding: 4px;
-  background: #f4f4f4;
-  color: #333;
-  font-weight: bold;
-}
-
-.calendar-wrapper td {
-  border: 1px solid #aaa;
-  padding: 8px;
-  vertical-align: top;
-  min-width: 40px;
-  max-width: 50px;
-}
-
+.calendar-wrapper td:hover { background: #f0f8ff; }
+.date-num { position: absolute; top: 3px; left: 7px; font-size: 1.01rem; color: #222; }
+.cell-vacancy, .cell-price { font-size: 1.02rem; font-weight: 500; }
+.cell-diff { font-size: 0.93rem; font-weight: 500; margin-left: 2px; }
+.cell-diff.pos { color: #e53939; }
+.cell-diff.neg { color: #1e6ec8; }
+.cell-event { font-size: 0.92rem; margin-top: 5px; }
+.cell-flame { position: absolute; top: 2px; right: 6px; font-size: 1.16rem; }
+.legend { margin-top: 8px; font-size: 1.03rem; }
+.legend-flame { color: #e6710f; margin-right: 10px; }
+.legend-event .event-icon { display: inline-block; width: 13px; height: 13px; border-radius: 50%; margin-right: 4px; vertical-align: middle;}
+.event-icon.red { background: #e53939; }
+.event-icon.blue { background: #488cff; }
+.event-icon.black { background: #222; }
+.note { font-size: 0.98rem; margin: 7px 0 15px 0; color: #345; }
 #graph-container {
-  min-height: 300px;
-  position: relative;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(70,90,120,0.18);
+  z-index: 50;
+  display: flex; justify-content: center; align-items: center;
 }
-
-#graph-container canvas {
-  max-height: 250px;
+#graph-container.hidden { display: none; }
+.graph-modal {
+  background: #fff; border-radius: 13px; padding: 23px 29px 15px 29px; box-shadow: 0 7px 35px rgba(40,60,120,0.09); width: 97vw; max-width: 570px;
 }
+.graph-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+#graph-date { font-weight: 600; font-size: 1.06rem; color: #123; }
+.graph-button-container { display: flex; gap: 9px; }
+#priceChart { width: 100%; max-height: 265px; }
+.footer { text-align: right; font-size: 0.96rem; color: #555; margin-top: 15px; }
 
-@media (max-width: 700px) {
-  .nav-button-container, .graph-button-container {
-    gap: 3.5px;
-    margin-bottom: 0.65rem;
-  }
-  .custom-button {
-    min-width: 56px !important;
-    max-width: 90vw !important;
-    padding: 4.2px 1px !important;
-    font-size: 0.7rem !important;
-  }
-  .custom-button .icon {
-    font-size: 1.09em !important;
-    margin-right: 8px !important;
-  }
-  .calendar-wrapper td, .calendar-wrapper th {
-    min-width: 32px !important;
-    max-width: 38px !important;
-    font-size: 9px !important;
-    padding: 1px 0 1px 0 !important;
-  }
-  .calendar-wrapper td div, .calendar-wrapper td span {
-    font-size: 9px !important;
-    line-height: 1.05 !important;
-  }
-  .calendar-wrapper td > div > div:nth-child(2),
-  .calendar-wrapper td > div > div:nth-child(3) {
-    display: block !important;
-    width: 100% !important;
-    text-align: left !important;
-  }
-  #graph-container {
-    margin-top: 1rem;
-    min-height: 200px;
-  }
-  #graph-container canvas {
-    max-height: 180px;
-  }
+@media (max-width: 760px) {
+  .container { padding: 7px 1vw 16vw 1vw; min-width: 0; }
+  h1 { font-size: 1.1rem; }
+  .nav-button-container { flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  #calendar-wrap { flex-direction: column; gap: 6px; }
+  .calendar-wrapper td { height: 39px; font-size: 0.9rem; }
+  .calendar-wrapper th { font-size: 0.95rem; }
+  .legend, .note { font-size: 0.89rem; }
+  .graph-modal { padding: 8vw 1vw 4vw 1vw; max-width: 99vw; }
+  #priceChart { max-height: 170px; }
 }
