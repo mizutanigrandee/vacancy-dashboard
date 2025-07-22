@@ -11,6 +11,7 @@ let selectedDate = null;
 let priceChart = null;
 
 function loadData() {
+  console.log('Loading data...');
   vacancyData = {
     "2025-07-22": { "vacancy": 310, "avg_price": 9458, "previous_vacancy": 320, "previous_avg_price": 9500 },
     "2025-07-23": { "vacancy": 300, "avg_price": 9300, "previous_vacancy": 310, "previous_avg_price": 9400 },
@@ -35,7 +36,7 @@ function loadData() {
     }
   };
   lastUpdatedEl.textContent = `最終更新: ${moment().format('YYYY-MM-DD HH:mm')} JST`;
-  console.log('Data loaded from code');
+  console.log('Data loaded:', { vacancyData: Object.keys(vacancyData).length, eventData: eventData.length, historicalData: Object.keys(historicalData).length });
   renderCalendars();
 }
 
@@ -59,6 +60,11 @@ function getHolidayColor(date) {
 }
 
 function renderCalendar(el, month) {
+  console.log('Rendering calendar for:', month.format('YYYY-MM'));
+  if (!el) {
+    console.error('Calendar element not found:', el);
+    return;
+  }
   const cal = [];
   cal.push('<div class="calendar-wrapper"><table style="border-collapse:collapse;width:100%;table-layout:fixed;text-align:center;">');
   cal.push('<thead style="background:#f4f4f4;color:#333;font-weight:bold;"><tr>');
@@ -100,9 +106,11 @@ function renderCalendar(el, month) {
   }
   cal.push('</tbody></table></div>');
   el.innerHTML = cal.join('');
+  console.log('Calendar rendered for element:', el.id);
 }
 
 function renderCalendars() {
+  console.log('Starting renderCalendars:', { calendar1El, calendar2El });
   if (!vacancyData || !eventData) {
     console.error('データ不足でカレンダー描画をスキップ:', { vacancyData: Object.keys(vacancyData).length, eventData: eventData.length });
     return;
@@ -128,6 +136,7 @@ document.getElementById('nextMonth').addEventListener('click', () => {
 });
 
 function showGraph(date) {
+  console.log('Showing graph for:', date);
   selectedDate = date;
   graphContainer.classList.remove('hidden');
   if (priceChart) priceChart.destroy();
@@ -159,6 +168,7 @@ function showGraph(date) {
       plugins: { legend: { position: 'top', labels: { boxWidth: 20, font: { size: 14 } } } }
     }
   });
+  console.log('Graph created for:', date);
 }
 
 document.getElementById('closeGraph').addEventListener('click', () => graphContainer.classList.add('hidden'));
