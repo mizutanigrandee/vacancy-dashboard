@@ -1,0 +1,18 @@
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+}
+
+#calendar {
+  min-height: 400px;
+}
+
+#calendar > div > div {
+  min-height: 100px;
+}
+
+@media (max-width: 768px) {
+  #calendar > div > div {
+    min-height: 120px;
+    font-size: 0.8rem;
+  }
+}
