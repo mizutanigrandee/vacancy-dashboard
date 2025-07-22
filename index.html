@@ -2,34 +2,40 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>空室＆平均価格カレンダー（大阪ミナミ）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <link rel="stylesheet" href="calendar_style.css">
 </head>
-<body>
-  <header>
-    <h1>空室＆平均価格カレンダー（大阪ミナミ）</h1>
-    <p class="desc">日付を選択すると推移グラフが表示されます</p>
-  </header>
-  <div class="calendar-controls">
-    <button id="prevMonthBtn" class="nav-btn">⬅️ 前月</button>
-    <button id="nextMonthBtn" class="nav-btn">➡️ 翌月</button>
-  </div>
-  <div id="calendar-app"></div>
-  <div id="chart-modal" class="modal">
-    <div class="modal-content">
-      <button id="closeChartBtn" class="close-btn">グラフを閉じる</button>
-      <div>
-        <button id="prevDayBtn" class="chart-nav-btn">前日</button>
-        <button id="nextDayBtn" class="chart-nav-btn">翌日</button>
+<body class="font-sans antialiased bg-gray-100">
+  <div class="flex flex-col md:flex-row min-h-screen">
+    <!-- Sidebar -->
+    <div class="w-full md:w-64 bg-white shadow-md p-4">
+      <h1 class="text-xl font-bold mb-4">大阪ミナミ カレンダー</h1>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium">月切替</label>
+          <select id="monthFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            <option value="">月を選択</option>
+          </select>
+        </div>
+        <button id="resetButton" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700">リセット</button>
       </div>
-      <canvas id="trendChart" width="340" height="200"></canvas>
+    </div>
+    <!-- Main Content -->
+    <div class="flex-1 p-4">
+      <div id="calendar" class="bg-white rounded-lg shadow-md p-4"></div>
+      <div id="graphModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-2xl">
+          <h2 id="graphTitle" class="text-lg font-bold mb-4"></h2>
+          <canvas id="priceChart"></canvas>
+          <button id="closeModal" class="mt-4 bg-gray-300 text-black py-2 px-4 rounded-md hover:bg-gray-400">閉じる</button>
+        </div>
+      </div>
     </div>
   </div>
-  <footer>
-    <span id="last-updated"></span>
-  </footer>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="calendar_app.js"></script>
 </body>
 </html>
