@@ -1,221 +1,35 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>空室＆平均価格カレンダー（本番・動的版）</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-body { background:#f7f8fa; margin:0; font-family:'Noto Sans JP',sans-serif; }
-.main { max-width:1500px; margin:30px auto 40px auto; background:#fff; border-radius:36px; box-shadow:0 4px 32px #d9e2ef99; padding:36px 24px 36px 48px; }
-h1 { margin:0 0 8px 0; font-size:40px; }
-h2 { margin:8px 0 0 0; font-size:22px; color:#444; }
-.banner { width:380px; margin-bottom:12px; }
-.flex { display:flex; gap:36px; flex-wrap:wrap; }
-.calendar-wrap { flex:1 1 48%; min-width:370px; }
-.calendar-title { font-size:28px; margin-bottom:4px; font-weight:700; color:#222; }
-table.calendar { border-collapse:collapse; border-radius:16px; overflow:hidden; margin-bottom:14px; background:#f5f7fb; }
-.calendar th, .calendar td { width:84px; height:80px; border:1px solid #e0e4ef; text-align:center; font-size:19px; vertical-align:top; background:#fff; padding:0; position:relative; }
-.calendar th.sun, .calendar td.sun { color:#e1000a; }
-.calendar th.sat, .calendar td.sat { color:#1b6ace; }
-.calendar td.hol { background:#fff5f5; }
-.calendar td.today { background:#bdf7d3; }
-.calendar td.out { background:#f5f7fb; color:#bbb; }
-.daynum { font-weight:bold; font-size:22px; margin-bottom:2px; }
-.diff.pos { color:#2176d2; font-size:14px; margin-left:2px; }
-.diff.neg { color:#e94343; font-size:14px; margin-left:2px; }
-.price-up { color:#e03e3e; font-size:17px; margin-left:3px; }
-.price-down { color:#208ad8; font-size:17px; margin-left:3px; }
-.fire { font-size:18px; margin-left:4px; position:absolute; right:6px; top:4px; }
-.fire1 { color:#ff9800; }
-.fire2 { color:#ff5722; }
-.fire3 { color:#ff1744; }
-.fire4 { color:#c51162; }
-.fire5 { color:#6d00c4; font-weight:bold; }
-.event-kyocera { display:block; color:#b10000; font-size:14px; margin-top:2px; }
-.event-other { display:block; color:#222; font-size:13px; }
-.nav { display:flex; gap:20px; margin-bottom:20px; }
-.nav button { background:#fff; border:1.5px solid #b9b9c9; border-radius:10px; padding:8px 18px; font-size:18px; font-weight:500; cursor:pointer; }
-.nav button:hover { background:#f3f3fa; border-color:#e53939; color:#e53939; }
-@media (max-width:1100px) { .flex { flex-direction:column; } .calendar-wrap { min-width:320px; } }
-</style>
+  <meta charset="UTF-8">
+  <title>空室＆平均価格カレンダー（大阪ミナミ）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="calendar_style.css">
 </head>
 <body>
-<div class="main">
-    <img src="バナー画像3.png" class="banner" alt="バナー画像">
-    <h1>空室＆平均価格カレンダー</h1>
-    <div id="last-update" style="color:#2baf71;font-size:18px; margin-bottom:7px;">最終巡回時刻：-</div>
-    <div class="nav">
-        <button onclick="prevMonth()">⬅️ 前月</button>
-        <button onclick="goToday()">📅 当月</button>
-        <button onclick="nextMonth()">➡️ 次月</button>
+  <header>
+    <h1>空室＆平均価格カレンダー（大阪ミナミ）</h1>
+    <p class="desc">日付を選択すると推移グラフが表示されます</p>
+  </header>
+  <div class="calendar-controls">
+    <button id="prevMonthBtn" class="nav-btn">⬅️ 前月</button>
+    <button id="nextMonthBtn" class="nav-btn">➡️ 翌月</button>
+  </div>
+  <div id="calendar-app"></div>
+  <div id="chart-modal" class="modal">
+    <div class="modal-content">
+      <button id="closeChartBtn" class="close-btn">グラフを閉じる</button>
+      <div>
+        <button id="prevDayBtn" class="chart-nav-btn">前日</button>
+        <button id="nextDayBtn" class="chart-nav-btn">翌日</button>
+      </div>
+      <canvas id="trendChart" width="340" height="200"></canvas>
     </div>
-    <div class="flex" id="calendar-blocks"></div>
-    <div id="graph-block" style="margin-top:30px;"></div>
-    <h2>日付を選択すると推移グラフが表示されます</h2>
-    <div style="margin:16px 0 8px 0; color:#222;">
-        <b>《注釈》</b><br>
-        ・在庫数、平均価格は「なんば・心斎橋・天王寺・阿倍野・長居」エリアから抽出しています。<br>
-        ・表示される「平均価格」は、楽天トラベル検索上位90施設の平均最安値です。<br>
-        ・空室数の（<span class="diff pos">+N</span>／<span class="diff neg">-N</span>）は、前回巡回時点との在庫数の増減を示します。<br>
-        ・平均価格の <span class="price-up">↑</span>／<span class="price-down">↓</span>は、前回巡回時点との平均価格の上昇／下降を示します。<br>
-        ・会場アイコン：<span class="event-kyocera">🔴京セラドーム</span>／<span style="color:#1976d2;">🔵ヤンマースタジアム</span>／<span class="event-other">★その他会場</span><br>
-        ・炎マーク（需要シンボル）の内訳：<br>
-        <span class="fire fire1">🔥1</span>：残室≤250 or 価格≥25,000円　
-        <span class="fire fire2">🔥2</span>：残室≤200 or 価格≥30,000円　
-        <span class="fire fire3">🔥3</span>：残室≤150 or 価格≥35,000円　
-        <span class="fire fire4">🔥4</span>：残室≤100 or 価格≥40,000円　
-        <span class="fire fire5">🔥5</span>：残室≤70 or 価格≥50,000円
-    </div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-// 設定：データファイルパス
-const CACHE_URL = "vacancy_price_cache.json";
-const EVENT_URL = "event_data.json"; // 変換済みevent_data.jsonが必要
-
-let monthOffset = 0;
-
-function getMonthFirst(offset=0) {
-    const d = new Date();
-    d.setDate(1);
-    d.setMonth(d.getMonth()+offset);
-    return new Date(d.getFullYear(), d.getMonth(), 1);
-}
-function prevMonth() { monthOffset--; drawCalendars(); }
-function nextMonth() { monthOffset++; drawCalendars(); }
-function goToday() { monthOffset=0; drawCalendars(); }
-
-let cacheData = {};
-let eventData = {};
-let holidays = {}; // {YYYY-MM-DD: true}
-
-fetch(CACHE_URL).then(r=>r.json()).then(data=>{
-    cacheData = data;
-    updateLastUpdate();
-    fetch(EVENT_URL)
-      .then(r=>r.json()).then(ev=>{
-          eventData = ev;
-          drawCalendars();
-      }).catch(()=>{ eventData = {}; drawCalendars(); });
-}).catch(()=>{});
-
-function updateLastUpdate() {
-    // 巡回最終日（cacheの最新日）を自動表示
-    let dates = Object.keys(cacheData).sort();
-    if(dates.length){
-        let last = dates[dates.length-1];
-        document.getElementById("last-update").textContent = "最終巡回時刻：" + last;
-    }
-}
-
-function getFire(v, p) {
-    if(v<=70 || p>=50000) return '<span class="fire fire5">🔥5</span>';
-    if(v<=100 || p>=40000) return '<span class="fire fire4">🔥4</span>';
-    if(v<=150 || p>=35000) return '<span class="fire fire3">🔥3</span>';
-    if(v<=200 || p>=30000) return '<span class="fire fire2">🔥2</span>';
-    if(v<=250 || p>=25000) return '<span class="fire fire1">🔥1</span>';
-    return "";
-}
-
-function drawCalendars() {
-    let base = getMonthFirst(monthOffset);
-    let next = getMonthFirst(monthOffset+1);
-    let html = drawCalendar(base) + drawCalendar(next);
-    document.getElementById("calendar-blocks").innerHTML = html;
-}
-
-function drawCalendar(monthDate) {
-    let y = monthDate.getFullYear(), m = monthDate.getMonth();
-    let first = new Date(y, m, 1);
-    let last = new Date(y, m+1, 0);
-    let today = (new Date()).toISOString().slice(0,10);
-    let cal = `<div class="calendar-wrap"><div class="calendar-title">${y}年 ${m+1}月</div><table class="calendar"><tr>
-        <th class="sun">日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th class="sat">土</th></tr>`;
-    let d = new Date(y, m, 1-(first.getDay()));
-    for(let w=0; w<6; w++){
-        cal += "<tr>";
-        for(let wd=0; wd<7; wd++, d.setDate(d.getDate()+1)){
-            let iso = d.toISOString().slice(0,10);
-            let isOut = (d.getMonth()!=m);
-            let cellClass = [];
-            if(wd==0) cellClass.push("sun");
-            if(wd==6) cellClass.push("sat");
-            if(isOut) cellClass.push("out");
-            if(iso==today) cellClass.push("today");
-            // TODO: 祝日判定（今は省略）
-            if(eventData[iso] && eventData[iso].length>0){
-                cellClass.push("hol");
-            }
-            cal += `<td class="${cellClass.join(" ")}" data-date="${iso}" onclick="showGraph('${iso}')">`;
-            if(isOut){
-                cal += "</td>";
-                continue;
-            }
-            cal += `<div class="daynum">${d.getDate()}</div>`;
-            let rec = cacheData[iso] || {};
-            if(rec.vacancy!==undefined){
-                cal += `<div>${rec.vacancy}件</div>`;
-                cal += `<div>¥${rec.avg_price}</div>`;
-                if(rec.vacancy_diff>0) cal += `<span class="diff pos">+${rec.vacancy_diff}</span>`;
-                if(rec.vacancy_diff<0) cal += `<span class="diff neg">${rec.vacancy_diff}</span>`;
-                if(rec.avg_price_diff>0) cal += `<span class="price-up">↑</span>`;
-                if(rec.avg_price_diff<0) cal += `<span class="price-down">↓</span>`;
-                cal += getFire(rec.vacancy, rec.avg_price);
-            }
-            // イベント表示
-            if(eventData[iso]){
-                for(let ev of eventData[iso]){
-                    if(ev.icon=="🔴") cal += `<span class="event-kyocera">${ev.icon}${ev.name}</span>`;
-                    else if(ev.icon=="★") cal += `<span class="event-other">${ev.icon}${ev.name}</span>`;
-                    else cal += `<span class="event-other">${ev.icon}${ev.name}</span>`;
-                }
-            }
-            cal += "</td>";
-        }
-        cal += "</tr>";
-    }
-    cal += "</table></div>";
-    return cal;
-}
-
-// グラフ描画
-function showGraph(date) {
-    // 履歴データ対応の場合のみ。サンプルなのでランダムデータ
-    let rec = cacheData[date];
-    if(!rec) return;
-    let dates = [], vacs = [], prices = [];
-    // 仮データ生成
-    for(let i=0;i<10;i++){
-        let d = new Date(new Date(date).getTime() - (9-i)*24*3600*1000);
-        let iso = d.toISOString().slice(0,10);
-        dates.push(iso);
-        let v = cacheData[iso]?.vacancy ?? Math.floor(Math.random()*300+100);
-        let p = cacheData[iso]?.avg_price ?? Math.floor(Math.random()*20000+8000);
-        vacs.push(v);
-        prices.push(p);
-    }
-    let ctx = document.createElement("canvas");
-    ctx.id = "graph-canvas";
-    document.getElementById("graph-block").innerHTML = `<div><canvas id="graph-canvas"></canvas></div>`;
-    new Chart(ctx, {
-        type:'line',
-        data: {
-            labels:dates,
-            datasets:[
-                { label:'在庫数', data:vacs, borderColor:'#2275e7', yAxisID:'y', fill:false },
-                { label:'平均価格', data:prices, borderColor:'#e15759', yAxisID:'y2', fill:false }
-            ]
-        },
-        options:{
-            responsive:true,
-            plugins:{ legend:{ display:true } },
-            scales:{
-                y:{ type:'linear', position:'left', min:0 },
-                y2:{ type:'linear', position:'right', min:0, grid:{ drawOnChartArea:false } }
-            }
-        }
-    });
-}
-</script>
+  </div>
+  <footer>
+    <span id="last-updated"></span>
+  </footer>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="calendar_app.js"></script>
 </body>
 </html>
