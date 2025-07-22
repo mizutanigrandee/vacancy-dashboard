@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>空室＆平均価格カレンダー（大阪ミナミ版）</title>
+  <title>【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
@@ -12,32 +12,45 @@
 </head>
 <body class="bg-gray-100 font-sans">
   <div class="container mx-auto p-4">
-    <h1 class="text-2xl font-bold text-center mb-4">空室＆平均価格カレンダー（大阪ミナミ版）</h1>
+    <h1 class="text-2xl font-bold text-center mb-4">【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー</h1>
+    <div class="text-sm text-gray-600 text-center mb-2">日付を選択すると推移グラフが表示されます</div>
     <div class="flex flex-col md:flex-row gap-4">
       <div class="w-full md:w-2/3">
-        <div id="calendar" class="bg-white p-4 rounded shadow"></div>
-        <div id="legend" class="mt-2 text-sm text-gray-600">
-          凡例: 🔥=需要(1-5) / 🔴=京セラ / 🔵=ヤンマー<br>
-          日付を選択すると推移グラフが表示されます
+        <div class="flex justify-center mb-2">
+          <button id="prevMonth" class="custom-button"><span class="icon">⬅️</span>前月</button>
+          <button id="currentMonth" class="custom-button"><span class="icon">📅</span>当月</button>
+          <button id="nextMonth" class="custom-button"><span class="icon">➡️</span>次月</button>
+        </div>
+        <div class="flex flex-col md:flex-row gap-4">
+          <div id="calendar1" class="bg-white p-4 rounded shadow w-full md:w-1/2"></div>
+          <div id="calendar2" class="bg-white p-4 rounded shadow w-full md:w-1/2"></div>
         </div>
       </div>
       <div class="w-full md:w-1/3">
         <div id="graph-container" class="bg-white p-4 rounded shadow hidden">
           <canvas id="priceChart"></canvas>
-          <div class="flex justify-between mt-2">
-            <button id="prevDay" class="px-2 py-1 bg-blue-500 text-white rounded">前日</button>
-            <button id="closeGraph" class="px-2 py-1 bg-red-500 text-white rounded">閉じる</button>
-            <button id="nextDay" class="px-2 py-1 bg-blue-500 text-white rounded">翌日</button>
+          <div class="nav-button-container mt-2">
+            <button id="prevDay" class="custom-button"><span class="icon">＜</span>前日</button>
+            <button id="closeGraph" class="custom-button"><span class="icon">❌</span>グラフを閉じる</button>
+            <button id="nextDay" class="custom-button"><span class="icon">＞</span>翌日</button>
           </div>
         </div>
       </div>
     </div>
     <div id="lastUpdated" class="text-right text-sm text-gray-600 mt-2"></div>
     <div id="annotation" class="text-sm text-gray-600 mt-2">
-      在庫状況：当日の空室ホテル合計数<br>
-      平均価格：その日の空室ホテルの平均最低価格<br>
-      ※在庫状況、平均価格は前日との比較で増減を表示<br>
-      ※データは2025-07-22 14:29 JST時点
+      《注釈》<br>
+      - 在庫数、平均価格は『なんば・心斎橋・天王寺・阿倍野・長居』エリアから抽出しています。<br>
+      - 表示される「平均価格」は、楽天トラベル検索上位90施設の平均最低価格です。<br>
+      - 空室数の<span style="color:blue;">(+N)</span>/<span style="color:red;">(-N)</span>は、前回巡回時点との在庫数の増減を示します。<br>
+      - 平均価格の<span style="color:red;">↑</span>/<span style="color:blue;">↓</span>は、前回巡回時点との平均価格の上昇/下降を示します。<br>
+      - 会場アイコン：🔴京セラドーム / 🔵ヤンマースタジアム / ⚫その他会場<br>
+      - 炎マーク（需要シンボル）の内訳：<br>
+        &nbsp;&nbsp;・🔥1：残室 ≤250 または 価格 ≥25,000円<br>
+        &nbsp;&nbsp;・🔥2：残室 ≤200 または 価格 ≥30,000円<br>
+        &nbsp;&nbsp;・🔥3：残室 ≤150 または 価格 ≥35,000円<br>
+        &nbsp;&nbsp;・🔥4：残室 ≤100 または 価格 ≥40,000円<br>
+        &nbsp;&nbsp;・🔥5：残室 ≤70 または 価格 ≥50,000円
     </div>
   </div>
   <script src="main.js"></script>
