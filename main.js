@@ -6,12 +6,13 @@ const lastUpdatedEl = document.getElementById('lastUpdated');
 let vacancyData = {};
 let eventData = [];
 let historicalData = {};
-let currentMonth = moment().startOf('month');
+let currentMonth = moment ? moment().startOf('month') : new Date().setMonth(new Date().getMonth());
 let selectedDate = null;
 let priceChart = null;
 
 function loadData() {
-  console.log('Loading data...', { calendar1El, calendar2El, graphContainer, priceChartEl, lastUpdatedEl });
+  console.log('Loading data on Pages...', { calendar1El, calendar2El, graphContainer, priceChartEl, lastUpdatedEl });
+  if (!moment) console.warn('moment.js not loaded, using fallback Date');
   vacancyData = {
     "2025-07-22": { "vacancy": 310, "avg_price": 9458, "previous_vacancy": 320, "previous_avg_price": 9500 },
     "2025-07-23": { "vacancy": 300, "avg_price": 9300, "previous_vacancy": 310, "previous_avg_price": 9400 },
@@ -35,7 +36,7 @@ function loadData() {
       "2025-07-23": { "vacancy": 300, "avg_price": 9300 }
     }
   };
-  lastUpdatedEl.textContent = `最終更新: ${moment().format('YYYY-MM-DD HH:mm')} JST`;
+  lastUpdatedEl.textContent = `最終更新: ${moment ? moment().format('YYYY-MM-DD HH:mm') : new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })} JST`;
   console.log('Data loaded:', { vacancyData: Object.keys(vacancyData).length, eventData: eventData.length, historicalData: Object.keys(historicalData).length });
   renderCalendars();
 }
@@ -53,14 +54,14 @@ function calculateDemand(vacancy, avgPrice) {
 }
 
 function getHolidayColor(date) {
-  const day = moment(date).day();
+  const day = moment ? moment(date).day() : new Date(date).getDay();
   if (day === 0 || Math.random() > 0.9) return '#ffecec'; // 簡易祝日
   if (day === 6) return '#e0f7ff';
   return '#fff';
 }
 
 function renderCalendar(el, month) {
-  console.log('Rendering calendar for:', month.format('YYYY-MM'), 'element:', el);
+  console.log('Rendering calendar for:', month, 'element:', el);
   if (!el) {
     console.error('Calendar element not found:', el);
     return;
@@ -70,9 +71,9 @@ function renderCalendar(el, month) {
   cal.push('<thead style="background:#f4f4f4;color:#333;font-weight:bold;"><tr>');
   cal.push(''.join(`<th style="border:1px solid #aaa;padding:4px;">${d}</th>` for d in "日月火水木金土"));
   cal.push('</tr></thead><tbody>');
-  const daysInMonth = month.daysInMonth();
-  const startDay = month.startOf('month').day();
-  const today = moment().startOf('day');
+  const daysInMonth = moment ? month.daysInMonth() : new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const startDay = moment ? month.startOf('month').day() : new Date(month.getFullYear(), month.getMonth(), 1).getDay();
+  const today = moment ? moment().startOf('day') : new Date();
 
   for (let w = 0; w < 6; w++) {
     cal.push('<tr>');
@@ -82,7 +83,7 @@ function renderCalendar(el, month) {
         cal.push('<td style="border:1px solid #aaa;padding:8px;background:#fff;"></td>');
         continue;
       }
-      const date = month.date(day).format('YYYY-MM-DD');
+      const date = moment ? month.date(day).format('YYYY-MM-DD') : new Date(month.getFullYear(), month.getMonth(), day).toISOString().split('T')[0];
       const data = vacancyData[date] || { vacancy: '-', avg_price: '-', previous_vacancy: '-', previous_avg_price: '-' };
       const vacDiff = data.vacancy !== '-' && data.previous_vacancy !== '-' ? parseInt(data.vacancy) - parseInt(data.previous_vacancy) : null;
       const priceDiff = data.avg_price !== '-' && data.previous_avg_price !== '-' ? 
@@ -90,7 +91,7 @@ function renderCalendar(el, month) {
       const events = eventData.filter(e => e.date === date);
       const demand = calculateDemand(data.vacancy, data.avg_price);
       const bgColor = getHolidayColor(date);
-      const isPast = moment(date).isBefore(today);
+      const isPast = moment ? moment(date).isBefore(today) : new Date(date) < today;
 
       cal.push(`
         <td style="border:1px solid #aaa;padding:8px;background:${bgColor};position:relative;vertical-align:top;"
@@ -115,23 +116,23 @@ function renderCalendars() {
     console.error('データ不足でカレンダー描画をスキップ:', { vacancyData: Object.keys(vacancyData).length, eventData: eventData.length });
     return;
   }
-  const month1 = currentMonth.clone();
-  const month2 = currentMonth.clone().add(1, 'month');
+  const month1 = moment ? currentMonth.clone() : new Date(currentMonth);
+  const month2 = moment ? currentMonth.clone().add(1, 'month') : new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1);
   renderCalendar(calendar1El, month1);
   renderCalendar(calendar2El, month2);
-  console.log('Calendars rendered for:', month1.format('YYYY-MM'), month2.format('YYYY-MM'));
+  console.log('Calendars rendered for:', month1, month2);
 }
 
 document.getElementById('prevMonth').addEventListener('click', () => {
-  currentMonth.add(-1, 'month');
+  currentMonth = moment ? currentMonth.add(-1, 'month') : new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1);
   renderCalendars();
 });
 document.getElementById('currentMonth').addEventListener('click', () => {
-  currentMonth = moment().startOf('month');
+  currentMonth = moment ? moment().startOf('month') : new Date(new Date().getFullYear(), new Date().getMonth());
   renderCalendars();
 });
 document.getElementById('nextMonth').addEventListener('click', () => {
-  currentMonth.add(1, 'month');
+  currentMonth = moment ? currentMonth.add(1, 'month') : new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1);
   renderCalendars();
 });
 
@@ -151,7 +152,7 @@ function showGraph(date) {
   priceChart = new Chart(priceChartEl, {
     type: 'line',
     data: {
-      labels: graphData.map(d => moment(d.date).format('MM/DD')),
+      labels: graphData.map(d => moment ? moment(d.date).format('MM/DD') : new Date(d.date).toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit' })),
       datasets: [
         { label: '平均単価', data: graphData.map(d => d.avg_price), borderColor: '#e15759', yAxisID: 'y1', fill: false, pointRadius: 3, tension: 0.1 },
         { label: '在庫数', data: graphData.map(d => d.vacancy), borderColor: 'green', yAxisID: 'y2', fill: false, pointRadius: 3, tension: 0.1 }
@@ -173,10 +174,10 @@ function showGraph(date) {
 
 document.getElementById('closeGraph').addEventListener('click', () => graphContainer.classList.add('hidden'));
 document.getElementById('prevDay').addEventListener('click', () => {
-  if (selectedDate) showGraph(moment(selectedDate).subtract(1, 'day').format('YYYY-MM-DD'));
+  if (selectedDate) showGraph(moment ? moment(selectedDate).subtract(1, 'day').format('YYYY-MM-DD') : new Date(new Date(selectedDate).setDate(new Date(selectedDate).getDate() - 1)).toISOString().split('T')[0]);
 });
 document.getElementById('nextDay').addEventListener('click', () => {
-  if (selectedDate) showGraph(moment(selectedDate).add(1, 'day').format('YYYY-MM-DD'));
+  if (selectedDate) showGraph(moment ? moment(selectedDate).add(1, 'day').format('YYYY-MM-DD') : new Date(new Date(selectedDate).setDate(new Date(selectedDate).getDate() + 1)).toISOString().split('T')[0]);
 });
 
 document.addEventListener('DOMContentLoaded', loadData);
