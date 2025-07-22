@@ -3,32 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>在庫ダッシュボード</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    .calendar-wrapper { margin-bottom: 20px; }
-    .hidden { display: none; }
-    #graph-container { position: relative; width: 600px; height: 400px; margin: 20px 0; }
-    button { margin: 5px; padding: 5px 10px; }
-  </style>
+  <title>空室＆平均価格カレンダー（大阪ミナミ版）</title>
+  <link href="style.css" rel="stylesheet">
+  <!-- 必須CDN類 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <div id="calendar1"></div>
-  <div id="calendar2"></div>
-  <div id="graph-container" class="hidden">
-    <canvas id="priceChart"></canvas>
-    <button id="closeGraph">閉じる</button>
-    <button id="prevDay">前日</button>
-    <button id="nextDay">翌日</button>
+  <div class="container">
+    <h1>空室＆平均価格カレンダー<br><span class="subtitle">（大阪ミナミ版）</span></h1>
+    <div class="desc">日付を選択すると推移グラフが表示されます</div>
+    <div class="nav-button-container">
+      <button id="prevMonth" class="custom-button">&lt; 前月</button>
+      <button id="currentMonth" class="custom-button">今月</button>
+      <button id="nextMonth" class="custom-button">次月 &gt;</button>
+    </div>
+    <div id="calendar-wrap">
+      <div id="calendar1"></div>
+      <div id="calendar2"></div>
+    </div>
+    <div class="legend">
+      <span>凡例：</span>
+      <span class="legend-flame">🔥＝需要シンボル（1〜5段階）</span>
+      <span class="legend-event"><span class="event-icon red"></span>京セラ</span>
+      <span class="legend-event"><span class="event-icon blue"></span>ヤンマー</span>
+      <span class="legend-event"><span class="event-icon black"></span>その他</span>
+    </div>
+    <div class="note">※ 各日セル：空室数 / 平均価格 / 前日比 / 需要シンボル / イベント</div>
+    <div id="graph-container" class="hidden">
+      <div class="graph-modal">
+        <div class="graph-header">
+          <span id="graph-date"></span>
+          <div class="graph-button-container">
+            <button id="prevDay" class="custom-button">&lt; 前日</button>
+            <button id="closeGraph" class="custom-button">グラフを閉じる</button>
+            <button id="nextDay" class="custom-button">翌日 &gt;</button>
+          </div>
+        </div>
+        <canvas id="priceChart"></canvas>
+      </div>
+    </div>
+    <div class="footer">
+      <span id="lastUpdated"></span>
+    </div>
   </div>
-  <div id="lastUpdated"></div>
-  <button id="prevMonth">前月</button>
-  <button id="currentMonth">今月</button>
-  <button id="nextMonth">次月</button>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="main.js"></script>
 </body>
 </html>
