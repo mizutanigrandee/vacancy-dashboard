@@ -100,6 +100,59 @@ if os.path.exists("バナー画像3.png"):
         </div><br>
     """, unsafe_allow_html=True)
 
+# --- 需要急変検知（5％以上変動、直近3日除外） ---
+def detect_demand_spikes(cache_data, n_recent=3, pct=0.05):
+    from collections import deque
+    if not cache_data: return []
+
+    # 日付順で並べる
+    sorted_dates = sorted(cache_data.keys())
+    recent_exclude = set(sorted_dates[-n_recent:])  # 直近3日間
+    results = []
+    for dt in sorted_dates:
+        if dt in recent_exclude:
+            continue
+        rec = cache_data[dt]
+        last_price = rec.get("last_avg_price", 0)
+        last_vac = rec.get("last_vacancy", 0)
+        price_diff = rec.get("avg_price_diff", 0)
+        vac_diff = rec.get("vacancy_diff", 0)
+        # 0割防止
+        price_ratio = abs(price_diff / last_price) if last_price else 0
+        vac_ratio = abs(vac_diff / last_vac) if last_vac else 0
+        # どちらか5％以上
+        if price_ratio >= pct or vac_ratio >= pct:
+            results.append({
+                "date": dt,
+                "price": rec.get("avg_price", 0),
+                "price_diff": price_diff,
+                "price_ratio": price_ratio,
+                "vacancy": rec.get("vacancy", 0),
+                "vacancy_diff": vac_diff,
+                "vacancy_ratio": vac_ratio
+            })
+    # 新しい順（直近が上）で最大3件
+    return sorted(results, key=lambda x: x["date"], reverse=True)[:3]
+
+demand_spikes = detect_demand_spikes(cache_data, n_recent=3, pct=0.05)
+
+if demand_spikes:
+    st.markdown(
+        "<div style='background:#fff7e6;border:2px solid #f39c12;border-radius:13px;padding:14px 24px 10px 24px;max-width:630px;margin:14px 0 18px 0;'>"
+        "<div style='font-size:20px;font-weight:bold;color:#e67e22;letter-spacing:1px;'>🚨 需要急変の兆候</div>",
+        unsafe_allow_html=True
+    )
+    for rec in demand_spikes:
+        price_txt = f"<span style='color:#d35400;'>単価 {'↑' if rec['price_diff'] > 0 else '↓'} {abs(rec['price_diff']):,.0f}円</span>（{rec['price_ratio']*100:.1f}%）"
+        vac_txt = f"<span style='color:#2980b9;'>客室 {'減' if rec['vacancy_diff'] < 0 else '増'} {abs(rec['vacancy_diff'])}件</span>（{rec['vacancy_ratio']*100:.1f}%）"
+        st.markdown(
+            f"<div style='margin-top:10px;font-size:17px;'><span style='font-weight:bold;color:#333;'>{rec['date']}</span>　{price_txt}　{vac_txt}</div>"
+            f"<div style='font-size:13px;color:#555;padding-left:5px;'>平均単価：<b>￥{rec['price']:,.0f}</b>／残室：<b>{rec['vacancy']}</b></div>",
+            unsafe_allow_html=True
+        )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
 APP_ID = st.secrets["RAKUTEN_APP_ID"]
 CACHE_FILE = "vacancy_price_cache.json"
 HISTORICAL_FILE = "historical_data.json"
