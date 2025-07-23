@@ -3,7 +3,6 @@ const calendar2El = document.getElementById('calendar2');
 const graphContainer = document.getElementById('graph-container');
 const priceChartEl = document.getElementById('priceChart');
 const lastUpdatedEl = document.getElementById('lastUpdated');
-const graphDateEl = document.getElementById('graph-date');
 let vacancyData = {};
 let eventData = [];
 let historicalData = {};
@@ -11,35 +10,26 @@ let currentMonth = moment().startOf('month');
 let selectedDate = null;
 let priceChart = null;
 
-// ==== [1] ダミーデータ（本番はfetch可） ====
-function loadData() {
-  vacancyData = {
-    "2025-07-22": { "vacancy": 310, "avg_price": 9458, "previous_vacancy": 320, "previous_avg_price": 9500 },
-    "2025-07-23": { "vacancy": 300, "avg_price": 9300, "previous_vacancy": 310, "previous_avg_price": 9400 },
-    "2025-07-24": { "vacancy": 290, "avg_price": 9200, "previous_vacancy": 300, "previous_avg_price": 9300 },
-    "2025-07-25": { "vacancy": 280, "avg_price": 9100, "previous_vacancy": 290, "previous_avg_price": 9200 }
-    // 必要に応じ増やす
-  };
-  eventData = [
-    { date: "2025-07-22", icon: "🔴", name: "京セラ" },
-    { date: "2025-07-23", icon: "🔵", name: "ヤンマー" },
-    { date: "2025-07-24", icon: "⚫", name: "その他" }
-  ];
-  historicalData = {
-    "2025-07-22": {
-      "2025-07-01": { "vacancy": 300, "avg_price": 9000 },
-      "2025-07-15": { "vacancy": 310, "avg_price": 9200 },
-      "2025-07-22": { "vacancy": 310, "avg_price": 9458 }
-    },
-    "2025-07-23": {
-      "2025-07-01": { "vacancy": 310, "avg_price": 9100 },
-      "2025-07-15": { "vacancy": 305, "avg_price": 9250 },
-      "2025-07-23": { "vacancy": 300, "avg_price": 9300 }
-    }
-    // 必要に応じ増やす
-  };
-  lastUpdatedEl.textContent = `最終更新: ${moment().format('YYYY-MM-DD HH:mm')} JST`;
-  renderCalendars();
+// ここだけ！JSONをfetchで本番取得
+async function loadData() {
+  try {
+    const [vacancyRes, eventRes, histRes] = await Promise.all([
+      fetch('./vacancy_price_cache.json'),
+      fetch('./event_data.json'),
+      fetch('./historical_data.json')
+    ]);
+    vacancyData = await vacancyRes.json();
+    // eventData: 配列でも連想配列でもOKに対応
+    const eventRaw = await eventRes.json();
+    eventData = Array.isArray(eventRaw) ? eventRaw : Object.values(eventRaw);
+    historicalData = await histRes.json();
+    lastUpdatedEl.textContent = `最終更新: ${new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })} JST`;
+    renderCalendars();
+  } catch (e) {
+    lastUpdatedEl.textContent = "データ取得エラー";
+    alert("JSONデータの読み込みに失敗しました。");
+    console.error(e);
+  }
 }
 
 function calculateDemand(vacancy, avgPrice) {
@@ -57,11 +47,13 @@ function calculateDemand(vacancy, avgPrice) {
 function getHolidayColor(date) {
   const day = moment(date).day();
   if (day === 0) return '#ffecec'; // 日曜
-  if (day === 6) return '#e7f4ff'; // 土曜
+  if (day === 6) return '#e0f7ff'; // 土曜
+  // jpholiday.js等を組み込めば祝日特定も可能
   return '#fff';
 }
 
 function renderCalendar(el, month) {
+  if (!el) return;
   const cal = [];
   cal.push('<div class="calendar-wrapper"><table>');
   cal.push('<thead><tr>');
@@ -70,19 +62,18 @@ function renderCalendar(el, month) {
   const daysInMonth = month.daysInMonth();
   const startDay = month.startOf('month').day();
   const today = moment().startOf('day');
-
+  let dNum = 1 - startDay;
   for (let w = 0; w < 6; w++) {
     cal.push('<tr>');
-    for (let d = 0; d < 7; d++) {
-      const day = w * 7 + d - startDay + 1;
-      if (day <= 0 || day > daysInMonth) {
-        cal.push('<td></td>');
+    for (let d = 0; d < 7; d++, dNum++) {
+      if (dNum <= 0 || dNum > daysInMonth) {
+        cal.push('<td class="empty"></td>');
         continue;
       }
-      const date = month.date(day).format('YYYY-MM-DD');
+      const date = month.clone().date(dNum).format('YYYY-MM-DD');
       const data = vacancyData[date] || { vacancy: '-', avg_price: '-', previous_vacancy: '-', previous_avg_price: '-' };
-      const vacDiff = (data.vacancy !== '-' && data.previous_vacancy !== '-') ? (parseInt(data.vacancy) - parseInt(data.previous_vacancy)) : null;
-      const priceDiff = (data.avg_price !== '-' && data.previous_avg_price !== '-') ? Math.round(parseInt(data.avg_price) - parseInt(data.previous_avg_price)) : null;
+      const vacDiff = (data.vacancy !== '-' && data.previous_vacancy !== '-') ? data.vacancy - data.previous_vacancy : null;
+      const priceDiff = (data.avg_price !== '-' && data.previous_avg_price !== '-') ? data.avg_price - data.previous_avg_price : null;
       const events = eventData.filter(e => e.date === date);
       const demand = calculateDemand(data.vacancy, data.avg_price);
       const bgColor = getHolidayColor(date);
@@ -90,18 +81,13 @@ function renderCalendar(el, month) {
 
       cal.push(`
         <td style="background:${bgColor};" onclick="showGraph('${date}')">
-          <div class="date-num">${day}</div>
-          <div class="cell-vacancy">${data.vacancy === '-' ? '-' : `${data.vacancy}件`}
-            ${vacDiff !== null ? `<span class="cell-diff ${vacDiff>=0?'pos':'neg'}">(${vacDiff>=0?'+':''}${vacDiff}件)</span>` : ''}
-          </div>
-          <div class="cell-price">¥${data.avg_price === '-' ? '-' : parseInt(data.avg_price).toLocaleString()}円
-            ${priceDiff !== null ? `<span class="cell-diff ${priceDiff>=0?'pos':'neg'}">${priceDiff>=0?'↑':'↓'}</span>` : ''}
-          </div>
-          <div class="cell-event">${events.map(e =>
-            `<span class="event-icon ${e.icon==='🔴'?'red':e.icon==='🔵'?'blue':'black'}"></span> ${e.name}`).join('<br>')}
-          </div>
-          ${!isPast && demand > 0 ? `<div class="cell-flame">🔥${'★'.repeat(demand)}</div>` : ''}
-        </td>`);
+          <div class="date-num">${dNum}</div>
+          <div class="vacancy">${data.vacancy !== '-' ? `${data.vacancy}件` : '-' }${vacDiff !== null ? `<span class="diff ${vacDiff>=0?'plus':'minus'}">(${vacDiff>=0?'+':''}${vacDiff}件)</span>` : ''}</div>
+          <div class="price">${data.avg_price !== '-' ? `￥${Number(data.avg_price).toLocaleString()}円` : '￥-円'}${priceDiff !== null ? `<span class="diff ${priceDiff>=0?'plus':'minus'}">${priceDiff>=0?'↑':'↓'}</span>` : ''}</div>
+          <div class="event-line">${events.map(e => `<span class="event-symbol ${e.icon=='🔴'?'red':e.icon=='🔵'?'blue':'black'}">${e.icon}</span>${e.name||''}`).join('<br>')}</div>
+          ${!isPast && demand>0 ? `<div class="demand-mark">🔥${'★'.repeat(demand)}</div>` : ''}
+        </td>
+      `);
     }
     cal.push('</tr>');
   }
@@ -116,31 +102,30 @@ function renderCalendars() {
   renderCalendar(calendar2El, month2);
 }
 
-// --- ナビボタン制御 ---
+// ナビ
 document.getElementById('prevMonth').onclick = () => { currentMonth.add(-1, 'month'); renderCalendars(); };
 document.getElementById('currentMonth').onclick = () => { currentMonth = moment().startOf('month'); renderCalendars(); };
 document.getElementById('nextMonth').onclick = () => { currentMonth.add(1, 'month'); renderCalendars(); };
 
-// --- グラフ表示 ---
+// グラフ
 window.showGraph = function(date) {
   selectedDate = date;
   graphContainer.classList.remove('hidden');
   if (priceChart) priceChart.destroy();
-  graphDateEl.textContent = `${moment(date).format('YYYY年M月D日')} の推移グラフ`;
   const data = historicalData[date] || {};
   const dates = Object.keys(data).sort();
   const graphData = dates.map(d => ({
     date: d,
-    vacancy: data[d].vacancy || 0,
-    avg_price: data[d].avg_price || 0
+    vacancy: data[d]?.vacancy || 0,
+    avg_price: data[d]?.avg_price || 0
   }));
   priceChart = new Chart(priceChartEl, {
     type: 'line',
     data: {
       labels: graphData.map(d => moment(d.date).format('MM/DD')),
       datasets: [
-        { label: '平均価格', data: graphData.map(d => d.avg_price), borderColor: '#e53939', yAxisID: 'y1', fill: false, tension: 0.17, pointRadius: 4 },
-        { label: '空室数', data: graphData.map(d => d.vacancy), borderColor: '#488cff', yAxisID: 'y2', fill: false, tension: 0.17, pointRadius: 4 }
+        { label: '平均単価', data: graphData.map(d => d.avg_price), borderColor: '#e15759', yAxisID: 'y1', fill: false, pointRadius: 3, tension: 0.1 },
+        { label: '在庫数', data: graphData.map(d => d.vacancy), borderColor: 'green', yAxisID: 'y2', fill: false, pointRadius: 3, tension: 0.1 }
       ]
     },
     options: {
@@ -148,20 +133,19 @@ window.showGraph = function(date) {
       maintainAspectRatio: false,
       scales: {
         x: { title: { display: true, text: '日付' } },
-        y1: { type: 'linear', position: 'left', title: { display: true, text: '平均価格(円)' }, ticks: { callback: v => `¥${v.toLocaleString()}` }, beginAtZero: true },
-        y2: { type: 'linear', position: 'right', title: { display: true, text: '空室数' }, grid: { drawOnChartArea: false }, beginAtZero: true }
+        y1: { type: 'linear', position: 'left', title: { display: true, text: '平均単価 (円)' }, ticks: { callback: v => `¥${v.toLocaleString()}` }, beginAtZero: true },
+        y2: { type: 'linear', position: 'right', title: { display: true, text: '在庫数' }, grid: { drawOnChartArea: false }, beginAtZero: true }
       },
-      plugins: { legend: { position: 'top' } }
+      plugins: { legend: { position: 'top', labels: { boxWidth: 20, font: { size: 14 } } } }
     }
   });
 };
-
 document.getElementById('closeGraph').onclick = () => graphContainer.classList.add('hidden');
 document.getElementById('prevDay').onclick = () => {
-  if (selectedDate) showGraph(moment(selectedDate).subtract(1, 'day').format('YYYY-MM-DD'));
+  if (selectedDate) window.showGraph(moment(selectedDate).subtract(1, 'day').format('YYYY-MM-DD'));
 };
 document.getElementById('nextDay').onclick = () => {
-  if (selectedDate) showGraph(moment(selectedDate).add(1, 'day').format('YYYY-MM-DD'));
+  if (selectedDate) window.showGraph(moment(selectedDate).add(1, 'day').format('YYYY-MM-DD'));
 };
 
 document.addEventListener('DOMContentLoaded', loadData);
