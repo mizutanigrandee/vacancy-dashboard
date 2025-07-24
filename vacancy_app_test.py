@@ -134,23 +134,36 @@ cache_data = load_json(CACHE_FILE)
 
 # --- 需要急変検知（5％以上変動、直近3日除外） ---
 def detect_demand_spikes(cache_data, n_recent=3, pct=0.05):
+    from collections import deque
     if not cache_data: return []
+    today = dt.date.today()
+
+    # 日付順で並べる（date型でソート）
     sorted_dates = sorted(cache_data.keys())
-    recent_exclude = set(sorted_dates[-n_recent:])
+    # 今日以降だけを抽出
+    future_dates = [d for d in sorted_dates if pd.to_datetime(d).date() >= today]
+    # 未来日の中で、直近n_recent日だけ除外
+    if n_recent > 0:
+        exclude_set = set(future_dates[:n_recent])  # 未来の「今日からn_recent日分」だけ除外
+    else:
+        exclude_set = set()
+
     results = []
-    for dt_ in sorted_dates:
-        if dt_ in recent_exclude:
+    for d in future_dates:
+        if d in exclude_set:
             continue
-        rec = cache_data[dt_]
+        rec = cache_data[d]
         last_price = rec.get("last_avg_price", 0)
         last_vac = rec.get("last_vacancy", 0)
         price_diff = rec.get("avg_price_diff", 0)
         vac_diff = rec.get("vacancy_diff", 0)
+        # 0割防止
         price_ratio = abs(price_diff / last_price) if last_price else 0
         vac_ratio = abs(vac_diff / last_vac) if last_vac else 0
+        # どちらか5％以上
         if price_ratio >= pct or vac_ratio >= pct:
             results.append({
-                "date": dt_,
+                "date": d,
                 "price": rec.get("avg_price", 0),
                 "price_diff": price_diff,
                 "price_ratio": price_ratio,
@@ -158,8 +171,9 @@ def detect_demand_spikes(cache_data, n_recent=3, pct=0.05):
                 "vacancy_diff": vac_diff,
                 "vacancy_ratio": vac_ratio
             })
-    # 新しい順（直近が上）で最大3件
+    # 新しい順で上限n件
     return sorted(results, key=lambda x: x["date"], reverse=True)[:10]
+
 
 demand_spikes = detect_demand_spikes(cache_data, n_recent=3, pct=0.05)
 
