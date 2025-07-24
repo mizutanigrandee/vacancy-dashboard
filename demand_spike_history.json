@@ -1,5 +1,5 @@
 {
-  "2025-07-25": [
+  "2025-07-24": [
     {
       "spike_date": "2025-08-02",
       "price": 25000,
@@ -10,6 +10,19 @@
       "last_vac": 210,
       "vacancy_diff": -10,
       "vacancy_ratio": 0.05
+    }
+  ],
+  "2025-07-23": [
+    {
+      "spike_date": "2025-07-30",
+      "price": 20000,
+      "last_price": 18000,
+      "price_diff": 2000,
+      "price_ratio": 0.11,
+      "vacancy": 180,
+      "last_vac": 200,
+      "vacancy_diff": -20,
+      "vacancy_ratio": 0.1
     }
   ]
 }
