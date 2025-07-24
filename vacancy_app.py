@@ -54,7 +54,6 @@ st.markdown("""
     width: 100%;
     margin-bottom: 1.6rem;
 }
-/* スマホは小さめ */
 @media (max-width: 700px) {
     .nav-button-container, .graph-button-container {
         gap: 3.5px;
@@ -70,7 +69,6 @@ st.markdown("""
         font-size: 1.09em !important;
         margin-right: 8px !important;
     }
-    /* 以下カレンダー等スマホ調整 */
     .calendar-wrapper td, .calendar-wrapper th {
         min-width: 32px !important; max-width: 38px !important;
         font-size: 9px !important; padding: 1px 0 1px 0 !important;
@@ -85,6 +83,8 @@ st.markdown("""
         width: 100% !important; max-width: 98vw !important; height: auto !important;
         display: block; margin: 0 auto;
     }
+    .spike-flex-row { flex-direction: column !important; align-items: stretch !important; }
+    .spike-chip { width: 100% !important; margin-bottom: 4px !important;}
 }
 </style>
 """, unsafe_allow_html=True)
@@ -104,6 +104,7 @@ APP_ID = st.secrets["RAKUTEN_APP_ID"]
 CACHE_FILE = "vacancy_price_cache.json"
 HISTORICAL_FILE = "historical_data.json"
 EVENT_EXCEL = "event_data.xlsx"
+SPIKE_HISTORY_FILE = "demand_spike_history.json"  # 履歴ファイル
 
 def generate_holidays(months=13):
     today = dt.date.today()
@@ -133,6 +134,65 @@ def load_event_data_from_excel(filepath=EVENT_EXCEL):
 event_data = load_event_data_from_excel()
 cache_data = load_json(CACHE_FILE)
 
+# --- demand_spike_history.json 履歴読み込み＆表示バナー ---
+def load_spike_history(filepath=SPIKE_HISTORY_FILE):
+    if os.path.exists(filepath):
+        with open(filepath, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+def format_spike_chip(spike, up_date):
+    price_txt = f"<span style='color:#d35400;'>単価{'↑' if spike['price_diff'] > 0 else '↓'} {abs(spike['price_diff']):,.0f}円</span>（{spike['price_ratio']*100:.1f}%）"
+    vac_txt = f"<span style='color:#2980b9;'>客室{'減' if spike['vacancy_diff'] < 0 else '増'} {abs(spike['vacancy_diff'])}件</span>（{spike['vacancy_ratio']*100:.1f}%）"
+    # 該当日だけ強調（太字＋黒色・やや大きめ）
+    return (
+        f"<span class='spike-chip' style='background:#fff8e6;border-radius:6px;padding:6px 12px 5px 8px;"
+        f"border:1.1px solid #ffdca7;display:inline-block;font-size:14.2px;line-height:1.22;margin-right:10px;margin-bottom:3px;'>"
+        f"<span style='color:#e67e22;font-weight:700;margin-right:8px;'>【{dt.datetime.strptime(up_date, '%Y-%m-%d').strftime('%-m/%-d')} UP】</span>"
+        f"<span style='font-weight:900;color:#222;font-size:15px;margin-right:2px;'>該当日 <span style='letter-spacing:1px;'>{spike['spike_date']}</span></span>"
+        f"{price_txt}　{vac_txt}　"
+        f"<span style='color:#555;font-size:12.3px;'>平均￥{spike['price']:,}／残{spike['vacancy']}</span>"
+        f"</span>"
+    )
+
+# --- 表示ロジック（直近3日分・最大10件）---
+spike_history = load_spike_history()
+recent_n = 3   # 直近n日
+max_items = 10 # 最大表示数
+
+# 直近n日分のみ・新しい順に
+sorted_dates = sorted(spike_history.keys(), reverse=True)[:recent_n]
+chips = []
+for up_date in sorted_dates:
+    for spike in spike_history[up_date]:
+        chips.append(format_spike_chip(spike, up_date))
+        if len(chips) >= max_items:
+            break
+    if len(chips) >= max_items:
+        break
+
+if chips:
+    st.markdown(
+        f"""
+        <div style="background:#fff8e6;border:2px solid #ffdca7;border-radius:13px;padding:12px 24px 10px 24px;max-width:850px;margin:15px 0 20px 0;">
+          <div style="display:flex;align-items:center;margin-bottom:4px;">
+            <span style="font-size:20px;color:#e67e22;margin-right:9px;">🚀</span>
+            <span style="font-weight:800;color:#e67e22;font-size:16px;letter-spacing:0.5px;margin-right:9px;">
+              需要急騰検知日
+            </span>
+            <span style="font-size:12.5px;color:#ae8d3a;">（直近{recent_n}日分・最大{max_items}件）</span>
+          </div>
+          <div class="spike-flex-row" style="display:flex;flex-wrap:wrap;gap:7px 0;align-items:center;margin-top:1px;">
+            {''.join(chips)}
+          </div>
+        </div>
+        """, unsafe_allow_html=True
+    )
+
+
+
+
+# --- 以降はカレンダー・グラフ等の元のまま ---
 def get_demand_icon(vac, price):
     if vac <= 70 or price >= 50000: return "🔥5"
     if vac <= 100 or price >= 40000: return "🔥4"
@@ -163,7 +223,6 @@ def draw_calendar(month_date: dt.date) -> str:
                 continue
             bg = '#ddd' if current < today else ('#ffecec' if (current in HOLIDAYS or current.weekday() == 6) else ('#e0f7ff' if current.weekday() == 5 else '#fff'))
             iso = current.isoformat()
-            # 【ここだけaタグ方式でページ遷移（selectedセット）】
             current_params = st.query_params.to_dict()
             new_params = {**current_params, "selected": iso}
             href = "?" + "&".join([f"{k}={v}" for k, v in new_params.items()])
@@ -200,7 +259,6 @@ if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
 MAX_MONTH_OFFSET = 12
 
-# --- 月送りナビ（st.button化：ページ遷移せず即座に切替） ---
 nav_left, nav_center, nav_right = st.columns([3, 4, 3])
 with nav_center:
     st.markdown('<div class="nav-button-container">', unsafe_allow_html=True)
