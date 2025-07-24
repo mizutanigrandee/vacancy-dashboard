@@ -54,7 +54,6 @@ st.markdown("""
     width: 100%;
     margin-bottom: 1.6rem;
 }
-/* スマホは小さめ */
 @media (max-width: 700px) {
     .nav-button-container, .graph-button-container {
         gap: 3.5px;
@@ -103,6 +102,7 @@ APP_ID = st.secrets["RAKUTEN_APP_ID"]
 CACHE_FILE = "vacancy_price_cache.json"
 HISTORICAL_FILE = "historical_data.json"
 EVENT_EXCEL = "event_data.xlsx"
+SPIKE_HISTORY_FILE = "demand_spike_history.json"  # 履歴ファイル
 
 def generate_holidays(months=13):
     today = dt.date.today()
@@ -132,79 +132,40 @@ def load_event_data_from_excel(filepath=EVENT_EXCEL):
 event_data = load_event_data_from_excel()
 cache_data = load_json(CACHE_FILE)
 
-# --- 需要急変検知（5％以上変動、直近3日除外） ---
-def detect_demand_spikes(cache_data, n_recent=3, pct=0.05):
-    from collections import deque
-    if not cache_data: return []
-    today = dt.date.today()
+# --- demand_spike_history.json 履歴読み込み＆表示 ---
+def load_spike_history(filepath=SPIKE_HISTORY_FILE):
+    if os.path.exists(filepath):
+        with open(filepath, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
 
-    # 日付順で並べる（date型でソート）
-    sorted_dates = sorted(cache_data.keys())
-    # 今日以降だけを抽出
-    future_dates = [d for d in sorted_dates if pd.to_datetime(d).date() >= today]
-    # 未来日の中で、直近n_recent日だけ除外
-    if n_recent > 0:
-        exclude_set = set(future_dates[:n_recent])  # 未来の「今日からn_recent日分」だけ除外
-    else:
-        exclude_set = set()
+def format_spike(spike, up_date):
+    price_txt = f"<span style='color:#d35400;'>単価 {'↑' if spike['price_diff'] > 0 else '↓'} {abs(spike['price_diff']):,.0f}円</span>（{spike['price_ratio']*100:.1f}%）"
+    vac_txt = f"<span style='color:#2980b9;'>客室 {'減' if spike['vacancy_diff'] < 0 else '増'} {abs(spike['vacancy_diff'])}件</span>（{spike['vacancy_ratio']*100:.1f}%）"
+    return (
+        f"<div style='margin-top:7px;font-size:16px;'>"
+        f"<b><span style='color:#e53939;'>【{dt.datetime.strptime(up_date,'%Y-%m-%d').strftime('%-m/%-d')} UP</span></b> "
+        f"<span style='font-weight:bold;color:#333;'>該当日 {spike['spike_date']}</span>　{price_txt}　{vac_txt}</div>"
+        f"<div style='font-size:13px;color:#555;padding-left:4px;'>平均単価：<b>￥{spike['price']:,.0f}</b>／残室：<b>{spike['vacancy']}</b></div>"
+    )
 
-    results = []
-    for d in future_dates:
-        if d in exclude_set:
-            continue
-        rec = cache_data[d]
-        last_price = rec.get("last_avg_price", 0)
-        last_vac = rec.get("last_vacancy", 0)
-        price_diff = rec.get("avg_price_diff", 0)
-        vac_diff = rec.get("vacancy_diff", 0)
-        # 0割防止
-        price_ratio = abs(price_diff / last_price) if last_price else 0
-        vac_ratio = abs(vac_diff / last_vac) if last_vac else 0
-        # どちらか5％以上
-        if price_ratio >= pct or vac_ratio >= pct:
-            results.append({
-                "date": d,
-                "price": rec.get("avg_price", 0),
-                "price_diff": price_diff,
-                "price_ratio": price_ratio,
-                "vacancy": rec.get("vacancy", 0),
-                "vacancy_diff": vac_diff,
-                "vacancy_ratio": vac_ratio
-            })
-    # 新しい順で上限n件
-    return sorted(results, key=lambda x: x["date"], reverse=True)[:10]
+spike_history = load_spike_history()
+latest_n = 3   # 表示したい履歴の日数（必要なら変更可）
+sorted_dates = sorted(spike_history.keys(), reverse=True)[:latest_n]
+spikes_to_show = [(d, spike_history[d]) for d in sorted_dates]
 
-
-demand_spikes = detect_demand_spikes(cache_data, n_recent=3, pct=0.05)
-
-# --- 需要急変の兆候（検知日表示つき） ---
-if demand_spikes:
-    # 検知日をファイルmtimeで取得（最終更新日時）
-    try:
-        mtime = os.path.getmtime(CACHE_FILE)
-        detect_dt = dt.datetime.fromtimestamp(mtime, pytz.timezone('Asia/Tokyo'))
-        detect_str = detect_dt.strftime("%Y/%m/%d")
-    except Exception:
-        detect_str = dt.datetime.now().strftime("%Y/%m/%d")
+if spikes_to_show:
     st.markdown(
-        "<div style='background:#fff7e6;border:2px solid #f39c12;border-radius:13px;padding:14px 24px 10px 24px;max-width:630px;margin:14px 0 18px 0;'>"
-        f"<div style='font-size:20px;font-weight:bold;color:#e67e22;letter-spacing:1px;'>"
-        f"🌸 <span style='color:#d60000;'>【{detect_str} UP】</span> 需要急変の兆候</div>",
+        "<div style='background:#fff7e6;border:2px solid #f39c12;border-radius:13px;padding:14px 24px 10px 24px;max-width:670px;margin:15px 0 19px 0;'>"
+        "<div style='font-size:20px;font-weight:bold;color:#e67e22;letter-spacing:1px;'>🌸 <span style='color:#e53939;'>【需要急変の兆候（履歴）】</span></div>",
         unsafe_allow_html=True
     )
-    for rec in demand_spikes:
-        price_txt = f"<span style='color:#d35400;'>単価 {'↑' if rec['price_diff'] > 0 else '↓'} {abs(rec['price_diff']):,.0f}円</span>（{rec['price_ratio']*100:.1f}%）"
-        vac_txt = f"<span style='color:#2980b9;'>客室 {'減' if rec['vacancy_diff'] < 0 else '増'} {abs(rec['vacancy_diff'])}件</span>（{rec['vacancy_ratio']*100:.1f}%）"
-        st.markdown(
-            f"<div style='margin-top:8px;font-size:16px;font-weight:bold;'>"
-            f"該当日 <span style='color:#e67e22;'>{rec['date']}</span>　{price_txt}　{vac_txt}</div>"
-            f"<div style='font-size:13px;color:#555;padding-left:5px;'>平均単価：<b>￥{rec['price']:,.0f}</b>／残室：<b>{rec['vacancy']}</b></div>",
-            unsafe_allow_html=True
-        )
+    for up_date, arr in spikes_to_show:
+        for spike in arr:
+            st.markdown(format_spike(spike, up_date), unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-
-
+# 以降はカレンダー・グラフ等の元のまま
 def get_demand_icon(vac, price):
     if vac <= 70 or price >= 50000: return "🔥5"
     if vac <= 100 or price >= 40000: return "🔥4"
@@ -271,7 +232,6 @@ if "month_offset" not in st.session_state:
     st.session_state.month_offset = 0
 MAX_MONTH_OFFSET = 12
 
-# --- 月送りナビ（st.button化：ページ遷移せず即座に切替） ---
 nav_left, nav_center, nav_right = st.columns([3, 4, 3])
 with nav_center:
     st.markdown('<div class="nav-button-container">', unsafe_allow_html=True)
