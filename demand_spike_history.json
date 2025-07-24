@@ -10,6 +10,39 @@
       "last_vac": 210,
       "vacancy_diff": -10,
       "vacancy_ratio": 0.05
+    },
+    {
+      "spike_date": "2025-08-10",
+      "price": 18000,
+      "last_price": 16000,
+      "price_diff": 2000,
+      "price_ratio": 0.125,
+      "vacancy": 130,
+      "last_vac": 140,
+      "vacancy_diff": -10,
+      "vacancy_ratio": 0.07
+    },
+    {
+      "spike_date": "2025-09-01",
+      "price": 15000,
+      "last_price": 11000,
+      "price_diff": 4000,
+      "price_ratio": 0.36,
+      "vacancy": 110,
+      "last_vac": 120,
+      "vacancy_diff": -10,
+      "vacancy_ratio": 0.08
+    },
+    {
+      "spike_date": "2025-09-05",
+      "price": 23000,
+      "last_price": 21000,
+      "price_diff": 2000,
+      "price_ratio": 0.095,
+      "vacancy": 90,
+      "last_vac": 95,
+      "vacancy_diff": -5,
+      "vacancy_ratio": 0.053
     }
   ],
   "2025-07-23": [
@@ -22,7 +55,75 @@
       "vacancy": 180,
       "last_vac": 200,
       "vacancy_diff": -20,
-      "vacancy_ratio": 0.1
+      "vacancy_ratio": 0.10
+    },
+    {
+      "spike_date": "2025-09-20",
+      "price": 21000,
+      "last_price": 17000,
+      "price_diff": 4000,
+      "price_ratio": 0.24,
+      "vacancy": 140,
+      "last_vac": 150,
+      "vacancy_diff": -10,
+      "vacancy_ratio": 0.067
+    },
+    {
+      "spike_date": "2025-10-01",
+      "price": 32000,
+      "last_price": 27000,
+      "price_diff": 5000,
+      "price_ratio": 0.19,
+      "vacancy": 100,
+      "last_vac": 110,
+      "vacancy_diff": -10,
+      "vacancy_ratio": 0.09
+    },
+    {
+      "spike_date": "2025-08-05",
+      "price": 17000,
+      "last_price": 15000,
+      "price_diff": 2000,
+      "price_ratio": 0.13,
+      "vacancy": 210,
+      "last_vac": 225,
+      "vacancy_diff": -15,
+      "vacancy_ratio": 0.067
+    }
+  ],
+  "2025-07-22": [
+    {
+      "spike_date": "2025-08-25",
+      "price": 12000,
+      "last_price": 10500,
+      "price_diff": 1500,
+      "price_ratio": 0.143,
+      "vacancy": 180,
+      "last_vac": 190,
+      "vacancy_diff": -10,
+      "vacancy_ratio": 0.053
+    },
+    {
+      "spike_date": "2025-09-15",
+      "price": 24000,
+      "last_price": 20000,
+      "price_diff": 4000,
+      "price_ratio": 0.20,
+      "vacancy": 140,
+      "last_vac": 145,
+      "vacancy_diff": -5,
+      "vacancy_ratio": 0.034
+    },
+    {
+      "spike_date": "2025-10-10",
+      "price": 30000,
+      "last_price": 27000,
+      "price_diff": 3000,
+      "price_ratio": 0.111,
+      "vacancy": 130,
+      "last_vac": 140,
+      "vacancy_diff": -10,
+      "vacancy_ratio": 0.071
     }
   ]
 }
