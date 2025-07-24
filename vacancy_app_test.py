@@ -134,47 +134,48 @@ def load_event_data_from_excel(filepath=EVENT_EXCEL):
 event_data = load_event_data_from_excel()
 cache_data = load_json(CACHE_FILE)
 
-# --- demand_spike_history.json 履歴読み込み ---
+# --- demand_spike_history.json 履歴読み込み＆表示 ---
 def load_spike_history(filepath=SPIKE_HISTORY_FILE):
     if os.path.exists(filepath):
         with open(filepath, "r", encoding="utf-8") as f:
             return json.load(f)
     return {}
 
-def format_spike_chip(spike, up_date):
-    price_txt = f"<span style='color:#d35400;'>単価{'↑' if spike['price_diff'] > 0 else '↓'} {abs(spike['price_diff']):,.0f}円</span>({spike['price_ratio']*100:.1f}%)"
-    vac_txt = f"<span style='color:#2980b9;'>客室{'減' if spike['vacancy_diff'] < 0 else '増'} {abs(spike['vacancy_diff'])}件</span>({spike['vacancy_ratio']*100:.1f}%)"
-    # MM/DD表記（検知日）
-    up_md = dt.datetime.strptime(up_date, "%Y-%m-%d").strftime("%-m/%-d")
+def format_spike(spike, up_date):
+    price_txt = f"<span style='color:#d35400;'>単価 {'↑' if spike['price_diff'] > 0 else '↓'} {abs(spike['price_diff']):,.0f}円</span>（{spike['price_ratio']*100:.1f}%）"
+    vac_txt = f"<span style='color:#2980b9;'>客室 {'減' if spike['vacancy_diff'] < 0 else '増'} {abs(spike['vacancy_diff'])}件</span>（{spike['vacancy_ratio']*100:.1f}%）"
     return (
-        f"<span class='spike-chip' style='background:#fff8e6;border-radius:6px;padding:6px 12px 5px 8px;border:1.1px solid #ffdca7;display:inline-block;font-size:13.8px;line-height:1.25;margin-right:10px;margin-bottom:3px;'>"
-        f"<span style='color:#e67e22;font-weight:700;margin-right:6px;'>【{up_md} UP】</span>"
-        f"<b style='color:#333;'>該当日 {spike['spike_date']}</b>　{price_txt}　{vac_txt}　"
-        f"<span style='color:#555;font-size:11.8px;'>平均￥{spike['price']:,}／残{spike['vacancy']}</span>"
-        f"</span>"
+        f"<div style='margin-top:7px;font-size:16px;'>"
+        f"<b><span style='color:#e53939;'>【{dt.datetime.strptime(up_date,'%Y-%m-%d').strftime('%-m/%-d')} UP</span></b> "
+        f"<span style='font-weight:bold;color:#333;'>該当日 {spike['spike_date']}</span>　{price_txt}　{vac_txt}</div>"
+        f"<div style='font-size:13px;color:#555;padding-left:4px;'>平均単価：<b>￥{spike['price']:,.0f}</b>／残室：<b>{spike['vacancy']}</b></div>"
     )
 
-# --- 需要急変履歴表示（バナー＋横並び履歴チップ） ---
 spike_history = load_spike_history()
-latest_n = 3   # 過去何回分の履歴を出すか（調整OK）
-sorted_dates = sorted(spike_history.keys(), reverse=True)[:latest_n]
-chips = []
-for up_date in sorted_dates:
-    for spike in spike_history[up_date]:
-        chips.append(format_spike_chip(spike, up_date))
+today = dt.date.today()
+n_days = 3   # 直近n日分
+max_items = 10   # 最大表示件数
 
-if chips:
+# 直近3日分（本日を含む）のキーだけ
+recent_dates = [(today - dt.timedelta(days=i)).isoformat() for i in range(n_days)]
+spikes_to_show = []
+for d in recent_dates:
+    arr = spike_history.get(d, [])
+    for spike in arr:
+        spikes_to_show.append( (d, spike) )
+# 新しい順に並び替え（up_date降順）
+spikes_to_show = sorted(spikes_to_show, key=lambda x: x[0], reverse=True)[:max_items]
+
+if spikes_to_show:
     st.markdown(
-        """
-        <div style="background:#fff7e6;border:1.5px solid #f39c12;border-radius:8px;padding:8px 15px 8px 14px;max-width:800px;margin:10px 0 7px 0;">
-          <div style="display:flex;align-items:center;">
-            <span style="font-size:19px;color:#e67e22;margin-right:7px;">🌸</span>
-            <span style="font-weight:bold;color:#e67e22;font-size:17px;margin-right:7px;">需要急変の兆候</span>
-            <span style="font-size:12.5px;color:#ae8d3a;">（直近{n}日分・前回検知まで）</span>
-          </div>
-          <div class="spike-flex-row" style="display:flex;flex-wrap:wrap;gap:6px 0;align-items:center;margin-top:3px;">""" + "".join(chips) + "</div></div>",
+        "<div style='background:#fff7e6;border:2px solid #f39c12;border-radius:13px;padding:14px 24px 10px 24px;max-width:670px;margin:15px 0 19px 0;'>"
+        "<div style='font-size:20px;font-weight:bold;color:#e67e22;letter-spacing:1px;'>🚀 <span style='color:#e53939;'>【需要急騰検知日（直近3日分・最大10件）】</span></div>",
         unsafe_allow_html=True
     )
+    for up_date, spike in spikes_to_show:
+        st.markdown(format_spike(spike, up_date), unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
 
 # --- 以降はカレンダー・グラフ等の元のまま ---
 def get_demand_icon(vac, price):
