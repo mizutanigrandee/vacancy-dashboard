@@ -206,6 +206,12 @@ def save_demand_spike_history(demand_spikes, history_file=SPIKE_HISTORY_FILE):
     else:
         history = {}
     history[today] = demand_spikes
+
+    # --- ここから追加（90日より前の履歴を削除） ---
+    limit = (dt.date.today() - dt.timedelta(days=90)).isoformat()
+    history = {d: v for d, v in history.items() if d >= limit}
+    # --- ここまで追加 ---
+
     with open(history_file, "w", encoding="utf-8") as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
     print(f"📁 {history_file} updated", file=sys.stderr)
