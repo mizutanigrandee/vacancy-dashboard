@@ -159,7 +159,7 @@ def detect_demand_spikes(cache_data, n_recent=3, pct=0.05):
                 "vacancy_ratio": vac_ratio
             })
     # 新しい順（直近が上）で最大3件
-    return sorted(results, key=lambda x: x["date"], reverse=True)[:3]
+    return sorted(results, key=lambda x: x["date"], reverse=True)[:10]
 
 demand_spikes = detect_demand_spikes(cache_data, n_recent=3, pct=0.05)
 
