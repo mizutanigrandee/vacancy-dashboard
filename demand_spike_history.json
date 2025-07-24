@@ -1,1 +1,15 @@
-{}
+{
+  "2025-07-25": [
+    {
+      "spike_date": "2025-08-02",
+      "price": 25000,
+      "last_price": 21000,
+      "price_diff": 4000,
+      "price_ratio": 0.19,
+      "vacancy": 200,
+      "last_vac": 210,
+      "vacancy_diff": -10,
+      "vacancy_ratio": 0.05
+    }
+  ]
+}
