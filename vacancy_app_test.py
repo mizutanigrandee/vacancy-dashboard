@@ -134,8 +134,7 @@ def load_event_data_from_excel(filepath=EVENT_EXCEL):
 event_data = load_event_data_from_excel()
 cache_data = load_json(CACHE_FILE)
 
-# --- demand_spike_history.json 履歴読み込み＆表示 ---
-# --- demand_spike_history.json 履歴読み込み ---
+# --- demand_spike_history.json 履歴読み込み＆表示バナー ---
 def load_spike_history(filepath=SPIKE_HISTORY_FILE):
     if os.path.exists(filepath):
         with open(filepath, "r", encoding="utf-8") as f:
@@ -145,44 +144,51 @@ def load_spike_history(filepath=SPIKE_HISTORY_FILE):
 def format_spike_chip(spike, up_date):
     price_txt = f"<span style='color:#d35400;'>単価{'↑' if spike['price_diff'] > 0 else '↓'} {abs(spike['price_diff']):,.0f}円</span>（{spike['price_ratio']*100:.1f}%）"
     vac_txt = f"<span style='color:#2980b9;'>客室{'減' if spike['vacancy_diff'] < 0 else '増'} {abs(spike['vacancy_diff'])}件</span>（{spike['vacancy_ratio']*100:.1f}%）"
-    # MM/DD表記（検知日）
-    up_md = dt.datetime.strptime(up_date, "%Y-%m-%d").strftime("%-m/%-d")
-    # 右側必ず閉じカッコ
+    # 該当日だけ強調（太字＋黒色・やや大きめ）
     return (
-        f"<span class='spike-chip' style='background:transparent;border-radius:6px;padding:1px 7px 1px 0;display:inline-block;font-size:14.0px;line-height:1.4;margin-right:20px;margin-bottom:3px;'>"
-        f"【{up_md} UP 該当日 {spike['spike_date']}　{price_txt}　{vac_txt}　"
-        f"<span style='color:#555;font-size:11.5px;'>平均￥{spike['price']:,}／残{spike['vacancy']}</span>】"
+        f"<span class='spike-chip' style='background:#fff8e6;border-radius:6px;padding:6px 12px 5px 8px;"
+        f"border:1.1px solid #ffdca7;display:inline-block;font-size:14.2px;line-height:1.22;margin-right:10px;margin-bottom:3px;'>"
+        f"<span style='color:#e67e22;font-weight:700;margin-right:8px;'>【{dt.datetime.strptime(up_date, '%Y-%m-%d').strftime('%-m/%-d')} UP】</span>"
+        f"<span style='font-weight:900;color:#222;font-size:15px;margin-right:2px;'>該当日 <span style='letter-spacing:1px;'>{spike['spike_date']}</span></span>"
+        f"{price_txt}　{vac_txt}　"
+        f"<span style='color:#555;font-size:12.3px;'>平均￥{spike['price']:,}／残{spike['vacancy']}</span>"
         f"</span>"
     )
 
-# --- 需要急騰履歴表示（横並び/色枠囲み/旧UI風） ---
+# --- 表示ロジック（直近3日分・最大10件）---
 spike_history = load_spike_history()
-latest_n = 3   # 直近n日分
-max_spikes = 10
+recent_n = 3   # 直近n日
+max_items = 10 # 最大表示数
 
-sorted_dates = sorted(spike_history.keys(), reverse=True)[:latest_n]
+# 直近n日分のみ・新しい順に
+sorted_dates = sorted(spike_history.keys(), reverse=True)[:recent_n]
 chips = []
 for up_date in sorted_dates:
     for spike in spike_history[up_date]:
         chips.append(format_spike_chip(spike, up_date))
-chips = chips[:max_spikes]
+        if len(chips) >= max_items:
+            break
+    if len(chips) >= max_items:
+        break
 
 if chips:
     st.markdown(
         f"""
-        <div style="background:#fff8e6;border:2px solid #ffbf69;border-radius:10px;padding:15px 26px 13px 23px;max-width:900px;margin:18px 0 20px 0;">
-          <div style="font-size:19px;color:#ff8000;font-weight:bold;letter-spacing:1.1px;margin-bottom:3px;">
-            <span style="font-size:22px;vertical-align:middle;">🚀</span>
-            <span style="margin-left:2px;">需要急騰検知日</span>
-            <span style="font-size:13.5px;color:#c49029;font-weight:400;margin-left:13px;">（直近{latest_n}日分・最大{max_spikes}件）</span>
+        <div style="background:#fff8e6;border:2px solid #ffdca7;border-radius:13px;padding:12px 24px 10px 24px;max-width:850px;margin:15px 0 20px 0;">
+          <div style="display:flex;align-items:center;margin-bottom:4px;">
+            <span style="font-size:20px;color:#e67e22;margin-right:9px;">🚀</span>
+            <span style="font-weight:800;color:#e67e22;font-size:16px;letter-spacing:0.5px;margin-right:9px;">
+              需要急騰検知日
+            </span>
+            <span style="font-size:12.5px;color:#ae8d3a;">（直近{recent_n}日分・最大{max_items}件）</span>
           </div>
-          <div style="display:flex;flex-wrap:wrap;gap:0px 0px;align-items:center;margin-top:4px;">
-            {"".join(chips)}
+          <div class="spike-flex-row" style="display:flex;flex-wrap:wrap;gap:7px 0;align-items:center;margin-top:1px;">
+            {''.join(chips)}
           </div>
         </div>
-        """,
-        unsafe_allow_html=True
+        """, unsafe_allow_html=True
     )
+
 
 
 
