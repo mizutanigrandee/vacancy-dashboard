@@ -187,10 +187,8 @@ def update_history(cache: dict):
 # 需要急変検知ロジック & 履歴保存
 # --------------------------------------------------
 def detect_demand_spikes(cache_data, n_recent=3, pct=0.05):
-    # 日付昇順
     sorted_dates = sorted(cache_data.keys())
     today = dt.date.today()
-    # 本日を含む直近n_recent日を除外
     exclude_dates = { (today - dt.timedelta(days=i)).isoformat() for i in range(n_recent) }
     results = []
     for d in sorted_dates:
@@ -217,16 +215,22 @@ def detect_demand_spikes(cache_data, n_recent=3, pct=0.05):
             })
     return results
 
-def save_demand_spike_history(demand_spikes, history_file=SPIKE_HISTORY_FILE):
+def save_demand_spike_history(demand_spikes, history_file=SPIKE_HISTORY_FILE, n_days=3):
     today = dt.date.today().isoformat()
+    # 既存履歴を読み込む
     if os.path.exists(history_file):
         with open(history_file, "r", encoding="utf-8") as f:
             history = json.load(f)
     else:
         history = {}
-    history[today] = demand_spikes
+    # 本日検知分を追加（※空なら上書きせず、過去履歴のみ残す）
+    if demand_spikes:
+        history[today] = demand_spikes
+    # 最新n日分だけに制限（降順ソート→先頭n件のみ抽出）
+    sorted_days = sorted(history.keys(), reverse=True)[:n_days]
+    new_history = {k: history[k] for k in sorted_days}
     with open(history_file, "w", encoding="utf-8") as f:
-        json.dump(history, f, ensure_ascii=False, indent=2)
+        json.dump(new_history, f, ensure_ascii=False, indent=2)
     print("📁 demand_spike_history.json updated", file=sys.stderr)
 
 # --------------------------------------------------
