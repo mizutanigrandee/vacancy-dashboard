@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -9,36 +8,35 @@
 </head>
 <body>
   <header class="app-header">
-    <img src="バナー画像3.png" alt="バナー画像3" class="app-banner">
-    <span class="app-title">空室＆平均価格カレンダー</span>
+    <img src="バナー画像3.png" class="app-banner" alt="バナー">
+    <div class="app-title">めちゃいいツール　空室＆平均価格カレンダー</div>
+    <div class="app-title-right">空室＆平均価格カレンダー</div>
   </header>
-  <section class="calendar-controls">
+  <div class="calendar-controls">
     <button id="prevMonthBtn">前月</button>
     <button id="currentMonthBtn">当月</button>
     <button id="nextMonthBtn">次月</button>
-  </section>
+  </div>
   <main class="calendar-main">
-    <div id="calendar-container" class="calendar-container">
-      <!-- JSでカレンダー2か月分を描画 -->
-    </div>
-    <div id="graph-container" class="graph-container" style="display:none;">
-      <!-- JSでグラフ描画 -->
-    </div>
+    <div class="calendar-container" id="calendar-container"></div>
   </main>
   <footer class="app-footer">
-    <div id="update-info">
-      最終更新日時：<span id="last-update">--- </span>
-    </div>
+    <div id="last-update"></div>
     <div class="note">
-      <h4>（注意）</h4>
-      <ul>
-        <li>在庫数、平均価格は「なんば・心斎橋・天王寺・阿倍野・長居」エリアから抽出しています。</li>
-        <li>価格は各日9:00時点の空室ホテルの最低価格の平均です。</li>
-        <li>祝日・イベントは色分け、需要シンボル（🔥）は需要の高い日を示します。</li>
-        <li>イベントはライブ、コンサート、国際イベント等の開催日に表示されます。</li>
-      </ul>
+      <p>日付を選択すると推移グラフが表示されます</p>
+      <p>最終公開日時：<span id="update-info"></span></p>
+      <div>
+        <h4>（注意）</h4>
+        <ul>
+          <li>在庫数、平均価格は「なんば・心斎橋・天王寺・阿倍野・長居」エリアから抽出しています。</li>
+          <li>価格は各日9:00時点の空室ホテルの最低価格の平均です。</li>
+          <li>祝日・イベントは色分け、特需シンボル（🔥）は需要の高い日を示します。</li>
+          <li>イベントはライブ、コンサート、国際イベント等の開催日に表示されます。</li>
+        </ul>
+      </div>
     </div>
   </footer>
+  <div id="graph-container" style="display:none;"></div>
   <script src="app.js"></script>
 </body>
 </html>
