@@ -5,12 +5,9 @@ body {
   margin: 0;
   padding: 0;
 }
-.calendar-main {
-  width: 100%;
-}
 .main-flexbox {
   display: flex;
-  gap: 36px;
+  gap: 40px;
   align-items: flex-start;
   justify-content: center;
   max-width: 1500px;
@@ -18,13 +15,13 @@ body {
   width: 100%;
 }
 .graph-side {
-  min-width: 450px;
-  max-width: 450px;
+  min-width: 430px;
+  max-width: 430px;
   background: #fff;
-  border-radius: 14px;
+  border-radius: 16px;
   box-shadow: 0 2px 16px rgba(65,95,140,0.11);
   margin-bottom: 12px;
-  padding: 16px 16px 16px 16px;
+  padding: 16px 18px 16px 18px;
 }
 .calendar-container {
   display: flex;
@@ -34,85 +31,83 @@ body {
 }
 .month-calendar {
   background: #fff;
-  border-radius: 12px;
+  border-radius: 14px;
   box-shadow: 0 2px 14px rgba(65,95,140,0.09);
-  padding: 18px 18px 12px 18px;
-  min-width: 410px;
-  max-width: 420px;
-  margin-bottom: 16px;
+  padding: 18px 12px 15px 12px;
+  min-width: 480px;
+  max-width: 480px;
+  margin-bottom: 18px;
 }
 .month-header {
-  font-size: 1.22rem;
+  font-size: 1.25rem;
   font-weight: bold;
   color: #2e6fa2;
   text-align: center;
-  margin-bottom: 8px;
+  margin-bottom: 11px;
 }
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
+  gap: 7px;
 }
 .calendar-dow {
   background: #e9f0f6 !important;
   color: #2e6fa2;
-  font-size: 15px !important;
-  padding: 8px 0 8px 0 !important;
-  min-height: 24px !important;
-  border-radius: 4px !important;
+  font-size: 15.5px !important;
+  padding: 7.5px 0 7.5px 0 !important;
+  min-height: 33px !important;
+  border-radius: 6px !important;
   font-weight: bold;
   text-align: center;
 }
 .calendar-cell {
   background: #f6f9ff;
-  border: 1px solid #e1e7ed;
-  border-radius: 7px;
-  min-height: 90px;
-  padding: 6px 9px 5px 9px;
-  font-size: 1.01rem;
+  border: 1.5px solid #e1e7ed;
+  border-radius: 8px;
+  min-height: 72px;
+  height: 72px;
+  max-height: 78px;
+  padding: 7px 6px 5px 10px;
+  font-size: 1.02rem;
   color: #222;
   position: relative;
   text-align: left;
   transition: box-shadow 0.2s;
   cursor: pointer;
   overflow: hidden;
+  box-sizing: border-box;
+  vertical-align: top;
 }
 .calendar-cell.selected {
   background: #d2edfa !important;
   box-shadow: 0 0 0 2px #5ac8fa;
 }
-.sunday-bg {
-  background: #f7e4e4 !important;
-}
-.saturday-bg {
-  background: #e3edff !important;
-}
-.holiday-bg {
-  background: #fff3e5 !important;
-}
+.sunday-bg { background: #f7e4e4 !important; }
+.saturday-bg { background: #e3edff !important; }
+.holiday-bg { background: #fff3e5 !important; }
 .cell-date {
-  font-size: 1.17rem;
+  font-size: 1.14rem;
   font-weight: 700;
   position: absolute;
-  top: 8px; left: 12px;
+  top: 7px; left: 9px;
   background: transparent;
   z-index: 1;
 }
 .cell-main {
   font-weight: bold;
-  font-size: 1.08rem;
-  margin-bottom: 3px;
-  margin-top: 27px;
-  line-height: 1.08;
+  font-size: 1.09rem;
+  margin-bottom: 2px;
+  margin-top: 24px;
+  line-height: 1.11;
 }
-.cell-vacancy { font-size: 1.09rem; }
+.cell-vacancy { font-size: 1.08rem; }
 .cell-vacancy-diff.plus { color: #1976d2; font-size: 12px; margin-left: 2px; }
 .cell-vacancy-diff.minus { color: #d32f2f; font-size: 12px; margin-left: 2px; }
 .cell-vacancy-diff.flat { color: #666; font-size: 12px; margin-left: 2px; }
-.cell-price { font-size: 0.99rem; color: #2e6fa2; margin-bottom: 1px; }
+.cell-price { font-size: 0.98rem; color: #2e6fa2; margin-bottom: 1px; }
 .cell-price-diff.up { color: #d32f2f; }
 .cell-price-diff.down { color: #1565c0; }
-.cell-demand-badge { display:inline-block; font-size:1.13rem; margin-left:2px; font-weight:bold;}
+.cell-demand-badge { display:inline-block; font-size:1.12rem; margin-left:2px; font-weight:bold;}
 .cell-demand-badge.lv1 { color: #ffa600; }
 .cell-demand-badge.lv2 { color: #ff6600; }
 .cell-demand-badge.lv3 { color: #e94e77; }
@@ -120,16 +115,15 @@ body {
 .cell-demand-badge.lv5 { color: #421c16; }
 .cell-event-list { margin-top: 2px; }
 .cell-event { font-size: 0.96rem; color: #357ebd; display: flex; align-items: center; gap: 3px; margin-top: 2px; }
-
 @media screen and (max-width: 1100px) {
-  .main-flexbox, .calendar-container { flex-direction: column; min-width: 100%; gap: 18px; }
+  .main-flexbox, .calendar-container { flex-direction: column; min-width: 100%; gap: 20px; }
   .graph-side, .month-calendar { min-width: 98vw; max-width: 99vw; }
-  .calendar-grid { gap: 5px; }
+  .calendar-grid { gap: 6px; }
 }
 @media screen and (max-width: 700px) {
-  .main-flexbox, .calendar-container { flex-direction: column; min-width: 100%; gap: 12px; }
+  .main-flexbox, .calendar-container { flex-direction: column; min-width: 100%; gap: 11px; }
   .graph-side, .month-calendar { min-width: 99vw; max-width: 99vw; }
-  .calendar-grid { gap: 3.5px; }
+  .calendar-grid { gap: 4px; }
 }
 .graph-btns {
   display: flex; gap: 9px; margin-bottom: 10px;
