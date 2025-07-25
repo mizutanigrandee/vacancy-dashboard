@@ -5,13 +5,13 @@ const EVENT_PATH = "./event_data.json";
 const HISTORICAL_PATH = "./historical_data.json";
 
 // ========== グローバル状態 ==========
-let calendarData = {};       // 当日分データ
-let prevCalendarData = {};   // 前日分データ
-let eventData = {};          // イベントデータ
-let historicalData = {};     // 推移グラフ用データ
+let calendarData = {};       // { "YYYY-MM-DD": { stock, price, event, demand, ... } }
+let prevCalendarData = {};   // { "YYYY-MM-DD": { stock, price, ... } }
+let eventData = {};          // { "YYYY-MM-DD": { event_name, ... } }
+let historicalData = {};     // { "YYYY-MM-DD": { stock_history:[], price_history:[] } }
 
 let currentYearMonth = [];   // [year, month] の配列。2か月分
-let selectedDate = null;     // カレンダーで選択された日付
+let selectedDate = null;
 
 // ========== 初期化 ==========
 window.onload = async function() {
@@ -100,22 +100,68 @@ function renderMonthCalendar(year, month) {
     const cell = document.createElement("div");
     cell.className = "calendar-cell";
     cell.dataset.date = cellDate;
-    // 土日・祝日判定
+
+    // 土日判定
     const dayOfWeek = (dayCount)%7;
     if (dayOfWeek === 0) cell.classList.add("sunday");
     if (dayOfWeek === 6) cell.classList.add("saturday");
 
-    // データ反映（仮。後ほど詳細化）
-    cell.innerHTML = `<div class="cell-main">${date}日</div>
-                      <div class="cell-price"></div>
-                      <div class="cell-diff"></div>
-                      <div class="cell-event"></div>
-                      <div class="cell-demand"></div>`;
+    // データ取得
+    const data = calendarData[cellDate] || {};
+    const prevData = prevCalendarData[cellDate] || {};
+    const event = eventData[cellDate] ? eventData[cellDate].event_name : "";
+    const demand = data.demand ? "🔥" : "";
+
+    // 祝日判定（仮：eventデータに"祝日"を含む場合）
+    if (event && event.includes("祝日")) {
+      cell.classList.add("holiday");
+    }
+
+    // イベント判定
+    if (event && !event.includes("祝日")) {
+      cell.classList.add("event");
+    }
+
+    // 需要シンボル
+    if (data.demand) {
+      cell.classList.add("strong-demand");
+    }
+
+    // 本日の在庫数
+    let stock = data.stock || "-";
+    // 平均価格
+    let price = data.price ? `¥${data.price.toLocaleString()}` : "-";
+    // 前日比
+    let diffHtml = "";
+    if (data.price && prevData.price) {
+      const diff = data.price - prevData.price;
+      if (diff > 0) {
+        diffHtml = `<span class="cell-diff up">↑ ${diff.toLocaleString()}</span>`;
+      } else if (diff < 0) {
+        diffHtml = `<span class="cell-diff down">↓ ${Math.abs(diff).toLocaleString()}</span>`;
+      } else {
+        diffHtml = `<span class="cell-diff">→ 0</span>`;
+      }
+    }
+
+    // イベント名
+    let eventHtml = event ? `<span class="cell-event"><span>🎫</span> ${event}</span>` : "";
+    // 需要シンボル
+    let demandHtml = demand ? `<span class="cell-demand">${demand}</span>` : "";
+
+    cell.innerHTML = `
+      <div class="cell-main">${stock}件 (${date}日)</div>
+      <div class="cell-price">${price}</div>
+      <div>${diffHtml}</div>
+      ${eventHtml}
+      ${demandHtml}
+    `;
 
     // クリックイベント
     cell.onclick = function() {
       selectDate(cellDate);
     };
+
     grid.appendChild(cell);
     dayCount++;
   }
@@ -126,7 +172,6 @@ function renderMonthCalendar(year, month) {
 // ========== 日付選択 ==========
 function selectDate(dateStr) {
   selectedDate = dateStr;
-  // 選択セルのハイライト
   document.querySelectorAll('.calendar-cell').forEach(cell => {
     if (cell.dataset.date === dateStr) {
       cell.classList.add('selected');
@@ -134,7 +179,6 @@ function selectDate(dateStr) {
       cell.classList.remove('selected');
     }
   });
-  // グラフ表示
   renderGraph(dateStr);
 }
 
@@ -145,8 +189,10 @@ function renderGraph(dateStr) {
   graphContainer.innerHTML = `
     <button onclick="closeGraph()" style="float:right;">グラフを閉じる</button>
     <h3>${dateStr} の在庫・価格推移</h3>
-    <div>（ここにJSグラフを描画します）</div>
+    <canvas id="stockChart" width="420" height="180"></canvas>
+    <canvas id="priceChart" width="420" height="180"></canvas>
   `;
+  // グラフ描画（次回Chart.jsで実装）
 }
 
 // ========== グラフを閉じる ==========
@@ -173,7 +219,6 @@ function setupMonthButtons() {
 }
 
 function shiftMonth(diff) {
-  // 先頭月をずらす
   let [y,m] = currentYearMonth[0];
   m += diff;
   if (m < 1) { y--; m = 12; }
@@ -187,13 +232,12 @@ function shiftMonth(diff) {
 
 // ========== 最終更新日時 ==========
 function updateLastUpdate() {
-  // 仮：vacancy_price_cache.jsonの更新日を取得
+  // 仮：現在時刻を表示。データの更新日時が分かれば反映可
   document.getElementById("last-update").textContent = formatDate(new Date());
 }
 
 function formatDate(dt) {
-  // yyyy-mm-dd hh:mm:ss
   return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")} ${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}:${String(dt.getSeconds()).padStart(2,"0")}`;
 }
 
-// ========== ここから先、カレンダーセルへの詳細データ反映・グラフ描画を拡充します ==========
+// ========== ここから先、グラフ描画などを拡充します ==========
