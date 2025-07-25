@@ -1,15 +1,16 @@
-
 // ========== 設定 ==========
 const DATA_PATH = "./vacancy_price_cache.json";
 const PREV_DATA_PATH = "./vacancy_price_cache_previous.json";
 const EVENT_PATH = "./event_data.json";
 const HISTORICAL_PATH = "./historical_data.json";
+const SPIKE_PATH = "./demand_spike_history.json";
 
 // ========== グローバル状態 ==========
 let calendarData = {};
 let prevCalendarData = {};
 let eventData = {};
 let historicalData = {};
+let spikeData = [];
 
 let currentYearMonth = [];
 let selectedDate = null;
@@ -17,6 +18,7 @@ let selectedDate = null;
 // ========== 初期化 ==========
 window.onload = async function() {
   await loadAllData();
+  renderSpikeBanner();
   initMonth();
   renderCalendars();
   updateLastUpdate();
@@ -29,16 +31,35 @@ async function loadAllData() {
   prevCalendarData = await fetchJson(PREV_DATA_PATH);
   eventData = await fetchJson(EVENT_PATH);
   historicalData = await fetchJson(HISTORICAL_PATH);
+  spikeData = await fetchJson(SPIKE_PATH);
 }
 
 async function fetchJson(path) {
   try {
-    const res = await fetch(path);
+    const res = await fetch(path + "?v=" + Date.now()); // キャッシュ対策
     if (!res.ok) return {};
     return await res.json();
   } catch(e) {
     return {};
   }
+}
+
+// ========== 需要急騰バナー ==========
+function renderSpikeBanner() {
+  const banner = document.getElementById("spike-banner");
+  banner.innerHTML = "";
+  if (!Array.isArray(spikeData) || spikeData.length === 0) {
+    banner.style.display = "none";
+    return;
+  }
+  banner.style.display = "flex";
+  const maxSpikes = 10;
+  spikeData.slice(0, maxSpikes).forEach(s => {
+    const badge = document.createElement("span");
+    badge.className = "spike-badge";
+    badge.innerHTML = `🚀 <span class="spike-date">${s.date}</span> ${s.comment ? s.comment : ""}`;
+    banner.appendChild(badge);
+  });
 }
 
 // ========== 月初期設定 ==========
@@ -100,7 +121,7 @@ function renderMonthCalendar(year, month) {
     cell.className = "calendar-cell";
     cell.dataset.date = cellDate;
 
-    // 土日判定
+    // 曜日色分け
     const dayOfWeek = (dayCount)%7;
     if (dayOfWeek === 0) cell.classList.add("sunday");
     if (dayOfWeek === 6) cell.classList.add("saturday");
@@ -108,40 +129,72 @@ function renderMonthCalendar(year, month) {
     // データ取得
     const data = calendarData[cellDate] || {};
     const prevData = prevCalendarData[cellDate] || {};
-    const event = eventData[cellDate] ? eventData[cellDate].event_name : "";
-    const demand = data.demand ? "🔥" : "";
+    const eventArr = eventData[cellDate]?.events || [];
+    let demandLv = data.demand || 0;
 
-    if (event && event.includes("祝日")) {
-      cell.classList.add("holiday");
-    }
-    if (event && !event.includes("祝日")) {
-      cell.classList.add("event");
-    }
-    if (data.demand) {
-      cell.classList.add("strong-demand");
-    }
+    // 祝日・イベント色分け
+    let isHoliday = eventArr.some(e => e.type === "holiday" || (e.name && e.name.includes("祝日")));
+    let isEvent = eventArr.some(e => e.type === "event" || e.type === "kyocera" || e.type === "yanmar" || e.type === "other");
+    if (isHoliday) cell.classList.add("holiday");
+    else if (isEvent) cell.classList.add("event");
+    if (demandLv >= 3) cell.classList.add("strong-demand");
 
-    let stock = data.vacancy || "-";
-    let price = data.avg_price ? `¥${Math.round(data.avg_price).toLocaleString()}` : "-";
+    // 前日比
     let diffHtml = "";
-    if (data.price && prevData.price) {
-      const diff = data.price - prevData.price;
+    if (typeof data.vacancy === "number" && typeof prevData.vacancy === "number") {
+      let diff = data.vacancy - prevData.vacancy;
       if (diff > 0) {
-        diffHtml = `<span class="cell-diff up">↑ ${diff.toLocaleString()}</span>`;
+        diffHtml = `<span class="cell-diff up">＋${diff}</span>`;
       } else if (diff < 0) {
-        diffHtml = `<span class="cell-diff down">↓ ${Math.abs(diff).toLocaleString()}</span>`;
+        diffHtml = `<span class="cell-diff down">－${Math.abs(diff)}</span>`;
       } else {
-        diffHtml = `<span class="cell-diff">→ 0</span>`;
+        diffHtml = `<span class="cell-diff flat">±0</span>`;
       }
     }
 
-    let eventHtml = event ? `<span class="cell-event"><span>🎫</span> ${event}</span>` : "";
-    let demandHtml = demand ? `<span class="cell-demand">${demand}</span>` : "";
+    // 価格
+    let priceStr = "-";
+    if (typeof data.avg_price === "number") {
+      priceStr = `¥${Math.round(data.avg_price).toLocaleString()}`;
+      // 前日比アイコン
+      if (typeof prevData.avg_price === "number" && prevData.avg_price !== 0) {
+        let diff = data.avg_price - prevData.avg_price;
+        if (diff > 0) {
+          priceStr += ` <span class="cell-diff up">↑</span>`;
+        } else if (diff < 0) {
+          priceStr += ` <span class="cell-diff down">↓</span>`;
+        } else {
+          priceStr += ` <span class="cell-diff flat">→</span>`;
+        }
+      }
+    }
 
+    // イベント注記（複数行対応・種別アイコン）
+    let eventHtml = "";
+    if (eventArr.length > 0) {
+      eventHtml = eventArr.map(ev => {
+        let icon = "";
+        if (ev.type === "kyocera") icon = "🔴";
+        else if (ev.type === "yanmar") icon = "🔵";
+        else if (ev.type === "other") icon = "★";
+        else if (ev.type === "holiday") icon = "🎌";
+        else icon = "🎫";
+        return `<span class="cell-event">${icon} ${ev.name}</span>`;
+      }).join("");
+    }
+
+    // 需要シンボル（🔥1～5段階）
+    let demandHtml = "";
+    if (demandLv >= 1) {
+      let lv = Math.min(demandLv,5);
+      demandHtml = `<span class="cell-demand lv${lv}">🔥${lv}</span>`;
+    }
+
+    // 本体
+    let stock = (typeof data.vacancy === "number") ? `${data.vacancy}件` : "-";
     cell.innerHTML = `
-      <div class="cell-main">${stock}件 (${date}日)</div>
-      <div class="cell-price">${price}</div>
-      <div>${diffHtml}</div>
+      <div class="cell-main">${stock} (${date}日) ${diffHtml}</div>
+      <div class="cell-price">${priceStr}</div>
       ${eventHtml}
       ${demandHtml}
     `;
@@ -170,7 +223,7 @@ function selectDate(dateStr) {
   renderGraph(dateStr);
 }
 
-// ========== グラフ描画（Chart.js版） ==========
+// ========== グラフ描画 ==========
 function renderGraph(dateStr) {
   const graphContainer = document.getElementById("graph-container");
   graphContainer.style.display = "block";
@@ -181,8 +234,22 @@ function renderGraph(dateStr) {
   const priceHistory = history?.price_history || [];
   const labels = history?.date_list || [];
 
+  // 現在インデックス
+  let idx = Object.keys(historicalData).indexOf(dateStr);
+
+  // グラフ操作ボタン
+  let keys = Object.keys(historicalData);
+  function goTo(offset) {
+    let i = idx + offset;
+    if (i >= 0 && i < keys.length) selectDate(keys[i]);
+  }
+
   graphContainer.innerHTML = `
-    <button onclick="closeGraph()" style="float:right;">グラフを閉じる</button>
+    <div class="graph-btns">
+      <button onclick="closeGraph()">✗ グラフを閉じる</button>
+      <button onclick="goGraphDay(-1)">＜前日</button>
+      <button onclick="goGraphDay(1)">翌日＞</button>
+    </div>
     <h3>${dateStr} の在庫・価格推移</h3>
     <div style="margin-bottom:18px;">
       <canvas id="stockChart" width="420" height="180"></canvas>
@@ -192,13 +259,19 @@ function renderGraph(dateStr) {
     </div>
   `;
 
-  // 既存グラフの破棄（同じcanvasIDで再描画する場合のChart.jsメモリリーク防止）
-  if(window.stockChartInstance) {
-    window.stockChartInstance.destroy();
-  }
-  if(window.priceChartInstance) {
-    window.priceChartInstance.destroy();
-  }
+  // グラフ移動関数をグローバル化
+  window.goGraphDay = function(diff) {
+    let keys = Object.keys(historicalData);
+    let idx = keys.indexOf(selectedDate);
+    let nextIdx = idx + diff;
+    if (nextIdx >= 0 && nextIdx < keys.length) {
+      selectDate(keys[nextIdx]);
+    }
+  };
+
+  // メモリリーク防止
+  if(window.stockChartInstance) window.stockChartInstance.destroy();
+  if(window.priceChartInstance) window.priceChartInstance.destroy();
 
   // 在庫推移グラフ
   if (labels.length && stockHistory.length) {
@@ -225,7 +298,6 @@ function renderGraph(dateStr) {
       }
     });
   }
-
   // 価格推移グラフ
   if (labels.length && priceHistory.length) {
     window.priceChartInstance = new Chart(document.getElementById('priceChart').getContext('2d'), {
@@ -263,8 +335,6 @@ function closeGraph() {
     cell.classList.remove('selected');
   });
   selectedDate = null;
-
-  // メモリリーク防止のためChart.jsインスタンスを破棄
   if(window.stockChartInstance) {
     window.stockChartInstance.destroy();
     window.stockChartInstance = null;
@@ -288,7 +358,6 @@ function setupMonthButtons() {
     shiftMonth(1);
   };
 }
-
 function shiftMonth(diff) {
   let [y,m] = currentYearMonth[0];
   m += diff;
@@ -303,9 +372,8 @@ function shiftMonth(diff) {
 
 // ========== 最終更新日時 ==========
 function updateLastUpdate() {
-  document.getElementById("last-update").textContent = formatDate(new Date());
+  document.getElementById("last-update").textContent = "最終更新日時：" + formatDate(new Date());
 }
-
 function formatDate(dt) {
   return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")} ${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}:${String(dt.getSeconds()).padStart(2,"0")}`;
 }
