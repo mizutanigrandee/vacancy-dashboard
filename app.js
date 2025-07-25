@@ -121,8 +121,8 @@ function renderMonthCalendar(year, month) {
       cell.classList.add("strong-demand");
     }
 
-    let stock = data.stock || "-";
-    let price = data.price ? `¥${data.price.toLocaleString()}` : "-";
+    let stock = data.vacancy || "-";
+    let price = data.avg_price ? `¥${Math.round(data.avg_price).toLocaleString()}` : "-";
     let diffHtml = "";
     if (data.price && prevData.price) {
       const diff = data.price - prevData.price;
