@@ -320,4 +320,8 @@ function shiftMonth(diff) {
 
 // ----------- 最終更新日時 -----------
 function updateLastUpdate() {
-  document.getElementById("last-update
+  document.getElementById("last-update").textContent = "最終更新日時：" + formatDate(new Date());
+}
+function formatDate(dt) {
+  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")} ${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}:${String(dt.getSeconds()).padStart(2,"0")}`;
+}
