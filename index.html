@@ -3,8 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <title>めちゃいいツール | 空室＆平均価格カレンダー</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- jpholiday.jsは必須なら追加可（日本の祝日自動判定用） -->
 </head>
 <body>
   <header class="app-header">
@@ -12,6 +14,10 @@
     <div class="app-title">めちゃいいツール　空室＆平均価格カレンダー</div>
     <div class="app-title-right">空室＆平均価格カレンダー</div>
   </header>
+
+  <!-- 🚀需要急騰日履歴バナー（最大10件） -->
+  <div id="spike-banner"></div>
+
   <div class="calendar-controls">
     <button id="prevMonthBtn">前月</button>
     <button id="currentMonthBtn">当月</button>
@@ -24,13 +30,12 @@
     <div id="last-update"></div>
     <div class="note">
       <p>日付を選択すると推移グラフが表示されます</p>
-      <p>最終公開日時：<span id="update-info"></span></p>
       <div>
         <h4>（注意）</h4>
         <ul>
           <li>在庫数、平均価格は「なんば・心斎橋・天王寺・阿倍野・長居」エリアから抽出しています。</li>
           <li>価格は各日9:00時点の空室ホテルの最低価格の平均です。</li>
-          <li>祝日・イベントは色分け、特需シンボル（🔥）は需要の高い日を示します。</li>
+          <li>祝日・イベントは色分け、特需シンボル（🔥1～5）は需要の高い日を示します。</li>
           <li>イベントはライブ、コンサート、国際イベント等の開催日に表示されます。</li>
         </ul>
       </div>
