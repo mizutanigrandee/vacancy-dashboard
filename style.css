@@ -13,7 +13,7 @@ body {
   gap: 36px;
   align-items: flex-start;
   justify-content: center;
-  max-width: 1450px;
+  max-width: 1500px;
   margin: 0 auto;
   width: 100%;
 }
@@ -28,7 +28,7 @@ body {
 }
 .calendar-container {
   display: flex;
-  gap: 32px;
+  gap: 40px;
   flex-wrap: wrap;
   justify-content: flex-start;
 }
@@ -36,10 +36,10 @@ body {
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 14px rgba(65,95,140,0.09);
-  padding: 14px 13px 8px 13px;
-  min-width: 350px;
-  max-width: 370px;
-  margin-bottom: 12px;
+  padding: 18px 18px 12px 18px;
+  min-width: 410px;
+  max-width: 420px;
+  margin-bottom: 16px;
 }
 .month-header {
   font-size: 1.22rem;
@@ -51,28 +51,31 @@ body {
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 3px;
+  gap: 6px;
 }
 .calendar-dow {
   background: #e9f0f6 !important;
   color: #2e6fa2;
-  font-size: 13px !important;
-  padding: 4px 0 !important;
-  min-height: 18px !important;
+  font-size: 15px !important;
+  padding: 8px 0 8px 0 !important;
+  min-height: 24px !important;
   border-radius: 4px !important;
+  font-weight: bold;
+  text-align: center;
 }
 .calendar-cell {
   background: #f6f9ff;
   border: 1px solid #e1e7ed;
   border-radius: 7px;
-  min-height: 66px;
-  padding: 6px 4px 5px 4px;
-  font-size: 0.99rem;
+  min-height: 90px;
+  padding: 6px 9px 5px 9px;
+  font-size: 1.01rem;
   color: #222;
   position: relative;
   text-align: left;
   transition: box-shadow 0.2s;
   cursor: pointer;
+  overflow: hidden;
 }
 .calendar-cell.selected {
   background: #d2edfa !important;
@@ -88,20 +91,28 @@ body {
   background: #fff3e5 !important;
 }
 .cell-date {
-  font-size: 1.08rem;
+  font-size: 1.17rem;
   font-weight: 700;
   position: absolute;
-  top: 6px; left: 8px;
+  top: 8px; left: 12px;
+  background: transparent;
+  z-index: 1;
 }
-.cell-main { font-weight: bold; font-size: 1.03rem; margin-bottom: 2px; margin-top: 20px; }
-.cell-vacancy { font-size: 1.08rem; }
+.cell-main {
+  font-weight: bold;
+  font-size: 1.08rem;
+  margin-bottom: 3px;
+  margin-top: 27px;
+  line-height: 1.08;
+}
+.cell-vacancy { font-size: 1.09rem; }
 .cell-vacancy-diff.plus { color: #1976d2; font-size: 12px; margin-left: 2px; }
 .cell-vacancy-diff.minus { color: #d32f2f; font-size: 12px; margin-left: 2px; }
 .cell-vacancy-diff.flat { color: #666; font-size: 12px; margin-left: 2px; }
-.cell-price { font-size: 0.97rem; color: #2e6fa2; margin-bottom: 1px; }
+.cell-price { font-size: 0.99rem; color: #2e6fa2; margin-bottom: 1px; }
 .cell-price-diff.up { color: #d32f2f; }
 .cell-price-diff.down { color: #1565c0; }
-.cell-demand-badge { display:inline-block; font-size:1.1rem; margin-left:2px; font-weight:bold;}
+.cell-demand-badge { display:inline-block; font-size:1.13rem; margin-left:2px; font-weight:bold;}
 .cell-demand-badge.lv1 { color: #ffa600; }
 .cell-demand-badge.lv2 { color: #ff6600; }
 .cell-demand-badge.lv3 { color: #e94e77; }
@@ -109,13 +120,16 @@ body {
 .cell-demand-badge.lv5 { color: #421c16; }
 .cell-event-list { margin-top: 2px; }
 .cell-event { font-size: 0.96rem; color: #357ebd; display: flex; align-items: center; gap: 3px; margin-top: 2px; }
+
 @media screen and (max-width: 1100px) {
   .main-flexbox, .calendar-container { flex-direction: column; min-width: 100%; gap: 18px; }
-  .graph-side, .month-calendar { min-width: 96vw; max-width: 98vw; }
+  .graph-side, .month-calendar { min-width: 98vw; max-width: 99vw; }
+  .calendar-grid { gap: 5px; }
 }
 @media screen and (max-width: 700px) {
   .main-flexbox, .calendar-container { flex-direction: column; min-width: 100%; gap: 12px; }
-  .graph-side, .month-calendar { min-width: 97vw; max-width: 99vw; }
+  .graph-side, .month-calendar { min-width: 99vw; max-width: 99vw; }
+  .calendar-grid { gap: 3.5px; }
 }
 .graph-btns {
   display: flex; gap: 9px; margin-bottom: 10px;
