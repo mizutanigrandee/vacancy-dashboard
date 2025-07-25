@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>めちゃいいツール | 空室＆平均価格カレンダー</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -11,35 +10,37 @@
   <header class="app-header">
     <img src="バナー画像3.png" class="app-banner" alt="バナー">
     <div class="app-title">めちゃいいツール　空室＆平均価格カレンダー</div>
+    <div class="app-title-right">空室＆平均価格カレンダー</div>
   </header>
-
-  <!-- 🚀需要急騰日履歴バナー -->
-  <div id="spike-banner"></div>
-
-  <main class="calendar-main">
-    <div class="graph-side" id="graph-container"></div>
-    <div class="calendar-container" id="calendar-container"></div>
-  </main>
-
-  <footer class="app-footer">
-    <div id="last-update"></div>
-    <div class="note">
-      <div class="legend">
-        <strong>《注釈・凡例》</strong><br>
-        ・在庫数、平均価格は「なんば・心斎橋・天王寺・阿倍野・長居」エリアから抽出しています。<br>
-        ・表示される「平均価格」は、楽天トラベル検索上位90施設の平均最低価格です。<br>
-        ・空室数の<span class="plus">（+N）</span>／<span class="minus">（−N）</span>は、前回巡回時点との在庫数の増減を示します。<br>
-        ・平均価格の<span class="up">↑</span>／<span class="down">↓</span>は、前回巡回時点との平均価格の上昇／下降を示します。<br>
-        ・会場アイコン：🔴京セラドーム / 🔵ヤンマースタジアム / ★その他会場<br>
-        ・炎マーク（需要シンボル）の内訳：<br>
-        　🔥1：残室 ≤250 または 価格 ≥25,000円<br>
-        　🔥2：残室 ≤200 または 価格 ≥30,000円<br>
-        　🔥3：残室 ≤150 または 価格 ≥35,000円<br>
-        　🔥4：残室 ≤100 または 価格 ≥40,000円<br>
-        　🔥5：残室 ≤70 または 価格 ≥50,000円
+  <div class="main-flex">
+    <div class="graph-container" id="graph-container"></div>
+    <div class="calendar-flex">
+      <div class="calendar-controls">
+        <button id="prevMonthBtn">前月</button>
+        <button id="currentMonthBtn">当月</button>
+        <button id="nextMonthBtn">次月</button>
       </div>
+      <div class="calendar-duo">
+        <div class="calendar-container" id="calendar-container"></div>
+      </div>
+      <footer class="app-footer">
+        <div id="last-update"></div>
+        <div class="note">
+          <p>日付を選択すると推移グラフが表示されます</p>
+          <p>最終公開日時：<span id="update-info"></span></p>
+          <div>
+            <h4>（注意）</h4>
+            <ul>
+              <li>在庫数、平均価格は「なんば・心斎橋・天王寺・阿倍野・長居」エリアから抽出しています。</li>
+              <li>価格は各日9:00時点の空室ホテルの最低価格の平均です。</li>
+              <li>祝日・イベントは色分け、特需シンボル（🔥）は需要の高い日を示します。</li>
+              <li>イベントはライブ、コンサート、国際イベント等の開催日に表示されます。</li>
+            </ul>
+          </div>
+        </div>
+      </footer>
     </div>
-  </footer>
+  </div>
   <script src="app.js"></script>
 </body>
 </html>
