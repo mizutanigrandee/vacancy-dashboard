@@ -1,96 +1,69 @@
-// --- 2025年の日本祝日（例） ---
-const JP_HOLIDAYS = {
-  "2025-01-01": "元日","2025-01-13":"成人の日","2025-02-11":"建国記念の日",
-  "2025-02-23":"天皇誕生日","2025-03-20":"春分の日","2025-04-29":"昭和の日",
-  "2025-05-03":"憲法記念日","2025-05-04":"みどりの日","2025-05-05":"こどもの日",
-  "2025-07-21":"海の日","2025-08-11":"山の日","2025-09-15":"敬老の日",
-  "2025-09-23":"秋分の日","2025-10-13":"スポーツの日","2025-11-03":"文化の日",
-  "2025-11-23":"勤労感謝の日"
-};
-function isHoliday(cellDate) {
-  return Boolean(JP_HOLIDAYS[cellDate]);
-}
-
+// ========== 設定 ==========
 const DATA_PATH = "./vacancy_price_cache.json";
 const PREV_DATA_PATH = "./vacancy_price_cache_previous.json";
 const EVENT_PATH = "./event_data.json";
 const HISTORICAL_PATH = "./historical_data.json";
-const SPIKE_PATH = "./demand_spike_history.json";
 
+// ========== 祝日データ（2025年：例） ==========
+const HOLIDAYS = [
+  "2025-01-01", "2025-01-13", "2025-02-11", "2025-02-23", "2025-03-20", "2025-04-29", "2025-05-03", "2025-05-04", "2025-05-05", "2025-05-06",
+  "2025-07-21", "2025-08-11", "2025-09-15", "2025-09-23", "2025-10-13", "2025-11-03", "2025-11-23"
+];
+
+// ========== グローバル状態 ==========
 let calendarData = {};
 let prevCalendarData = {};
 let eventData = {};
 let historicalData = {};
-let spikeData = [];
 
 let currentYearMonth = [];
 let selectedDate = null;
 
-// ----------- 初期化 -----------
+// ========== 初期化 ==========
 window.onload = async function() {
   await loadAllData();
-  renderSpikeBanner();
   initMonth();
+  // 日付未選択時は「本日」に初期化（グラフ枠が空白のままを防ぐ）
+  if (!selectedDate) selectedDate = todayIso();
   renderPage();
   updateLastUpdate();
   setupMonthButtons();
-};
+}
 
-// ----------- データ読込 -----------
+function todayIso() {
+  const today = new Date();
+  return today.toISOString().slice(0, 10);
+}
+
+// ========== データ読込 ==========
 async function loadAllData() {
   calendarData = await fetchJson(DATA_PATH);
   prevCalendarData = await fetchJson(PREV_DATA_PATH);
   eventData = await fetchJson(EVENT_PATH);
   historicalData = await fetchJson(HISTORICAL_PATH);
-  spikeData = await fetchJson(SPIKE_PATH);
 }
 async function fetchJson(path) {
   try {
-    const res = await fetch(path + "?v=" + Date.now());
+    const res = await fetch(path);
     if (!res.ok) return {};
     return await res.json();
   } catch(e) { return {}; }
 }
 
-// ----------- 需要急騰バナー -----------
-function renderSpikeBanner() {
-  const banner = document.getElementById("spike-banner");
-  banner.innerHTML = "";
-  if (!Array.isArray(spikeData) || spikeData.length === 0) {
-    banner.style.display = "none";
-    return;
-  }
-  banner.style.display = "flex";
-  spikeData.slice(0, 10).forEach(s => {
-    const chip = document.createElement("div");
-    chip.className = "spike-chip";
-    chip.innerHTML = `<span class="spike-date">🚀 ${s.date}</span>
-    <span class="spike-main">${s.spike_date ? "該当日 " + s.spike_date : ""}</span>
-    <span style="color:#d35400;">単価${s.price_diff > 0 ? "↑" : "↓"} ${Math.abs(s.price_diff).toLocaleString()}円</span>
-    <span style="color:#2980b9;">客室${s.vacancy_diff < 0 ? "減" : "増"} ${Math.abs(s.vacancy_diff)}件</span>
-    <span class="spike-comment">${s.comment ? s.comment : ""}</span>
-    `;
-    banner.appendChild(chip);
-  });
+// ========== 祝日判定 ==========
+function isHoliday(dateIso) {
+  return HOLIDAYS.includes(dateIso);
 }
 
-// ----------- 月初期化 -----------
-function initMonth() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth() + 1;
-  currentYearMonth = [
-    [year, month],
-    month === 12 ? [year+1, 1] : [year, month+1]
-  ];
-}
-
-// ----------- ページ描画（グラフ左／カレンダー右） -----------
+// ========== ページ再描画 ==========
 function renderPage() {
   const main = document.querySelector(".calendar-main");
+  // 横並び or 縦並びレスポンシブ
   main.innerHTML = `
-    <div class="graph-side" id="graph-container"></div>
-    <div class="calendar-container" id="calendar-container"></div>
+    <div class="main-flexbox">
+      <div class="graph-side" id="graph-container"></div>
+      <div class="calendar-container" id="calendar-container"></div>
+    </div>
   `;
   renderGraph(selectedDate);
   renderCalendars();
@@ -101,7 +74,7 @@ function renderPage() {
   }
 }
 
-// ----------- カレンダー描画 -----------
+// ========== カレンダー描画 ==========
 function renderCalendars() {
   const container = document.getElementById("calendar-container");
   container.innerHTML = "";
@@ -124,8 +97,7 @@ function renderMonthCalendar(year, month) {
   grid.className = "calendar-grid";
   for (let d of daysOfWeek) {
     const cell = document.createElement("div");
-    cell.className = "calendar-cell";
-    cell.style.fontWeight = "bold";
+    cell.className = "calendar-cell calendar-dow";
     cell.textContent = d;
     grid.appendChild(cell);
   }
@@ -146,7 +118,7 @@ function renderMonthCalendar(year, month) {
     cell.dataset.date = cellDate;
     // 土日祝色分け
     const dayOfWeek = (dayCount)%7;
-    if (isHoliday(cellDate)) cell.classList.add("holiday");
+    if (isHoliday(cellDate)) cell.classList.add("holiday-bg");
     if (dayOfWeek === 0) cell.classList.add("sunday-bg");
     if (dayOfWeek === 6) cell.classList.add("saturday-bg");
     // データ
@@ -196,7 +168,7 @@ function renderMonthCalendar(year, month) {
   return wrapper;
 }
 
-// ----------- グラフ描画 -----------
+// ========== グラフ描画 ==========
 function renderGraph(dateStr) {
   const graphContainer = document.getElementById("graph-container");
   if (!dateStr) {
@@ -240,7 +212,7 @@ function renderGraph(dateStr) {
     </div>
   `;
   window.closeGraph = function() {
-    selectedDate = null;
+    selectedDate = todayIso();
     renderPage();
   };
   window.goGraphDay = goGraphDay;
@@ -296,7 +268,7 @@ function renderGraph(dateStr) {
   }
 }
 
-// ----------- 月切替ボタン -----------
+// ========== 月切替・レスポンシブ ==========
 function setupMonthButtons() {
   const prevBtn = document.getElementById("prevMonthBtn");
   const todayBtn = document.getElementById("currentMonthBtn");
@@ -305,6 +277,15 @@ function setupMonthButtons() {
   prevBtn.onclick = function() { shiftMonth(-1); };
   todayBtn.onclick = function() { initMonth(); renderPage(); };
   nextBtn.onclick = function() { shiftMonth(1); };
+}
+function initMonth() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth() + 1;
+  currentYearMonth = [
+    [year, month],
+    month === 12 ? [year+1, 1] : [year, month+1]
+  ];
 }
 function shiftMonth(diff) {
   let [y,m] = currentYearMonth[0];
@@ -318,7 +299,7 @@ function shiftMonth(diff) {
   renderPage();
 }
 
-// ----------- 最終更新日時 -----------
+// ========== 最終更新日時 ==========
 function updateLastUpdate() {
   document.getElementById("last-update").textContent = "最終更新日時：" + formatDate(new Date());
 }
