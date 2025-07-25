@@ -5,12 +5,12 @@ const EVENT_PATH = "./event_data.json";
 const HISTORICAL_PATH = "./historical_data.json";
 
 // ========== グローバル状態 ==========
-let calendarData = {};       // { "YYYY-MM-DD": { stock, price, event, demand, ... } }
-let prevCalendarData = {};   // { "YYYY-MM-DD": { stock, price, ... } }
-let eventData = {};          // { "YYYY-MM-DD": { event_name, ... } }
-let historicalData = {};     // { "YYYY-MM-DD": { stock_history:[], price_history:[] } }
+let calendarData = {};
+let prevCalendarData = {};
+let eventData = {};
+let historicalData = {};
 
-let currentYearMonth = [];   // [year, month] の配列。2か月分
+let currentYearMonth = [];
 let selectedDate = null;
 
 // ========== 初期化 ==========
@@ -63,10 +63,8 @@ function renderCalendars() {
 
 // ========== 1か月分カレンダー描画 ==========
 function renderMonthCalendar(year, month) {
-  // 枠作成
   const wrapper = document.createElement("div");
   wrapper.className = "month-calendar";
-  // ヘッダー
   const header = document.createElement("div");
   header.className = "month-header";
   header.textContent = `${year}年${month}月`;
@@ -112,26 +110,18 @@ function renderMonthCalendar(year, month) {
     const event = eventData[cellDate] ? eventData[cellDate].event_name : "";
     const demand = data.demand ? "🔥" : "";
 
-    // 祝日判定（仮：eventデータに"祝日"を含む場合）
     if (event && event.includes("祝日")) {
       cell.classList.add("holiday");
     }
-
-    // イベント判定
     if (event && !event.includes("祝日")) {
       cell.classList.add("event");
     }
-
-    // 需要シンボル
     if (data.demand) {
       cell.classList.add("strong-demand");
     }
 
-    // 本日の在庫数
     let stock = data.stock || "-";
-    // 平均価格
     let price = data.price ? `¥${data.price.toLocaleString()}` : "-";
-    // 前日比
     let diffHtml = "";
     if (data.price && prevData.price) {
       const diff = data.price - prevData.price;
@@ -144,9 +134,7 @@ function renderMonthCalendar(year, month) {
       }
     }
 
-    // イベント名
     let eventHtml = event ? `<span class="cell-event"><span>🎫</span> ${event}</span>` : "";
-    // 需要シンボル
     let demandHtml = demand ? `<span class="cell-demand">${demand}</span>` : "";
 
     cell.innerHTML = `
@@ -157,7 +145,6 @@ function renderMonthCalendar(year, month) {
       ${demandHtml}
     `;
 
-    // クリックイベント
     cell.onclick = function() {
       selectDate(cellDate);
     };
@@ -182,17 +169,90 @@ function selectDate(dateStr) {
   renderGraph(dateStr);
 }
 
-// ========== グラフ描画（仮） ==========
+// ========== グラフ描画（Chart.js版） ==========
 function renderGraph(dateStr) {
   const graphContainer = document.getElementById("graph-container");
   graphContainer.style.display = "block";
+
+  // 履歴データ取得
+  const history = historicalData[dateStr];
+  const stockHistory = history?.stock_history || [];
+  const priceHistory = history?.price_history || [];
+  const labels = history?.date_list || [];
+
   graphContainer.innerHTML = `
     <button onclick="closeGraph()" style="float:right;">グラフを閉じる</button>
     <h3>${dateStr} の在庫・価格推移</h3>
-    <canvas id="stockChart" width="420" height="180"></canvas>
-    <canvas id="priceChart" width="420" height="180"></canvas>
+    <div style="margin-bottom:18px;">
+      <canvas id="stockChart" width="420" height="180"></canvas>
+    </div>
+    <div>
+      <canvas id="priceChart" width="420" height="180"></canvas>
+    </div>
   `;
-  // グラフ描画（次回Chart.jsで実装）
+
+  // 既存グラフの破棄（同じcanvasIDで再描画する場合のChart.jsメモリリーク防止）
+  if(window.stockChartInstance) {
+    window.stockChartInstance.destroy();
+  }
+  if(window.priceChartInstance) {
+    window.priceChartInstance.destroy();
+  }
+
+  // 在庫推移グラフ
+  if (labels.length && stockHistory.length) {
+    window.stockChartInstance = new Chart(document.getElementById('stockChart').getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: '在庫数',
+          data: stockHistory,
+          fill: false,
+          borderColor: '#2196f3',
+          backgroundColor: '#90caf9',
+          tension: 0.2,
+          pointRadius: 2,
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, title: { display: true, text: "在庫数" } },
+          x: { title: { display: true, text: "日付" } }
+        }
+      }
+    });
+  }
+
+  // 価格推移グラフ
+  if (labels.length && priceHistory.length) {
+    window.priceChartInstance = new Chart(document.getElementById('priceChart').getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: '平均価格',
+          data: priceHistory,
+          fill: false,
+          borderColor: '#e91e63',
+          backgroundColor: '#f8bbd0',
+          tension: 0.2,
+          pointRadius: 2,
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          y: {
+            beginAtZero: false,
+            title: { display: true, text: "平均価格（円）" }
+          },
+          x: { title: { display: true, text: "日付" } }
+        }
+      }
+    });
+  }
 }
 
 // ========== グラフを閉じる ==========
@@ -202,6 +262,16 @@ function closeGraph() {
     cell.classList.remove('selected');
   });
   selectedDate = null;
+
+  // メモリリーク防止のためChart.jsインスタンスを破棄
+  if(window.stockChartInstance) {
+    window.stockChartInstance.destroy();
+    window.stockChartInstance = null;
+  }
+  if(window.priceChartInstance) {
+    window.priceChartInstance.destroy();
+    window.priceChartInstance = null;
+  }
 }
 
 // ========== 月切替ボタン ==========
@@ -232,12 +302,9 @@ function shiftMonth(diff) {
 
 // ========== 最終更新日時 ==========
 function updateLastUpdate() {
-  // 仮：現在時刻を表示。データの更新日時が分かれば反映可
   document.getElementById("last-update").textContent = formatDate(new Date());
 }
 
 function formatDate(dt) {
   return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")} ${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}:${String(dt.getSeconds()).padStart(2,"0")}`;
 }
-
-// ========== ここから先、グラフ描画などを拡充します ==========
