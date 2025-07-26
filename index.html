@@ -8,43 +8,65 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+  <!-- 1. バナー表示 (Base64 埋め込み) -->
   <header>
-    <img src="バナー画像3.png" alt="めちゃいいツールロゴ" class="main-banner"/>
+    <img id="banner" alt="めちゃいいツールロゴ" class="main-banner"/>
     <div class="title-group">
       <h1>空室＆平均価格カレンダー</h1>
       <p class="subtitle">（空室・料金・イベント一括可視化）</p>
     </div>
   </header>
 
-  <div class="nav-buttons">
-    <button id="prev-month">⬅️ 前月</button>
-    <button id="current-month">📅 当月</button>
-    <button id="next-month">➡️ 次月</button>
+  <!-- 2. 需要急騰検知バナー -->
+  <div id="spike-container"></div>
+
+  <!-- 3. 月移動ボタン -->
+  <div class="nav-button-container">
+    <button id="prev-month" class="custom-button"><span class="icon">⬅️</span>前月</button>
+    <button id="current-month" class="custom-button"><span class="icon">📅</span>当月</button>
+    <button id="next-month" class="custom-button"><span class="icon">➡️</span>次月</button>
   </div>
 
+  <!-- 4. メイン（左:グラフ／右:カレンダー２か月） -->
   <div class="main-content">
-    <!-- 左：グラフエリア -->
+    <!-- グラフエリア（初期 hidden） -->
     <section id="graph-area" class="graph-area hidden">
-      <div class="graph-controls">
-        <button id="close-graph">❌ グラフを閉じる</button>
-        <button id="prev-day">＜前日</button>
-        <button id="next-day">翌日＞</button>
+      <div class="graph-button-container">
+        <button id="close-graph" class="custom-button"><span class="icon">❌</span>グラフを閉じる</button>
+        <button id="prev-day" class="custom-button"><span class="icon">＜</span>前日</button>
+        <button id="next-day" class="custom-button">翌日<span class="icon">＞</span></button>
       </div>
       <h4 id="graph-title"></h4>
       <canvas id="vac-chart"></canvas>
       <canvas id="price-chart"></canvas>
     </section>
 
-    <!-- 右：カレンダー２か月 -->
+    <!-- カレンダー２か月 -->
     <div id="calendar-container" class="calendar-container"></div>
   </div>
 
+  <!-- 5. フッター -->
   <footer>
     <p>※ 🔴京セラ／🔵ヤンマー／⚫その他イベントは自動表示</p>
     <p id="last-updated">最終更新：--</p>
     <p class="hint">日付をクリックすると推移グラフが表示されます</p>
   </footer>
 
+  <!-- 6. アプリ本体JS -->
   <script src="app.js"></script>
+
+  <!-- 7. バナー Base64 埋め込みスクリプト -->
+  <script>
+    (async()=>{
+      const res = await fetch('バナー画像3.png');
+      const blob = await res.blob();
+      const dataUrl = await new Promise(r=>{
+        const fr = new FileReader();
+        fr.onload = ()=>r(fr.result);
+        fr.readAsDataURL(blob);
+      });
+      document.getElementById('banner').src = dataUrl;
+    })();
+  </script>
 </body>
 </html>
