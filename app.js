@@ -1,9 +1,10 @@
 // ========== データ & 祝日設定 ==========
+
+// ファイルパス定義
 const DATA_PATH  = "./vacancy_price_cache.json";
 const PREV_PATH  = "./vacancy_price_cache_previous.json";
 const EVENT_PATH = "./event_data.json";
 const HIST_PATH  = "./historical_data.json";
-const HOLIDAYS   = [/* ...ここに祝日を配列でセット... */];
 
 // グローバル状態
 let calendarData   = {},
@@ -12,17 +13,14 @@ let calendarData   = {},
     historicalData = {};
 let currentYM = [], selectedDate = null;
 
-// 起動時初期化
-window.onload = async () => {
-  await loadAll();
-  initMonth();
-  if (!selectedDate) selectedDate = todayIso();
-  renderPage();
-  updateLastUpdate();
-  setupMonthButtons();
-};
+// ========== 祝日判定（ローカルjs方式。japanese-holidays.jsを別途読み込み必須） ==========
+function isHoliday(date) {
+  // "YYYY-MM-DD" 形式 or Date型 どちらも可
+  if (!window.JapaneseHolidays) return null;
+  return window.JapaneseHolidays.isHoliday(date);
+}
 
-// ヘルパー
+// ========== ヘルパー ==========
 const todayIso = () => new Date().toISOString().slice(0,10);
 async function loadJson(path) {
   try {
@@ -39,14 +37,8 @@ async function loadAll() {
   eventData      = await loadJson(EVENT_PATH);
   historicalData = await loadJson(HIST_PATH);
 }
-function isHoliday(date) {
-  // dateは "YYYY-MM-DD" 形式
-  const d = new Date(date);
-  return window.JapaneseHolidays && window.JapaneseHolidays.isHoliday(d);
-}
 
-
-// 月送りボタン設定
+// ========== 月送りボタン設定 ==========
 function setupMonthButtons() {
   document.getElementById("prevMonthBtn").onclick    = () => { shiftMonth(-1); renderPage(); };
   document.getElementById("currentMonthBtn").onclick = () => { initMonth();   renderPage(); };
@@ -66,7 +58,7 @@ function shiftMonth(diff) {
   currentYM = [[y,m], m === 12 ? [y+1,1] : [y, m+1]];
 }
 
-// 全体再描画
+// ========== ページ全体再描画 ==========
 function renderPage() {
   document.querySelector(".calendar-main").innerHTML = `
     <div class="main-flexbox">
@@ -77,7 +69,7 @@ function renderPage() {
   renderCalendars();
 }
 
-// カレンダー描画
+// ========== カレンダー描画 ==========
 function renderCalendars() {
   const container = document.getElementById("calendar-container");
   container.innerHTML = "";
@@ -85,6 +77,7 @@ function renderCalendars() {
     container.appendChild(renderMonth(y,m));
   }
 }
+
 function renderMonth(y,m) {
   const wrap = document.createElement("div");
   wrap.className = "month-calendar";
@@ -96,7 +89,7 @@ function renderMonth(y,m) {
   // 曜日ヘッダー
   ["日","月","火","水","木","金","土"].forEach(d => {
     const c = document.createElement("div");
-    c.className = "calendar-dow";
+    c.className = "calendar-cell calendar-dow";
     c.textContent = d;
     grid.appendChild(c);
   });
@@ -117,14 +110,17 @@ function renderMonth(y,m) {
     cell.className = "calendar-cell";
     cell.dataset.date = iso;
 
-    // ③過去日付グレーアウト
-    if (iso < todayIso()) cell.classList.add("past-date");
+    // 祝日判定
+    let holidayName = isHoliday(iso);
 
     // 土日祝色分け
     const idx = (grid.children.length) % 7;
-    if      (isHoliday(iso))     cell.classList.add("holiday-bg");
-    else if (idx === 0)          cell.classList.add("sunday-bg");
-    else if (idx === 6)          cell.classList.add("saturday-bg");
+    if      (holidayName) cell.classList.add("holiday-bg");
+    else if (idx === 0)   cell.classList.add("sunday-bg");
+    else if (idx === 6)   cell.classList.add("saturday-bg");
+
+    // 過去日付グレーアウト
+    if (iso < todayIso()) cell.classList.add("past-date");
 
     // データ取得＆差分
     const cur = calendarData[iso] || {},
@@ -138,10 +134,10 @@ function renderMonth(y,m) {
     const stock = cur.vacancy != null ? `${cur.vacancy}件` : "-";
     const price = cur.avg_price != null ? cur.avg_price.toLocaleString() : "-";
 
-    // ③括弧付き差分テキスト（±0は空欄）
-    const dvText = dv > 0 ? `(+${dv})` : dv < 0 ? `(${dv})` : "";
+    // 括弧付き差分テキスト
+    const dvText = dv > 0 ? `(+${dv})` : dv < 0 ? `(${dv})` : `(±0)`;
 
-    // ④需要シンボル（炎マーク右上絶対配置！）
+    // 需要シンボル
     let lvl = 0;
     if (cur.vacancy!=null && cur.avg_price!=null){
       if (cur.vacancy<=70  || cur.avg_price>=50000) lvl=5;
@@ -152,17 +148,13 @@ function renderMonth(y,m) {
     }
     const badge = lvl ? `<div class="cell-demand-badge lv${lvl}">🔥${lvl}</div>` : "";
 
-    // ①イベント
-    let evs = "";
-    if (eventData[iso] && Array.isArray(eventData[iso])) {
-      evs = eventData[iso]
-        .map(ev => `<div class="cell-event">${ev.icon} ${ev.name}</div>`)
-        .join("");
-    }
+    // ▼イベント表示（小さく黒字＆折り返し）
+    const evs = (eventData[iso] || [])
+      .map(ev => `<div class="cell-event" style="font-size:11px; color:#222; white-space:normal; line-height:1.1;">${ev.icon} <span style="color:#222;">${ev.name}</span></div>`)
+      .join("");
 
-    // セル内HTML（炎マークを一番最初＝右上絶対配置！）
+    // セル内HTML
     cell.innerHTML = `
-      ${badge}
       <div class="cell-date">${d}</div>
       <div class="cell-main">
         <span class="cell-vacancy">${stock}</span>
@@ -172,7 +164,9 @@ function renderMonth(y,m) {
         ￥${price}
         <span class="cell-price-diff ${dp>0?"up":dp<0?"down":"flat"}">${dp>0?"↑":dp<0?"↓":"→"}</span>
       </div>
+      ${badge}
       <div class="cell-event-list">${evs}</div>
+      ${holidayName ? `<div class="cell-holidayname" style="color:#e53935; font-size:10px; margin-top:1px;">${holidayName}</div>` : ""}
     `;
     cell.onclick = () => { selectedDate = iso; renderPage(); };
     grid.appendChild(cell);
@@ -182,7 +176,7 @@ function renderMonth(y,m) {
   return wrap;
 }
 
-// グラフ描画
+// ========== グラフ描画（変更なしでOK） ==========
 function renderGraph(dateStr){
   const gc = document.getElementById("graph-container");
   if (!dateStr) { gc.innerHTML=""; return; }
@@ -192,7 +186,7 @@ function renderGraph(dateStr){
 
   gc.innerHTML = `
     <div class="graph-btns">
-      <button onclick="closeGraph()">✗ グラフを閉じる</button>
+      <button onclick="closeGraph()">✗ 当日へ戻る</button>
       <button onclick="nav(-1)">< 前日</button>
       <button onclick="nav(1)">翌日 ></button>
     </div>
@@ -256,10 +250,20 @@ function renderGraph(dateStr){
   }
 }
 
-// 最終更新日時
+// ========== 最終更新日時 ==========
 function updateLastUpdate(){
   const el = document.getElementById("last-update"),
         d  = new Date(),
         z  = n => String(n).padStart(2,"0");
   el.textContent = `最終更新日時：${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}`;
 }
+
+// ========== 起動時初期化 ==========
+window.onload = async () => {
+  await loadAll();
+  initMonth();
+  if (!selectedDate) selectedDate = todayIso();
+  renderPage();
+  updateLastUpdate();
+  setupMonthButtons();
+};
