@@ -1,143 +1,129 @@
-const API_URL = './vacancy_price_cache.json'; // 本番データをここに指定
-const EVENT_URL = './event_data.json'; // イベント情報
+const API_URL = './vacancy_price_cache.json';
+const HIST_URL = './historical_data.json';
+const EVENT_URL = './event_data.json';
 
-let currentOffset = 0;
-let rawData = {};
-let eventData = {};
+let rawData = {}, histData = {}, eventData = {};
+let currentOffset = 0, currentDate = null;
+let vacChart = null, priceChart = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await fetchData();
-  renderCalendar(currentOffset);
-  setupButtons();
+  await loadAll();
+  renderCalendar();
+  setupNavButtons();
+  setupGraphButtons();
 });
 
-async function fetchData() {
-  const [res1, res2] = await Promise.all([
-    fetch(API_URL).then(r => r.json()),
-    fetch(EVENT_URL).then(r => r.json())
-  ]);
-  rawData = res1;
-  eventData = res2;
-  document.getElementById("last-updated").textContent = `最終更新：${new Date().toLocaleDateString()}`;
+async function loadAll() {
+  [ rawData, histData, eventData ] = await Promise.all(
+    [API_URL, HIST_URL, EVENT_URL].map(url => fetch(url).then(r => r.json()))
+  );
+  document.getElementById('last-updated').textContent =
+    `最終更新：${new Date().toLocaleString('ja-JP', { hour12:false })}`;
 }
 
-function setupButtons() {
-  document.getElementById('prev-month').onclick = () => {
-    currentOffset--;
-    renderCalendar(currentOffset);
-  };
-  document.getElementById('current-month').onclick = () => {
-    currentOffset = 0;
-    renderCalendar(currentOffset);
-  };
-  document.getElementById('next-month').onclick = () => {
-    currentOffset++;
-    renderCalendar(currentOffset);
-  };
+function setupNavButtons() {
+  document.getElementById('prev-month').onclick = () => { currentOffset--; renderCalendar(); };
+  document.getElementById('current-month').onclick = () => { currentOffset = 0; renderCalendar(); };
+  document.getElementById('next-month').onclick = () => { currentOffset++; renderCalendar(); };
 }
 
-function renderCalendar(offset) {
+function renderCalendar() {
   const container = document.getElementById('calendar-container');
   container.innerHTML = '';
-  const baseDate = new Date();
-  baseDate.setMonth(baseDate.getMonth() + offset);
-  for (let i = 0; i < 2; i++) {
-    const date = new Date(baseDate);
-    date.setMonth(baseDate.getMonth() + i);
-    container.appendChild(createCalendar(date));
+  const base = new Date();
+  base.setMonth(base.getMonth() + currentOffset);
+  for(let i=0; i<2; i++){
+    const m = new Date(base.getFullYear(), base.getMonth()+i, 1);
+    container.appendChild(createCalendar(m));
   }
+  // attach cell clicks
+  document.querySelectorAll('td[data-date]').forEach(td => {
+    td.onclick = () => showGraph(td.dataset.date);
+  });
 }
 
 function createCalendar(date) {
-  const year = date.getFullYear();
-  const month = date.getMonth();
-  const first = new Date(year, month, 1);
-  const last = new Date(year, month + 1, 0);
-  const startDay = first.getDay();
+  const year = date.getFullYear(), month = date.getMonth();
+  const first = new Date(year, month, 1), last = new Date(year, month+1, 0);
+  const tbl = document.createElement('table');
+  tbl.className = 'calendar';
+  tbl.innerHTML = `<caption>${year}年${month+1}月</caption>
+    <thead><tr>${['日','月','火','水','木','金','土'].map(d=>`<th>${d}</th>`).join('')}</tr></thead><tbody>`;
+  let day = 1 - first.getDay();
+  while(day <= last.getDate()){
+    tbl.innerHTML += '<tr>' + Array(7).fill(0).map((_,i) => {
+      const d = new Date(year,month,day+i);
+      if(d.getMonth()!==month) return `<td class="empty"></td>`;
+      const iso = d.toISOString().slice(0,10);
+      const rec = rawData[iso]||{vacancy:0,avg_price:0,previous_vacancy:0,previous_avg_price:0};
+      const dv = rec.vacancy - rec.previous_vacancy;
+      const dp = rec.avg_price  - rec.previous_avg_price;
+      const arrow = dp>0?'<span class="up">↑</span>':dp<0?'<span class="down">↓</span>':'';
+      const evs = (eventData[iso]||[]).map(e=>`${e.icon}${e.name}`).join('<br>');
+      const wd = d.getDay();
+      const cls = wd===0?'sunday':wd===6?'saturday':'';
+      return `<td data-date="${iso}" class="${cls}">
+        <div class="date-number">${d.getDate()}</div>
+        <div class="vacancy">${rec.vacancy}件${dv>0?`<span class="up">(+${dv})</span>`:dv<0?`<span class="down">(${dv})</span>`:''}</div>
+        <div class="price">¥${rec.avg_price.toLocaleString()} ${arrow}</div>
+        <div class="event">${evs}</div>
+      </td>`;
+    }).join('') + '</tr>';
+    day += 7;
+  }
+  tbl.innerHTML += '</tbody>';
+  const div = document.createElement('div');
+  div.appendChild(tbl);
+  return div;
+}
 
-  const table = document.createElement('table');
-  const header = document.createElement('caption');
-  header.textContent = `${year}年${month + 1}月`;
-  table.appendChild(header);
+function setupGraphButtons() {
+  document.getElementById('close-graph').onclick = hideGraph;
+  document.getElementById('prev-day').onclick   = () => navDay(-1);
+  document.getElementById('next-day').onclick   = () => navDay(1);
+}
 
-  const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-  const tr = document.createElement('tr');
-  weekdays.forEach(day => {
-    const th = document.createElement('th');
-    th.textContent = day;
-    tr.appendChild(th);
+function showGraph(date) {
+  if(!histData[date]) { alert('この日付の履歴データがありません'); return; }
+  currentDate = date;
+  document.getElementById('graph-title').textContent = `${date} の在庫・価格推移`;
+  document.getElementById('graph-area').classList.remove('hidden');
+
+  const records = Object.entries(histData[date])
+    .map(([d,r])=>({d,newVac:r.vacancy,newPrice:r.avg_price}))
+    .sort((a,b)=>a.d.localeCompare(b.d));
+
+  const labels = records.map(r=>r.d.slice(5));
+  const vacData = records.map(r=>r.newVac);
+  const priceData = records.map(r=>r.newPrice);
+
+  const vacCtx = document.getElementById('vac-chart').getContext('2d');
+  const priceCtx = document.getElementById('price-chart').getContext('2d');
+
+  if(vacChart) vacChart.destroy();
+  vacChart = new Chart(vacCtx, {
+    type:'line',
+    data:{ labels, datasets:[{ label:'在庫数', data:vacData, fill:false, tension:0.2 }] },
+    options:{ scales:{ y:{ beginAtZero:true } } }
   });
-  table.appendChild(tr);
 
-  let trBody = document.createElement('tr');
-  for (let i = 0; i < startDay; i++) {
-    const td = document.createElement('td');
-    td.className = 'empty';
-    trBody.appendChild(td);
-  }
-
-  for (let d = 1; d <= last.getDate(); d++) {
-    if ((startDay + d - 1) % 7 === 0 && d > 1) {
-      table.appendChild(trBody);
-      trBody = document.createElement('tr');
-    }
-
-    const td = document.createElement('td');
-    const cellDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    const info = rawData[cellDate];
-
-    td.className = ['日', '土'].includes(weekdays[(startDay + d - 1) % 7])
-      ? weekdays[(startDay + d - 1) % 7] === '日' ? 'sunday' : 'saturday'
-      : '';
-
-    const dayNum = document.createElement('div');
-    dayNum.className = 'date-number';
-    dayNum.textContent = d;
-    td.appendChild(dayNum);
-
-    if (info) {
-      const v = document.createElement('span');
-      v.className = 'vacancy';
-      v.innerHTML = `${info.vacancy}件 ${info.previous_vacancy !== undefined ? `(${formatDiff(info.vacancy - info.previous_vacancy)})` : ''}`;
-      td.appendChild(v);
-
-      const p = document.createElement('span');
-      p.className = 'price';
-      p.innerHTML = `¥${info.avg_price.toLocaleString()} ${priceArrow(info.avg_price, info.previous_avg_price)}`;
-      td.appendChild(p);
-    }
-
-    if (eventData[cellDate]) {
-      const ev = document.createElement('div');
-      ev.className = 'event';
-      ev.innerHTML = eventData[cellDate];
-      td.appendChild(ev);
-    }
-
-    trBody.appendChild(td);
-  }
-
-  while (trBody.children.length < 7) {
-    const td = document.createElement('td');
-    td.className = 'empty';
-    trBody.appendChild(td);
-  }
-  table.appendChild(trBody);
-
-  const wrapper = document.createElement('div');
-  wrapper.className = 'calendar';
-  wrapper.appendChild(table);
-  return wrapper;
+  if(priceChart) priceChart.destroy();
+  priceChart = new Chart(priceCtx, {
+    type:'line',
+    data:{ labels, datasets:[{ label:'平均単価 (¥)', data:priceData, fill:false, tension:0.2 }] },
+    options:{ scales:{ y:{ beginAtZero:true } } }
+  });
 }
 
-function formatDiff(num) {
-  if (num > 0) return `<span class="up">+${num}</span>`;
-  if (num < 0) return `<span class="down">${num}</span>`;
-  return '±0';
+function hideGraph() {
+  document.getElementById('graph-area').classList.add('hidden');
+  currentDate = null;
 }
 
-function priceArrow(curr, prev) {
-  if (curr > prev) return `<span class="up">↑</span>`;
-  if (curr < prev) return `<span class="down">↓</span>`;
-  return '';
+function navDay(offset) {
+  if(!currentDate) return;
+  const dt = new Date(currentDate);
+  dt.setDate(dt.getDate() + offset);
+  const iso = dt.toISOString().slice(0,10);
+  showGraph(iso);
 }
