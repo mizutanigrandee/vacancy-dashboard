@@ -17,14 +17,12 @@ body {
   gap: 36px;
   align-items: flex-start;
   justify-content: center;
-  /* 横幅制限を外して大きくしてもスクロールできるように */
-  max-width: none;
+  max-width: none; /* 横幅制限解除 */
   margin: 0 auto;
   width: 100%;
 }
 
 .graph-side {
-  /* 必要に応じてグラフ部分も拡大したい場合はここを調整してください */
   min-width: 450px;
   max-width: 450px;
   background: #fff;
@@ -46,9 +44,9 @@ body {
   border-radius: 12px;
   box-shadow: 0 2px 14px rgba(65,95,140,0.09);
   padding: 14px 13px 8px 13px;
-  /* ２倍サイズに拡大 */
-  min-width: 700px;
-  max-width: 740px;
+  /* 少し幅を絞ってセルが枠内に収まるよう調整 */
+  min-width: 680px;
+  max-width: 720px;
   margin-bottom: 12px;
 }
 
@@ -63,16 +61,16 @@ body {
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  grid-auto-rows: 1fr;  /* 行高さも列幅と同じ比率に */
+  grid-auto-rows: 1fr;  /* 行高さを列幅と同じに */
   gap: 3px;
 }
 
 .calendar-dow {
   background: #e9f0f6 !important;
   color: #2e6fa2;
-  font-size: 13px !important;
-  padding: 4px 0 !important;
-  min-height: 18px !important;
+  font-size: 12px !important;    /* 少し縮小 */
+  padding: 2px 0 !important;     /* 縦パディングを縮小 */
+  min-height: 16px !important;   /* 高さを抑える */
   border-radius: 4px !important;
 }
 
@@ -80,8 +78,8 @@ body {
   background: #f6f9ff;
   border: 1px solid #e1e7ed;
   border-radius: 7px;
-  aspect-ratio: 1 / 1; /* 幅と高さを1:1で固定 */
-  min-height: 0;       /* 古い min-height を解除 */
+  aspect-ratio: 1 / 1;
+  min-height: 0;
   padding: 6px 4px 5px 4px;
   font-size: 0.99rem;
   color: #222;
@@ -109,18 +107,18 @@ body {
 }
 
 .cell-date {
-  font-size: 1.08rem;
+  font-size: 0.75rem;  /* 小さく */
   font-weight: 700;
   position: absolute;
-  top: 6px;
-  left: 8px;
+  top: 4px;            /* 少し内側へ */
+  left: 4px;
 }
 
 .cell-main {
   font-weight: bold;
   font-size: 1.03rem;
-  margin-bottom: 2px;
   margin-top: 20px;
+  margin-bottom: 2px;
 }
 
 .cell-vacancy {
@@ -160,10 +158,14 @@ body {
 }
 
 .cell-demand-badge {
+  /* 右上に固定配置 */
+  position: absolute;
+  top: 4px;
+  right: 4px;
   display: inline-block;
   font-size: 1.1rem;
-  margin-left: 2px;
   font-weight: bold;
+  margin: 0; /* デフォルトのマージンを無効化 */
 }
 
 .cell-demand-badge.lv1 { color: #ffa600; }
@@ -172,7 +174,9 @@ body {
 .cell-demand-badge.lv4 { color: #be0c0c; }
 .cell-demand-badge.lv5 { color: #421c16; }
 
-.cell-event-list { margin-top: 2px; }
+.cell-event-list {
+  margin-top: 2px;
+}
 
 .cell-event {
   font-size: 0.96rem;
