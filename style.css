@@ -80,25 +80,25 @@ body {
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  grid-template-rows: 38px repeat(6, 1fr); /* 38pxで高さUP */
+  grid-template-rows: 28px repeat(6, 1fr); /* ← 28pxで高さバランス良く */
   gap: 3px;
 }
 .calendar-dow {
-  aspect-ratio: auto;
-  height: 38px !important;          /* ←しっかり高め */
-  min-width: 60px !important;
-  max-width: 100px !important;
+  height: 28px !important;
+  min-width: 36px !important;
+  max-width: 120px !important;
   padding: 2px 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   background: #e9f0f6 !important;
   color: #2e6fa2 !important;
-  font-size: 17px !important;       /* ←しっかり大きく */
+  font-size: 14.5px !important;
   font-weight: bold !important;
   border-radius: 4px !important;
-  letter-spacing: 1.5px;
+  letter-spacing: 1px;
 }
+
 
 /* ── 日付セル ── */
 .calendar-cell {
