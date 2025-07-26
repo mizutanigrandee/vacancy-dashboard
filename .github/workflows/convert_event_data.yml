@@ -3,7 +3,7 @@ name: Convert event_data.xlsx to event_data.json
 on:
   push:
     paths:
-      - 'event_data.xlsx'   # Excelファイルがアップされたときだけ実行
+      - 'event_data.xlsx'
 
 jobs:
   build:
@@ -27,6 +27,7 @@ df = pd.read_excel('event_data.xlsx').dropna(subset=['date','icon','name'])
 d = {}; [d.setdefault(pd.to_datetime(r['date']).date().isoformat(), []).append({'icon':str(r['icon']),'name':str(r['name'])}) for i,r in df.iterrows()]
 json.dump(d, open('event_data.json','w',encoding='utf-8'), ensure_ascii=False, indent=2)
 "
+
       - name: Commit and push event_data.json
         run: |
           git config --local user.email 'github-actions@github.com'
