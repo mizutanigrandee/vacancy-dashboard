@@ -80,19 +80,19 @@ body {
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  grid-template-rows: 20px repeat(6, 1fr);
+  grid-template-rows: 28px repeat(6, 1fr); /* 28pxで高さUP */
   gap: 3px;
 }
 .calendar-dow {
   aspect-ratio: auto;
-  height: 20px !important;
-  padding: 0 !important;
+  height: 28px !important;   /* ←28pxでゆとりUP */
+  padding: 2px 0 !important; /* ←上下2pxずつ */
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   background: #e9f0f6 !important;
   color: #2e6fa2 !important;
-  font-size: 11px !important;
+  font-size: 13px !important;  /* ←やや大きめ */
   border-radius: 4px !important;
 }
 
@@ -107,6 +107,7 @@ body {
   position: relative;
   transition: box-shadow 0.2s;
   cursor: pointer;
+  overflow: hidden;
 }
 .calendar-cell.selected {
   background: #d2edfa !important;
@@ -153,13 +154,15 @@ body {
 .cell-price-diff.down { color: #1565c0; }
 .cell-price-diff.flat { color: #666;   }
 
-/* ── 需要シンボル（炎アイコン右上） ── */
+/* ── 需要シンボル（炎アイコン右上絶対配置） ── */
 .cell-demand-badge {
   position: absolute;
   top: 4px;
   right: 4px;
   font-size: 1.1rem;
   font-weight: bold;
+  z-index: 10;
+  pointer-events: none;
 }
 .cell-demand-badge.lv1 { color: #ffa600; }
 .cell-demand-badge.lv2 { color: #ff6600; }
