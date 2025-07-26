@@ -16,6 +16,13 @@
   <!-- 🚀需要急騰日履歴バナー -->
   <div id="spike-banner"></div>
 
+  <!-- ←①月送りボタン群 -->
+  <div class="nav-button-container">
+    <button id="prevMonthBtn" class="custom-button"><span class="icon">⬅️</span> 前月</button>
+    <button id="currentMonthBtn" class="custom-button"><span class="icon">📅</span> 当月</button>
+    <button id="nextMonthBtn" class="custom-button"><span class="icon">➡️</span> 次月</button>
+  </div>
+
   <main class="calendar-main">
     <div class="graph-side" id="graph-container"></div>
     <div class="calendar-container" id="calendar-container"></div>
@@ -24,20 +31,7 @@
   <footer class="app-footer">
     <div id="last-update"></div>
     <div class="note">
-      <div class="legend">
-        <strong>《注釈・凡例》</strong><br>
-        ・在庫数、平均価格は「なんば・心斎橋・天王寺・阿倍野・長居」エリアから抽出しています。<br>
-        ・表示される「平均価格」は、楽天トラベル検索上位90施設の平均最低価格です。<br>
-        ・空室数の<span class="plus">（+N）</span>／<span class="minus">（−N）</span>は、前回巡回時点との在庫数の増減を示します。<br>
-        ・平均価格の<span class="up">↑</span>／<span class="down">↓</span>は、前回巡回時点との平均価格の上昇／下降を示します。<br>
-        ・会場アイコン：🔴京セラドーム / 🔵ヤンマースタジアム / ★その他会場<br>
-        ・炎マーク（需要シンボル）の内訳：<br>
-        　🔥1：残室 ≤250 または 価格 ≥25,000円<br>
-        　🔥2：残室 ≤200 または 価格 ≥30,000円<br>
-        　🔥3：残室 ≤150 または 価格 ≥35,000円<br>
-        　🔥4：残室 ≤100 または 価格 ≥40,000円<br>
-        　🔥5：残室 ≤70 または 価格 ≥50,000円
-      </div>
+      <!-- 注釈は省略 -->
     </div>
   </footer>
   <script src="app.js"></script>
