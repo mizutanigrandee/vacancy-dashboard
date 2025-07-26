@@ -153,7 +153,8 @@ function renderMonth(y,m) {
       .map(ev => `<div class="cell-event" style="font-size:11px; color:#222; white-space:normal; line-height:1.1;">${ev.icon} <span style="color:#222;">${ev.name}</span></div>`)
       .join("");
 
-    // セル内HTML
+
+    // セル内HTML（祝日名は出さない）
     cell.innerHTML = `
       <div class="cell-date">${d}</div>
       <div class="cell-main">
@@ -166,8 +167,8 @@ function renderMonth(y,m) {
       </div>
       ${badge}
       <div class="cell-event-list">${evs}</div>
-      ${holidayName ? `<div class="cell-holidayname" style="color:#e53935; font-size:10px; margin-top:1px;">${holidayName}</div>` : ""}
     `;
+
     cell.onclick = () => { selectedDate = iso; renderPage(); };
     grid.appendChild(cell);
   }
