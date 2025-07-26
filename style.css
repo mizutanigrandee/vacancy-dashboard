@@ -76,26 +76,20 @@ body {
   margin-bottom: 8px;
 }
 
-/* ── 曜日行（しっかり大きく中央配置・見やすく補強） ── */
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  grid-template-rows: 28px repeat(6, 1fr); /* ← 28pxで高さバランス良く */
-  gap: 3px;
-}
+/* --- 曜日行 --- */
 .calendar-dow {
-  height: 28px !important;
-  min-width: 36px !important;
-  max-width: 120px !important;
-  padding: 2px 0 !important;
+  height: 36px !important;
+  min-width: 54px !important;
+  max-width: 90px !important;
+  padding: 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   background: #e9f0f6 !important;
   color: #2e6fa2 !important;
-  font-size: 14.5px !important;
+  font-size: 18px !important;
   font-weight: bold !important;
-  border-radius: 4px !important;
+  border-radius: 6px !important;
   letter-spacing: 1px;
 }
 
