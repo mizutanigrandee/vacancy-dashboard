@@ -1,0 +1,36 @@
+name: Convert event_data.xlsx to event_data.json
+
+on:
+  push:
+    paths:
+      - 'event_data.xlsx'   # Excelファイルがアップされたときだけ実行
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pandas and openpyxl
+        run: pip install pandas openpyxl
+
+      - name: Convert Excel to JSON
+        run: |
+          python -c "
+import pandas as pd, json
+df = pd.read_excel('event_data.xlsx').dropna(subset=['date','icon','name'])
+d = {}; [d.setdefault(pd.to_datetime(r['date']).date().isoformat(), []).append({'icon':str(r['icon']),'name':str(r['name'])}) for i,r in df.iterrows()]
+json.dump(d, open('event_data.json','w',encoding='utf-8'), ensure_ascii=False, indent=2)
+"
+      - name: Commit and push event_data.json
+        run: |
+          git config --local user.email 'github-actions@github.com'
+          git config --local user.name 'github-actions'
+          git add event_data.json
+          git commit -m 'Auto-generate event_data.json from Excel'
+          git push
