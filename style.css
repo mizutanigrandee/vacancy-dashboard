@@ -6,7 +6,6 @@
   justify-content: center;
   align-items: center;
   padding: 16px 0;
-  /* 添付イメージ風グラデーション */
   background: linear-gradient(90deg, #2D9CDB 0%, #E743B2 100%);
 }
 .app-banner {
@@ -16,7 +15,7 @@
 
 /* ── 月送りボタンとヘッダーの間隔 ── */
 .nav-button-container {
-  margin-top: 16px;   /* ヘッダーとのスペース */
+  margin-top: 16px;
   display: flex;
   justify-content: center;
   gap: 9px;
@@ -85,12 +84,12 @@ body {
   gap: 3px;
 }
 .calendar-dow {
-  aspect-ratio: auto;              /* 正方形指定を解除 */
-  height: 20px !important;         /* 高さを20pxに固定 */
-  padding: 0 !important;           /* 上下パディングをゼロに */
+  aspect-ratio: auto;
+  height: 20px !important;
+  padding: 0 !important;
   display: flex !important;
-  align-items: center !important;  /* 縦中央 */
-  justify-content: center !important; /* 横中央 */
+  align-items: center !important;
+  justify-content: center !important;
   background: #e9f0f6 !important;
   color: #2e6fa2 !important;
   font-size: 11px !important;
@@ -117,18 +116,9 @@ body {
 .saturday-bg  { background: #e3edff !important; }
 .holiday-bg   { background: #fff3e5 !important; }
 
-/* ── 過去日付のグレーアウト ── */
+/* ── 過去日付のグレーアウト（背景のみ） ── */
 .calendar-cell.past-date {
   background: #f0f0f0 !important;
-}
-.calendar-cell.past-date .cell-date,
-.calendar-cell.past-date .cell-vacancy,
-.calendar-cell.past-date .cell-vacancy-diff,
-.calendar-cell.past-date .cell-price,
-.calendar-cell.past-date .cell-price-diff,
-.calendar-cell.past-date .cell-demand-badge {
-  color: #999 !important;
-  opacity: 0.6;
 }
 
 /* ── 日付数字 ── */
@@ -178,7 +168,9 @@ body {
 .cell-demand-badge.lv5 { color: #421c16; }
 
 /* ── イベントリスト ── */
-.cell-event-list { margin-top: 2px; }
+.cell-event-list {
+  margin-top: 2px;
+}
 .cell-event {
   font-size: 0.96rem;
   color: #357ebd;
