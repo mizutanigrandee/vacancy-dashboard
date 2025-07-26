@@ -21,12 +21,15 @@ jobs:
 
       - name: Convert Excel to JSON
         run: |
-          python -c "
+          python -c '
 import pandas as pd, json
-df = pd.read_excel('event_data.xlsx').dropna(subset=['date','icon','name'])
-d = {}; [d.setdefault(pd.to_datetime(r['date']).date().isoformat(), []).append({'icon':str(r['icon']),'name':str(r['name'])}) for i,r in df.iterrows()]
-json.dump(d, open('event_data.json','w',encoding='utf-8'), ensure_ascii=False, indent=2)
-"
+df = pd.read_excel("event_data.xlsx").dropna(subset=["date","icon","name"])
+d = {}
+for _, r in df.iterrows():
+    k = pd.to_datetime(r["date"]).date().isoformat()
+    d.setdefault(k, []).append({"icon": str(r["icon"]), "name": str(r["name"])})
+json.dump(d, open("event_data.json","w",encoding="utf-8"), ensure_ascii=False, indent=2)
+'
 
       - name: Commit and push event_data.json
         run: |
