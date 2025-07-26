@@ -40,8 +40,11 @@ async function loadAll() {
   historicalData = await loadJson(HIST_PATH);
 }
 function isHoliday(date) {
-  return HOLIDAYS.includes(date);
+  // dateは "YYYY-MM-DD" 形式
+  const d = new Date(date);
+  return window.JapaneseHolidays && window.JapaneseHolidays.isHoliday(d);
 }
+
 
 // 月送りボタン設定
 function setupMonthButtons() {
