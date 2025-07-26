@@ -6,13 +6,12 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://unpkg.com/japanese-holidays@3.0.0/lib/index.js"></script>
-
+  <!-- 祝日判定ローカルJSを必ず先に読み込み -->
+  <script src="japanese-holidays.js"></script>
 </head>
 <body>
   <header class="app-header">
     <img src="バナー画像3.png" class="app-banner" alt="バナー">
-    <!-- ▼ ロゴ直下の重複タイトルは削除しました -->
   </header>
 
   <!-- 🚀需要急騰日履歴バナー -->
@@ -32,9 +31,10 @@
 
   <footer class="app-footer">
     <div id="last-update"></div>
-    <!-- 注釈省略 -->
+    <!-- 注釈など -->
   </footer>
 
+  <!-- 最後にapp.js -->
   <script src="app.js"></script>
 </body>
 </html>
