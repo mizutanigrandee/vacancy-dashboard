@@ -6,8 +6,8 @@
   justify-content: center;
   align-items: center;
   padding: 16px 0;
-  /* グラデーション背景 */
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* 添付イメージ風グラデーション */
+  background: linear-gradient(90deg, #2D9CDB 0%, #E743B2 100%);
 }
 .app-banner {
   width: 40%;
@@ -72,15 +72,21 @@ body {
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  grid-auto-rows: 1fr;
+  /* 一行目：20px。以下最大6行を自動で均等配分 */
+  grid-template-rows: 20px repeat(6, 1fr);
   gap: 3px;
 }
 .calendar-dow {
+  /* 正方形指定をリセットして上下をコンパクトに */
+  aspect-ratio: auto;
+  height: 20px !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
   background: #e9f0f6 !important;
   color: #2e6fa2 !important;
   font-size: 11px !important;
-  line-height: 1 !important;
-  padding: 2px 0 !important; /* 上下を短く */
   border-radius: 4px !important;
 }
 
@@ -100,9 +106,9 @@ body {
   background: #d2edfa !important;
   box-shadow: 0 0 0 2px #5ac8fa !important;
 }
-.sunday-bg { background: #f7e4e4 !important; }
-.saturday-bg { background: #e3edff !important; }
-.holiday-bg { background: #fff3e5 !important; }
+.sunday-bg    { background: #f7e4e4 !important; }
+.saturday-bg  { background: #e3edff !important; }
+.holiday-bg   { background: #fff3e5 !important; }
 
 /* 日付数字（小さく左上） */
 .cell-date {
@@ -114,17 +120,45 @@ body {
 }
 
 /* 在庫＆前日比 */
-.cell-main { margin-top: 20px; margin-bottom: 2px; }
-.cell-vacancy { font-size: 1.08rem; font-weight: bold; }
-.cell-vacancy-diff.plus  { color: #1976d2; font-size: 12px; margin-left: 2px; }
-.cell-vacancy-diff.minus { color: #d32f2f; font-size: 12px; margin-left: 2px; }
-.cell-vacancy-diff.flat  { color: #666;   font-size: 12px; margin-left: 2px; }
+.cell-main {
+  margin-top: 20px;
+  margin-bottom: 2px;
+}
+.cell-vacancy {
+  font-size: 1.08rem;
+  font-weight: bold;
+}
+.cell-vacancy-diff.plus {
+  color: #1976d2;
+  font-size: 12px;
+  margin-left: 2px;
+}
+.cell-vacancy-diff.minus {
+  color: #d32f2f;
+  font-size: 12px;
+  margin-left: 2px;
+}
+.cell-vacancy-diff.flat {
+  color: #666;
+  font-size: 12px;
+  margin-left: 2px;
+}
 
 /* 価格＆前日比 */
-.cell-price { font-size: 0.97rem; color: #2e6fa2; margin-bottom: 1px; }
-.cell-price-diff.up   { color: #d32f2f; }
-.cell-price-diff.down { color: #1565c0; }
-.cell-price-diff.flat { color: #666;   }
+.cell-price {
+  font-size: 0.97rem;
+  color: #2e6fa2;
+  margin-bottom: 1px;
+}
+.cell-price-diff.up {
+  color: #d32f2f;
+}
+.cell-price-diff.down {
+  color: #1565c0;
+}
+.cell-price-diff.flat {
+  color: #666;
+}
 
 /* 需要シンボル（右上） */
 .cell-demand-badge {
@@ -141,7 +175,9 @@ body {
 .cell-demand-badge.lv5 { color: #421c16; }
 
 /* イベント */
-.cell-event-list { margin-top: 2px; }
+.cell-event-list {
+  margin-top: 2px;
+}
 .cell-event {
   font-size: 0.96rem;
   color: #357ebd;
@@ -172,7 +208,9 @@ body {
   cursor: pointer;
   transition: background 0.18s, color 0.18s, border 0.18s;
 }
-.custom-button .icon { margin-right: 6px; }
+.custom-button .icon {
+  margin-right: 6px;
+}
 .custom-button:hover {
   background: #f3f7fa;
   border-color: #e53939;
@@ -182,13 +220,25 @@ body {
 /* ── レスポンシブ ── */
 @media screen and (max-width: 1100px) {
   .main-flexbox,
-  .calendar-container { flex-direction: column; gap: 18px; }
+  .calendar-container {
+    flex-direction: column;
+    gap: 18px;
+  }
   .graph-side,
-  .month-calendar   { min-width: 96vw; max-width: 98vw; }
+  .month-calendar {
+    min-width: 96vw;
+    max-width: 98vw;
+  }
 }
 @media screen and (max-width: 700px) {
   .main-flexbox,
-  .calendar-container { flex-direction: column; gap: 12px; }
+  .calendar-container {
+    flex-direction: column;
+    gap: 12px;
+  }
   .graph-side,
-  .month-calendar     { min-width: 97vw; max-width: 99vw; }
+  .month-calendar {
+    min-width: 97vw;
+    max-width: 99vw;
+  }
 }
