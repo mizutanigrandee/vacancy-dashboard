@@ -1,54 +1,38 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>空室＆平均価格カレンダー</title>
-  <meta name="viewport" content="width=1300">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="header">
-    <img src="logo.png" alt="めちゃいいツール" class="logo">
-    <span class="header-title">空室＆平均価格カレンダー</span>
-    <span class="header-sub">（空室・料金・イベント一括可視化）</span>
-    <span class="header-link"><a href="#">（空室＆平均価格カレンダー）</a></span>
-  </div>
+  <header>
+    <img src="logo.png" alt="めちゃいいツールロゴ" />
+    <h1>空室＆平均価格カレンダー</h1>
+    <p>（空室・料金・イベント一括可視化）</p>
+  </header>
 
-  <div class="main-container">
-    <div id="graph-container">
-      <div class="graph-title" id="graph-title">2025-07-26 の在庫・価格推移</div>
-      <canvas id="mainChart" width="530" height="220"></canvas>
+  <main>
+    <div class="graph-area" id="graph-area">
+      <!-- 折れ線グラフ（在庫／価格）をJSで描画 -->
     </div>
-    <div class="calendars-wrap">
-      <div class="calendar-block">
-        <div class="calendar-title" id="month1-title"></div>
-        <table id="calendar1" class="calendar-table"></table>
-      </div>
-      <div class="calendar-block">
-        <div class="calendar-title" id="month2-title"></div>
-        <table id="calendar2" class="calendar-table"></table>
-      </div>
-    </div>
-  </div>
-  <div class="calendar-nav">
-    <button id="prevMonthBtn">前月</button>
-    <button id="todayBtn">当月</button>
-    <button id="nextMonthBtn">次月</button>
-  </div>
 
-  <div class="footer-info">
-    <div id="last-updated">最終更新日時: 2025-07-26</div>
-    <div class="notes">
-      <strong>（注釈・凡例）</strong><br>
-      ・在庫数、平均価格は『なんば・心斎橋・天王寺・阿倍野・長居』エリアから抽出しています。<br>
-      ・表示される「平均価格」は、楽天トラベル検索上位90施設の平均最低価格です。<br>
-      ・空室数の <span style="color:#1563db;">（+N）</span> ／ <span style="color:#db1515;">（-N）</span> は前回取得時点との差分です。<br>
-      ・平均価格の↑↓は前回取得時点との差分です。<br>
-      ・会場アイコン：<span style="color:red;">🔴京セラドーム</span>／<span style="color:blue;">🔵ヤンマースタジアム</span>／★その他会場<br>
-      ・炎マーク（需要シンボル）の内訳：🔥1～5<br>
-      　1: 残室≤250 or 価格≥25,000円　2: 残室≤200 or 価格≥30,000円　3: 残室≤150 or 価格≥35,000円　4: 残室≤100 or 価格≥40,000円　5: 残室≤70 or 価格≥50,000円
+    <div class="calendar-controls">
+      <button id="prev-month">⬅️ 前月</button>
+      <button id="current-month">当月</button>
+      <button id="next-month">➡️ 次月</button>
     </div>
-  </div>
+
+    <div class="calendar-container" id="calendar-container">
+      <!-- JSで2か月分のカレンダーを描画 -->
+    </div>
+
+    <div class="footer-notice">
+      <p>※ 🔴京セラ／🔵ヤンマー／⚫その他イベントは自動表示</p>
+      <p id="last-updated">最終更新：--</p>
+    </div>
+  </main>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="app.js"></script>
