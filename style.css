@@ -1,167 +1,135 @@
-/* リセット */
+/* --- リセット --- */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* --- カスタムボタン --- */
+.custom-button {
+    display: flex; align-items: center; justify-content: center;
+    padding: 9px 0; min-width: 80px; max-width: 220px;
+    border: 1.8px solid #b9b9c9; border-radius: 10px;
+    background: #fff; color: #1a1a1a; text-decoration: none;
+    font-size: 1rem; font-weight: 500; margin: 0 10px 10px 0;
+    box-shadow: 0 1.5px 7px rgba(0,0,0,0.03);
+    transition: background .18s, color .18s, border .18s;
+}
+.custom-button, .custom-button:visited, .custom-button:active {
+    text-decoration: none !important; color: #1a1a1a !important;
+}
+.custom-button .icon {
+    font-size: 1em; margin-right: 11px; line-height: 1; display: inline-block;
+}
+.custom-button:hover {
+    background: #f3f3fa; border-color: #e53939; color: #e53939 !important;
+}
+
+/* --- レスポンシブボタンコンテナ --- */
+.nav-button-container, .graph-button-container {
+    display: flex; justify-content: center; align-items: center;
+    gap: 18px; flex-wrap: wrap; width: 100%; margin-bottom: 1.6rem;
+}
+
+/* --- ヘッダー --- */
 body {
-  font-family: 'Arial', sans-serif;
-  background: #f7f9fb;
-  color: #222;
+  font-family: Arial, sans-serif;
+  background: #f7f9fb; color: #222;
 }
-
-header {
-  text-align: center;
-  padding: 1em 0 0.5em;
-}
-
+header { text-align: center; padding: 1em 0 .5em; }
 .main-banner {
-  max-width: 1000px;
-  width: 100%;
-  height: auto;
-  margin: 0 auto 0.5em;
-  display: block;
+  max-width: 1000px; width: 100%; height: auto;
+  display: block; margin: 0 auto .5em;
 }
-
 .title-group h1 {
-  font-size: 1.8em;
-  color: #b03060;
+  font-size: 1.8em; color: #b03060;
 }
-
 .subtitle {
-  font-size: 0.9em;
-  color: #555;
-  margin-top: 0.2em;
+  font-size: .9em; color: #555; margin-top:.2em;
 }
 
-.nav-buttons {
-  text-align: center;
-  margin-bottom: 1em;
+/* --- 需要急騰バナー用Flex --- */
+.spike-flex-row {
+  display: flex; flex-wrap: wrap; gap: 7px 0; align-items: center; margin-top: 1px;
 }
 
-.nav-buttons button {
-  margin: 0 0.5em;
-  padding: 0.6em 1.2em;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background: #fff;
-  cursor: pointer;
-  font-weight: bold;
-}
+/* --- ナビゲーションボタン --- */
+/* （上述の custom-button, nav-button-container が対応） */
 
+/* --- メイン２カラム --- */
 .main-content {
-  display: flex;
-  gap: 20px;
-  padding: 0 1em;
+  display: flex; gap: 20px; padding: 0 1em;
 }
 
-/* グラフエリア */
+/* --- グラフエリア --- */
 .graph-area {
   flex: 0 0 360px;
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  background: #fff; border: 1px solid #ccc; border-radius: 8px;
   padding: 1em;
 }
-
 .hidden { display: none; }
-
-.graph-controls {
-  display: flex;
-  justify-content: flex-start;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.graph-controls button {
-  padding: 0.4em 0.8em;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background: #fff;
-  cursor: pointer;
-  font-size: 0.9em;
-}
-
 canvas {
-  display: block;
-  width: 100%;
-  height: 200px !important;
+  display: block; width: 100%; height: 300px !important;
   margin-bottom: 1em;
 }
 
-/* カレンダー部 */
+/* --- カレンダー部 (1.5×拡大) --- */
 .calendar-container {
-  flex: 1;
-  display: flex;
-  gap: 20px;
-  overflow-x: auto;
+  flex: 1; display: flex; gap: 20px; overflow-x: auto;
 }
-
 .calendar {
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  min-width: 320px;
+  background: #fff; border: 1px solid #ccc; border-radius: 8px;
+  min-width: 480px; /* ← 1.5倍 */
 }
-
 .calendar caption {
-  font-weight: bold;
-  padding: 0.5em 0;
+  font-weight: bold; padding: .75em 0; /* ← 1.5倍 */
 }
-
 .calendar table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-  text-align: center;
+  width: 100%; border-collapse: collapse; table-layout: fixed;
 }
-
 .calendar th, .calendar td {
   border: 1px solid #ddd;
-  padding: 6px 4px;
-  position: relative;
-  font-size: 0.75em;
+  padding: 9px 6px;      /* ← 1.5倍 */
+  font-size: 1.125em;    /* ← 0.75em×1.5 */
+  position: relative; vertical-align: top; text-align: center;
 }
-
 .calendar th {
-  background: #f0f0f5;
-  font-weight: bold;
+  background: #f0f0f5; font-weight: bold;
 }
-
-.calendar td.empty {
-  background: #f9f9f9;
-}
-
-.calendar td.sunday { background: #ffecec; }
+.calendar td.empty { background: #f9f9f9; }
+.calendar td.sunday   { background: #ffecec; }
 .calendar td.saturday { background: #ecf3ff; }
 
 .date-number {
-  font-weight: bold;
-  margin-bottom: 4px;
+  font-weight: bold; margin-bottom: 6px; /* ← 1.5倍 */
 }
-
 .vacancy, .price {
   line-height: 1.2;
 }
-
-.vacancy .up { color: blue; }
+.vacancy .up   { color: blue; }
 .vacancy .down { color: red; }
-
-.price .up { color: red; }
-.price .down { color: blue; }
-
+.price   .up   { color: red; }
+.price   .down { color: blue; }
 .event {
-  font-size: 0.7em;
-  margin-top: 4px;
-  line-height: 1.1;
+  font-size: .7em; margin-top: 4px; line-height: 1.1;
 }
 
-/* フッター */
+/* --- フッター --- */
 footer {
-  text-align: center;
-  font-size: 0.85em;
-  color: #555;
-  margin: 1em 0;
+  text-align: center; font-size: .85em; color: #555; margin: 1em 0;
 }
+.hint { color: #296; margin-top: .5em; }
 
-.hint {
-  color: #296;
-  margin-top: 0.5em;
+/* --- レスポンシブ調整 --- */
+@media (max-width:700px) {
+  .nav-button-container, .graph-button-container {
+    gap: 3.5px; margin-bottom: .65rem;
+  }
+  .custom-button {
+    min-width: 56px !important; max-width: 90vw !important;
+    padding: 4.2px 1 !important; font-size: .7rem !important;
+  }
+  .custom-button .icon {
+    font-size: 1.09em !important; margin-right: 8px !important;
+  }
+  .main-banner {
+    width: 98vw !important; height: auto !important; margin:0 auto;
+  }
+  /* 必要に応じて他要素の更なる縮小を追加 */
 }
