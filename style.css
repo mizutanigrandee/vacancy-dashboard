@@ -76,24 +76,28 @@ body {
   margin-bottom: 8px;
 }
 
-/* ── 曜日行（上下を短く中央配置） ── */
+/* ── 曜日行（しっかり大きく中央配置・見やすく補強） ── */
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  grid-template-rows: 28px repeat(6, 1fr); /* 28pxで高さUP */
+  grid-template-rows: 38px repeat(6, 1fr); /* 38pxで高さUP */
   gap: 3px;
 }
 .calendar-dow {
   aspect-ratio: auto;
-  height: 28px !important;   /* ←28pxでゆとりUP */
-  padding: 2px 0 !important; /* ←上下2pxずつ */
+  height: 38px !important;          /* ←しっかり高め */
+  min-width: 60px !important;
+  max-width: 100px !important;
+  padding: 2px 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   background: #e9f0f6 !important;
   color: #2e6fa2 !important;
-  font-size: 13px !important;  /* ←やや大きめ */
+  font-size: 17px !important;       /* ←しっかり大きく */
+  font-weight: bold !important;
   border-radius: 4px !important;
+  letter-spacing: 1.5px;
 }
 
 /* ── 日付セル ── */
@@ -191,11 +195,10 @@ body {
   font-weight: normal;
 }
 .cell-event-name {
-  color: #222;        /* アーティスト名は黒 */
-  font-weight: 600;   /* 少し太字で見やすく */
+  color: #222 !important;   /* ←黒で強制 */
+  font-weight: 600 !important;
   margin-left: 2px;
 }
-
 
 /* ── グラフボタン群 ── */
 .graph-btns {
@@ -230,6 +233,13 @@ body {
     min-width: 96vw;
     max-width: 98vw;
   }
+  .calendar-dow {
+    min-width: 28px !important;
+    max-width: 80vw !important;
+    font-size: 14px !important;
+    height: 28px !important;
+    line-height: 28px !important;
+  }
 }
 @media screen and (max-width: 700px) {
   .main-flexbox,
@@ -241,5 +251,12 @@ body {
   .month-calendar {
     min-width: 97vw;
     max-width: 99vw;
+  }
+  .calendar-dow {
+    min-width: 18px !important;
+    max-width: 80vw !important;
+    font-size: 11px !important;
+    height: 20px !important;
+    line-height: 20px !important;
   }
 }
