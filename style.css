@@ -175,16 +175,25 @@ body {
   margin-top: 2px;
 }
 .cell-event {
-  font-size: 11px;          /* ←ここを小さめに */
-  color: #357ebd;
+  font-size: 11px;
   display: flex;
   align-items: center;
   gap: 2px;
   margin-top: 2px;
   line-height: 1.1;
-  word-break: break-all;    /* 長いイベント名も自動で折返し */
-  white-space: normal;      /* 折返し有効 */
-  max-width: 95%;           /* はみ出し防止 */
+  word-break: break-all;
+  white-space: normal;
+  max-width: 95%;
+}
+.cell-event-icon {
+  color: #357ebd;     /* アイコンは青 */
+  flex-shrink: 0;
+  font-weight: normal;
+}
+.cell-event-name {
+  color: #222;        /* アーティスト名は黒 */
+  font-weight: 600;   /* 少し太字で見やすく */
+  margin-left: 2px;
 }
 
 
