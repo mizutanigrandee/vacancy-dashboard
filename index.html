@@ -1,72 +1,45 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー</title>
-  <link rel="stylesheet" href="style.css"/>
+  <meta charset="UTF-8">
+  <title>めちゃいいツール | 空室＆平均価格カレンダー</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <!-- 1. バナー表示 (Base64 埋め込み) -->
-  <header>
-    <img id="banner" alt="めちゃいいツールロゴ" class="main-banner"/>
-    <div class="title-group">
-      <h1>空室＆平均価格カレンダー</h1>
-      <p class="subtitle">（空室・料金・イベント一括可視化）</p>
-    </div>
+  <header class="app-header">
+    <img src="バナー画像3.png" class="app-banner" alt="バナー">
+    <div class="app-title">めちゃいいツール　空室＆平均価格カレンダー</div>
   </header>
 
-  <!-- 2. 需要急騰検知バナー -->
-  <div id="spike-container"></div>
+  <!-- 🚀需要急騰日履歴バナー -->
+  <div id="spike-banner"></div>
 
-  <!-- 3. 月移動ボタン -->
-  <div class="nav-button-container">
-    <button id="prev-month" class="custom-button"><span class="icon">⬅️</span>前月</button>
-    <button id="current-month" class="custom-button"><span class="icon">📅</span>当月</button>
-    <button id="next-month" class="custom-button"><span class="icon">➡️</span>次月</button>
-  </div>
+  <main class="calendar-main">
+    <div class="graph-side" id="graph-container"></div>
+    <div class="calendar-container" id="calendar-container"></div>
+  </main>
 
-  <!-- 4. メイン（左:グラフ／右:カレンダー２か月） -->
-  <div class="main-content">
-    <!-- グラフエリア（初期 hidden） -->
-    <section id="graph-area" class="graph-area hidden">
-      <div class="graph-button-container">
-        <button id="close-graph" class="custom-button"><span class="icon">❌</span>グラフを閉じる</button>
-        <button id="prev-day" class="custom-button"><span class="icon">＜</span>前日</button>
-        <button id="next-day" class="custom-button">翌日<span class="icon">＞</span></button>
+  <footer class="app-footer">
+    <div id="last-update"></div>
+    <div class="note">
+      <div class="legend">
+        <strong>《注釈・凡例》</strong><br>
+        ・在庫数、平均価格は「なんば・心斎橋・天王寺・阿倍野・長居」エリアから抽出しています。<br>
+        ・表示される「平均価格」は、楽天トラベル検索上位90施設の平均最低価格です。<br>
+        ・空室数の<span class="plus">（+N）</span>／<span class="minus">（−N）</span>は、前回巡回時点との在庫数の増減を示します。<br>
+        ・平均価格の<span class="up">↑</span>／<span class="down">↓</span>は、前回巡回時点との平均価格の上昇／下降を示します。<br>
+        ・会場アイコン：🔴京セラドーム / 🔵ヤンマースタジアム / ★その他会場<br>
+        ・炎マーク（需要シンボル）の内訳：<br>
+        　🔥1：残室 ≤250 または 価格 ≥25,000円<br>
+        　🔥2：残室 ≤200 または 価格 ≥30,000円<br>
+        　🔥3：残室 ≤150 または 価格 ≥35,000円<br>
+        　🔥4：残室 ≤100 または 価格 ≥40,000円<br>
+        　🔥5：残室 ≤70 または 価格 ≥50,000円
       </div>
-      <h4 id="graph-title"></h4>
-      <canvas id="vac-chart"></canvas>
-      <canvas id="price-chart"></canvas>
-    </section>
-
-    <!-- カレンダー２か月 -->
-    <div id="calendar-container" class="calendar-container"></div>
-  </div>
-
-  <!-- 5. フッター -->
-  <footer>
-    <p>※ 🔴京セラ／🔵ヤンマー／⚫その他イベントは自動表示</p>
-    <p id="last-updated">最終更新：--</p>
-    <p class="hint">日付をクリックすると推移グラフが表示されます</p>
+    </div>
   </footer>
-
-  <!-- 6. アプリ本体JS -->
   <script src="app.js"></script>
-
-  <!-- 7. バナー Base64 埋め込みスクリプト -->
-  <script>
-    (async()=>{
-      const res = await fetch('バナー画像3.png');
-      const blob = await res.blob();
-      const dataUrl = await new Promise(r=>{
-        const fr = new FileReader();
-        fr.onload = ()=>r(fr.result);
-        fr.readAsDataURL(blob);
-      });
-      document.getElementById('banner').src = dataUrl;
-    })();
-  </script>
 </body>
 </html>
