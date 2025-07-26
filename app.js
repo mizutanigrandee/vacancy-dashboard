@@ -1,214 +1,204 @@
-// app.js
+// app.js - 本番用（ダミーデータ完全排除）
+// 必要に応じてファイル名やAPI URLなどを調整してください
 
-// 必要なモックデータ例（本番はfetchで差し替え）
-const mockVacancyData = window.mockVacancyData || {}; // { 'YYYY-MM-DD': { vacancy, price, ... } }
-const mockEventData = window.mockEventData || {};     // { 'YYYY-MM-DD': [ { icon, name }, ... ] }
-const mockHistoryData = window.mockHistoryData || {}; // { 'YYYY-MM-DD': { 'YYYY-MM-DD': { vacancy, price } } }
+let baseYear, baseMonth, monthOffset = 0;
+let cacheData = {};    // vacancy_price_cache.json
+let eventData = {};    // event_data.json もしくは event_data.xlsxを事前変換
+let selectedDate = null;
 
-const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
-const CALENDAR_CELL_SIZE = 70; // px, 正方形を維持
+// --- データ取得（ページ初期化時に実行） ---
+async function loadAllData() {
+    // 1. 空室・価格キャッシュ
+    await fetch('vacancy_price_cache.json', { cache: "reload" })
+      .then(res => res.json())
+      .then(json => { cacheData = json; });
 
-// 祝日判定（例：jpholiday互換API/テーブルなど本番で差し替え）
-function isHoliday(date) {
-  // 簡易版：日曜だけ祝日。必要に応じて拡張
-  return date.getDay() === 0;
+    // 2. イベントデータ（JSONに変換しておくことを推奨）
+    await fetch('event_data.json', { cache: "reload" })
+      .then(res => res.json())
+      .then(json => { eventData = json; });
+
+    // 3. 今日
+    const today = new Date();
+    baseYear = today.getFullYear();
+    baseMonth = today.getMonth() + 1;
+    monthOffset = 0;
+    // 4. 初回描画
+    drawCalendars();
+    // 5. 初期グラフ
+    const todayStr = today.toISOString().slice(0, 10);
+    selectedDate = todayStr;
+    drawGraph(todayStr);
+    // 6. 更新日時
+    document.getElementById("last-updated").textContent = `最終更新日時: ${todayStr}`;
 }
-function isSaturday(date) {
-  return date.getDay() === 6;
-}
 
-// 月のカレンダー行列（weeks: [[Date, ...], ...]）
-function getMonthMatrix(year, month) {
-  const first = new Date(year, month, 1);
-  const last = new Date(year, month + 1, 0);
-  const start = new Date(first);
-  start.setDate(start.getDate() - start.getDay());
-  const end = new Date(last);
-  end.setDate(end.getDate() + (6 - end.getDay()));
-  const weeks = [];
-  let cur = new Date(start);
-  while (cur <= end) {
-    let week = [];
-    for (let d = 0; d < 7; ++d) {
-      week.push(new Date(cur));
-      cur.setDate(cur.getDate() + 1);
+// --- カレンダーデータ取得 ---
+function getCalendarMatrix(year, month) {
+    const matrix = [];
+    const firstDay = new Date(year, month - 1, 1).getDay();
+    const lastDate = new Date(year, month, 0).getDate();
+
+    let week = Array(7).fill(null);
+    let dayCount = 1 - firstDay;
+
+    for (let row = 0; row < 6; row++) {
+        week = [];
+        for (let col = 0; col < 7; col++, dayCount++) {
+            if (dayCount < 1 || dayCount > lastDate) {
+                week.push(null);
+            } else {
+                const iso = `${year}-${String(month).padStart(2, '0')}-${String(dayCount).padStart(2, '0')}`;
+                const rec = cacheData[iso] || {};
+                const ev  = eventData[iso] || [];
+                week.push({
+                    day: dayCount,
+                    iso,
+                    ...rec,
+                    events: ev,
+                    weekday: col
+                });
+            }
+        }
+        matrix.push(week);
     }
-    weeks.push(week);
-  }
-  return weeks;
+    return matrix;
 }
 
-// 需要シンボル
-function getDemandIcon(vac, price) {
-  if (vac <= 70 || price >= 50000) return "🔥5";
-  if (vac <= 100 || price >= 40000) return "🔥4";
-  if (vac <= 150 || price >= 35000) return "🔥3";
-  if (vac <= 200 || price >= 30000) return "🔥2";
-  if (vac <= 250 || price >= 25000) return "🔥1";
-  return "";
-}
-
-// 祝日 or 土日判定
-function getCellClass(date, month) {
-  if (date.getMonth() !== month) return "calendar-cell out-month";
-  if (isHoliday(date)) return "calendar-cell holiday";
-  if (isSaturday(date)) return "calendar-cell saturday";
-  if (date.getDay() === 0) return "calendar-cell sunday";
-  return "calendar-cell";
-}
-
-// カレンダー1枚HTML生成
-function renderCalendar(year, month, selectedDate) {
-  const today = new Date();
-  const weeks = getMonthMatrix(year, month);
-  let html = `<div class="month-header">${year}年${month + 1}月</div>`;
-  html += `<div class="calendar-grid calendar-header-row">`;
-  for (let i = 0; i < 7; ++i) html += `<div>${WEEKDAYS[i]}</div>`;
-  html += `</div>`;
-
-  html += `<div class="calendar-grid">`;
-  for (const week of weeks) {
-    for (const date of week) {
-      const ymd = date.toISOString().slice(0, 10);
-      const inMonth = date.getMonth() === month;
-      const cellClass =
-        getCellClass(date, month) +
-        (ymd === selectedDate ? " selected" : "");
-      let rec = mockVacancyData[ymd] || {};
-      let vac = rec.vacancy ?? "";
-      let price = rec.price ?? "";
-      let diffV = rec.vacancy_diff ?? "";
-      let diffP = rec.price_diff ?? "";
-      let demand = (vac && price) ? getDemandIcon(vac, price) : "";
-      let eventHtml = "";
-      if (mockEventData[ymd]) {
-        eventHtml = `<div class="event-line">${mockEventData[ymd]
-          .map(ev => `<span>${ev.icon} ${ev.name}</span>`)
-          .join("<br>")}</div>`;
-      }
-      html += `
-      <div class="${cellClass}" style="height:${CALENDAR_CELL_SIZE}px;"
-        data-date="${ymd}" ${inMonth ? '' : 'tabindex="-1"'}>
-        <div class="cell-date" style="font-weight:bold;font-size:15px;">
-          ${date.getDate()}
-        </div>
-        <div class="cell-vac">
-          ${vac !== "" ? `${vac}件` : ""}
-          ${diffV > 0 ? `<span style="color:blue;font-size:12px;">（+${diffV}）</span>` : ""}
-          ${diffV < 0 ? `<span style="color:red;font-size:12px;">（${diffV}）</span>` : ""}
-        </div>
-        <div class="cell-price">
-          ${price !== "" ? `¥${Number(price).toLocaleString()}` : ""}
-          ${diffP > 0 ? `<span style="color:red;"> ↑</span>` : ""}
-          ${diffP < 0 ? `<span style="color:blue;"> ↓</span>` : ""}
-        </div>
-        <div class="cell-demand">${demand}</div>
-        ${eventHtml}
-      </div>
-      `;
+// --- カレンダー描画 ---
+function drawCalendar(targetId, year, month, selIso) {
+    const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
+    const matrix = getCalendarMatrix(year, month);
+    let html = `<table class="calendar-table"><thead><tr>`;
+    for (let wd = 0; wd < 7; wd++) {
+        html += `<th>${weekDays[wd]}</th>`;
     }
-  }
-  html += `</div>`;
-  return html;
-}
+    html += "</tr></thead><tbody>";
 
-// グラフ描画（簡易・モック版、実際はChart.js等で実装推奨）
-function renderGraph(dateStr) {
-  // データ取得
-  const hist = mockHistoryData[dateStr];
-  if (!hist) return `<div style="color:#777;margin:14px;">データなし</div>`;
-  // 仮：canvasタグ生成。グラフjsは別途
-  // 実際はplotlyやChart.jsなど推奨
-  return `
-    <div style="font-weight:bold;margin-bottom:2px;">${dateStr} の在庫・価格推移</div>
-    <canvas id="vacancyGraph" width="340" height="120"></canvas>
-    <canvas id="priceGraph" width="340" height="120"></canvas>
-  `;
-}
-
-// 選択日付のグラフ描画
-function updateGraph(dateStr) {
-  const graphContainer = document.getElementById("graph-container");
-  graphContainer.innerHTML = renderGraph(dateStr);
-  // ここでCanvas描画（Chart.js等で）を追加
-  // 仮のランダムグラフでOKなら…
-  if (mockHistoryData[dateStr]) {
-    drawMockLineChart("vacancyGraph", Object.values(mockHistoryData[dateStr]).map(d => d.vacancy), "在庫数");
-    drawMockLineChart("priceGraph", Object.values(mockHistoryData[dateStr]).map(d => d.price), "平均単価(円)");
-  }
-}
-
-// 仮：ランダム線グラフ（Canvasで簡易）
-function drawMockLineChart(canvasId, dataArr, label) {
-  const c = document.getElementById(canvasId);
-  if (!c || !dataArr.length) return;
-  const ctx = c.getContext("2d");
-  ctx.clearRect(0,0, c.width, c.height);
-  ctx.beginPath();
-  ctx.moveTo(10, 100 - dataArr[0]/(Math.max(...dataArr)+1) * 100);
-  for (let i=1; i<dataArr.length; i++) {
-    ctx.lineTo(10+i*20, 100 - dataArr[i]/(Math.max(...dataArr)+1) * 100);
-  }
-  ctx.strokeStyle = canvasId === "vacancyGraph" ? "#2980b9" : "#e74c3c";
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  ctx.font = "10px sans-serif";
-  ctx.fillText(label, 10, 10);
-}
-
-// 月カレンダーのリフレッシュ
-function updateCalendars(baseDate, selectedDate) {
-  const y1 = baseDate.getFullYear(), m1 = baseDate.getMonth();
-  const y2 = (new Date(baseDate.getTime() + 32*24*60*60*1000)).getFullYear();
-  const m2 = (new Date(baseDate.getTime() + 32*24*60*60*1000)).getMonth();
-
-  document.getElementById("calendar-container-1").innerHTML = renderCalendar(y1, m1, selectedDate);
-  document.getElementById("calendar-container-2").innerHTML = renderCalendar(y2, m2, selectedDate);
-
-  // カレンダークリックで日付選択
-  Array.from(document.querySelectorAll('.calendar-cell')).forEach(cell => {
-    cell.onclick = e => {
-      const ymd = cell.dataset.date;
-      if (ymd) {
-        updateGraph(ymd);
-        updateCalendars(baseDate, ymd);
-      }
-    };
-  });
-}
-
-// ナビゲーション
-function bindCalendarNav(baseDateSetter) {
-  document.getElementById('prevMonthBtn').onclick = () => baseDateSetter(-1);
-  document.getElementById('currentMonthBtn').onclick = () => baseDateSetter(0);
-  document.getElementById('nextMonthBtn').onclick = () => baseDateSetter(1);
-}
-
-// 初期化
-window.onload = function() {
-  let baseMonth = new Date();
-  baseMonth.setDate(1);
-  let selected = null;
-
-  function rerender(navi=0) {
-    if (navi !== 0) {
-      baseMonth.setMonth(baseMonth.getMonth() + navi);
-    } else if (navi === 0) {
-      baseMonth = new Date();
-      baseMonth.setDate(1);
+    for (const week of matrix) {
+        html += "<tr>";
+        for (const cell of week) {
+            if (!cell) {
+                html += `<td></td>`;
+                continue;
+            }
+            let tdClass = "";
+            if (cell.weekday === 0) tdClass += " sunday";
+            else if (cell.weekday === 6) tdClass += " saturday";
+            if (selIso && selIso === cell.iso) tdClass += " selected";
+            html += `<td class="${tdClass.trim()}" data-date="${cell.iso}">`;
+            html += `<span class="day-num">${cell.day}</span>`;
+            // 在庫数・差分
+            if (cell.vacancy !== undefined) {
+                html += `<span class="vacancy">${cell.vacancy}件`;
+                if (cell.vacancy_diff > 0) html += `<span class="diff-up">（+${cell.vacancy_diff}）</span>`;
+                else if (cell.vacancy_diff < 0) html += `<span class="diff-down">（${cell.vacancy_diff}）</span>`;
+                html += `</span>`;
+            }
+            // 平均価格・差分
+            if (cell.avg_price !== undefined) {
+                html += `<span class="avg-price">￥${Number(cell.avg_price).toLocaleString()}`;
+                if (cell.avg_price_diff > 0) html += `<span class="diff-up"> ↑</span>`;
+                else if (cell.avg_price_diff < 0) html += `<span class="diff-down"> ↓</span>`;
+                html += `</span>`;
+            }
+            // 需要マーク
+            if (cell.demand_symbol) {
+                html += `<span class="demand">${cell.demand_symbol}</span>`;
+            }
+            // イベント
+            if (cell.events.length > 0) {
+                html += `<div class="event">`;
+                for (const e of cell.events) html += `<span>${e.icon} ${e.name}</span><br>`;
+                html += `</div>`;
+            }
+            html += `</td>`;
+        }
+        html += "</tr>";
     }
-    updateCalendars(baseMonth, selected);
-  }
+    html += "</tbody></table>";
+    document.getElementById(targetId).innerHTML = html;
 
-  // ナビゲーション
-  bindCalendarNav((navi) => rerender(navi));
+    // 日付クリック
+    document.querySelectorAll(`#${targetId} td[data-date]`).forEach(td => {
+        td.onclick = () => {
+            const iso = td.getAttribute("data-date");
+            selectedDate = iso;
+            drawCalendars(iso);
+            drawGraph(iso);
+        };
+    });
+}
 
-  // 初期表示（当日グラフ付き）
-  selected = new Date().toISOString().slice(0, 10);
-  updateCalendars(baseMonth, selected);
-  updateGraph(selected);
+// --- 2枚カレンダー描画 ---
+function drawCalendars(selectedIso = null) {
+    // 左：今月 右：来月
+    let base = new Date(baseYear, baseMonth - 1 + monthOffset);
+    let y1 = base.getFullYear();
+    let m1 = base.getMonth() + 1;
+    let y2 = y1, m2 = m1 + 1;
+    if (m2 > 12) { m2 = 1; y2 += 1; }
 
-  // 巡回日時
-  document.getElementById("last-update").textContent =
-    `最終更新日時: ${(new Date()).toLocaleString()}`;
+    let sel1 = null, sel2 = null;
+    if (selectedIso) {
+        const [yy, mm] = selectedIso.split("-").map(Number);
+        if (yy === y1 && mm === m1) sel1 = selectedIso;
+        if (yy === y2 && mm === m2) sel2 = selectedIso;
+    }
+    drawCalendar("calendar1", y1, m1, sel1);
+    drawCalendar("calendar2", y2, m2, sel2);
+}
+
+// --- グラフ描画（本番用。データは historical_data.json などと連携想定）---
+function drawGraph(iso) {
+    const box = document.getElementById("graph-container");
+    box.innerHTML = ""; // 初期化
+    if (!iso) {
+        box.innerHTML = `<div style="width:95%;height:230px;background:#f9fafb;display:flex;align-items:center;justify-content:center;border-radius:8px;color:#aaa;font-size:20px;">データなし</div>`;
+        return;
+    }
+    // 本番は historical_data.json からAPI等で該当日データ取得
+    fetch('historical_data.json', { cache: "reload" })
+      .then(res => res.json())
+      .then(hist => {
+        const dayObj = hist[iso];
+        if (!dayObj) {
+          box.innerHTML = `<div style="width:95%;height:230px;background:#f9fafb;display:flex;align-items:center;justify-content:center;border-radius:8px;color:#aaa;font-size:20px;">この日付の履歴データがありません</div>`;
+          return;
+        }
+        // vacancy, avg_priceの推移データ（取得日ベース）でグラフ化
+        const labels = Object.keys(dayObj).sort();
+        const vacancy = labels.map(k => dayObj[k].vacancy);
+        const price   = labels.map(k => dayObj[k].avg_price);
+        // Chart.jsなどに差し替えてください。ここではSVG簡易例
+        let svg = `<svg width="400" height="180" style="background:#fff;">`;
+        // vacancy(青)
+        svg += `<polyline fill="none" stroke="#2171b8" stroke-width="2" points="`;
+        vacancy.forEach((v, i) => svg += `${30 + i * 11},${140 - (v - 100) * 0.3} `);
+        svg += `"/>`;
+        // price(赤)
+        svg += `<polyline fill="none" stroke="#e15759" stroke-width="2" points="`;
+        price.forEach((p, i) => svg += `${30 + i * 11},${170 - (p - 8000) * 0.0045} `);
+        svg += `"/>`;
+        svg += `<text x="30" y="22" font-size="16" fill="#444">${iso} の在庫・価格推移</text>`;
+        svg += `</svg>`;
+        box.innerHTML = svg;
+      });
+}
+
+// --- ナビゲーション ---
+document.getElementById("prev-month").onclick = () => {
+    monthOffset -= 1;
+    drawCalendars(selectedDate);
 };
+document.getElementById("current-month").onclick = () => {
+    monthOffset = 0;
+    drawCalendars(selectedDate);
+};
+document.getElementById("next-month").onclick = () => {
+    monthOffset += 1;
+    drawCalendars(selectedDate);
+};
+
+// --- ページロード ---
+window.onload = loadAllData;
