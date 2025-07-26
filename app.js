@@ -3,7 +3,7 @@ const DATA_PATH  = "./vacancy_price_cache.json";
 const PREV_PATH  = "./vacancy_price_cache_previous.json";
 const EVENT_PATH = "./event_data.json";
 const HIST_PATH  = "./historical_data.json";
-const HOLIDAYS   = [/* … */];
+const HOLIDAYS   = [/* ...ここに祝日を配列でセット... */];
 
 // グローバル状態
 let calendarData   = {},
@@ -93,7 +93,7 @@ function renderMonth(y,m) {
   // 曜日ヘッダー
   ["日","月","火","水","木","金","土"].forEach(d => {
     const c = document.createElement("div");
-    c.className = "calendar-cell calendar-dow";
+    c.className = "calendar-dow";
     c.textContent = d;
     grid.appendChild(c);
   });
@@ -135,10 +135,10 @@ function renderMonth(y,m) {
     const stock = cur.vacancy != null ? `${cur.vacancy}件` : "-";
     const price = cur.avg_price != null ? cur.avg_price.toLocaleString() : "-";
 
-    // ①括弧付き差分テキスト
-    const dvText = dv > 0 ? `(+${dv})` : dv < 0 ? `(${dv})` : `(±0)`;
+    // ③括弧付き差分テキスト（±0は空欄）
+    const dvText = dv > 0 ? `(+${dv})` : dv < 0 ? `(${dv})` : "";
 
-    // 需要シンボル
+    // ④需要シンボル（炎マーク右上絶対配置！）
     let lvl = 0;
     if (cur.vacancy!=null && cur.avg_price!=null){
       if (cur.vacancy<=70  || cur.avg_price>=50000) lvl=5;
@@ -149,13 +149,17 @@ function renderMonth(y,m) {
     }
     const badge = lvl ? `<div class="cell-demand-badge lv${lvl}">🔥${lvl}</div>` : "";
 
-    // イベント
-    const evs = (eventData[iso] || [])
-                  .map(ev => `<div class="cell-event">${ev.icon} ${ev.name}</div>`)
-                  .join("");
+    // ①イベント
+    let evs = "";
+    if (eventData[iso] && Array.isArray(eventData[iso])) {
+      evs = eventData[iso]
+        .map(ev => `<div class="cell-event">${ev.icon} ${ev.name}</div>`)
+        .join("");
+    }
 
-    // セル内HTML
+    // セル内HTML（炎マークを一番最初＝右上絶対配置！）
     cell.innerHTML = `
+      ${badge}
       <div class="cell-date">${d}</div>
       <div class="cell-main">
         <span class="cell-vacancy">${stock}</span>
@@ -163,9 +167,8 @@ function renderMonth(y,m) {
       </div>
       <div class="cell-price">
         ￥${price}
-        <span class="cell-price-diff ${dp>0?"up":dp<0?"down":"flat"}>${dp>0?"↑":dp<0?"↓":"→"}</span>
+        <span class="cell-price-diff ${dp>0?"up":dp<0?"down":"flat"}">${dp>0?"↑":dp<0?"↓":"→"}</span>
       </div>
-      ${badge}
       <div class="cell-event-list">${evs}</div>
     `;
     cell.onclick = () => { selectedDate = iso; renderPage(); };
