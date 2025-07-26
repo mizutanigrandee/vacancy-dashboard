@@ -1,47 +1,64 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>めちゃいいツール　空室＆平均価格カレンダー</title>
-  <meta name="viewport" content="width=1200">
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>めちゃいいツール｜空室＆平均価格カレンダー</title>
+  <meta name="viewport" content="width=1200" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="app-header">
-    <img src="logo.png" class="app-logo" alt="ロゴ" />
-    <span class="app-title">めちゃいいツール</span>
-    <span class="app-subtitle">空室＆平均価格カレンダー</span>
-    <span class="app-link">（空室＆平均価格カレンダー）</span>
-  </div>
-  <div class="main-container">
-    <div class="left-box">
-      <div id="graph-container" class="graph-box"></div>
+  <header>
+    <div class="header-left">
+      <img src="logo.png" alt="めちゃいいツール" class="logo" />
+      <span class="main-title">空室＆平均価格カレンダー</span>
     </div>
-    <div class="right-box">
-      <div class="calendar-nav-row">
-        <button id="prevMonthBtn">前月</button>
-        <button id="currentMonthBtn">当月</button>
-        <button id="nextMonthBtn">次月</button>
+    <div class="header-right">
+      <span class="subtitle">（空室＆平均価格カレンダー）</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="main-row">
+      <div id="graph-box">
+        <div id="graph-container">
+          <!-- グラフがここに描画される -->
+        </div>
       </div>
-      <div class="calendar-row">
-        <div id="calendar-container-1" class="calendar-container"></div>
-        <div id="calendar-container-2" class="calendar-container"></div>
+      <div class="calendar-container">
+        <div class="calendar-controls">
+          <button id="prev-month">前月</button>
+          <button id="current-month">当月</button>
+          <button id="next-month">次月</button>
+        </div>
+        <div class="calendars">
+          <div class="calendar-block">
+            <div id="calendar1"></div>
+          </div>
+          <div class="calendar-block">
+            <div id="calendar2"></div>
+          </div>
+        </div>
       </div>
-      <div id="last-update" class="last-update"></div>
-      <div class="calendar-note">
-        <b>《注釈・凡例》</b><br>
-        ・在庫数、平均価格は『なんば・心斎橋・天王寺・阿倍野・長居』エリアから抽出しています。<br>
+    </div>
+    <div id="footer">
+      <div id="last-updated"></div>
+      <div id="info-notes">
+        <strong>《注釈・凡例》</strong><br>
+        ・在室数、平均価格は『なんば・心斎橋・天王寺・阿倍野・長居』エリアから抽出しています。<br>
         ・表示される「平均価格」は、楽天トラベル検索上位90施設の平均最低価格です。<br>
-        ・空室数の<span style="color:blue;">（+N）</span>／<span style="color:red;">（−N）</span>は前回巡回時点との増減です。<br>
-        ・平均価格の<span style="color:red;">↑</span>／<span style="color:blue;">↓</span>は前回巡回時点との平均価格の上下です。<br>
-        ・会場アイコン：🔴京セラドーム／🔵ヤンマースタジアム／★その他会場<br>
-        ・炎マーク（需要シンボル）：🔥1〜🔥5<br>
-        <span style="font-size:13px;">
-        1: 残室≤250または価格≥25,000円　2: 残室≤200または価格≥30,000円　3: 残室≤150または価格≥35,000円　4: 残室≤100または価格≥40,000円　5: 残室≤70または価格≥50,000円
-        </span>
+        ・空室数の<span style="color:blue;">（+N）</span>／<span style="color:red;">（−N）</span>は、前回巡回時点との在庫数の増減を示します。<br>
+        ・平均価格の<span style="color:red;">↑</span>／<span style="color:blue;">↓</span>は、前回巡回時点との平均価格の上昇／下降を示します。<br>
+        ・会場アイコン：🔴京セラドーム / 🔵ヤンマースタジアム / ★その他会場<br>
+        ・炎マーク（需要シンボル）の内訳：<br>
+        &nbsp;&nbsp;・🔥1：残室 ≤250 または 価格 ≥25,000円<br>
+        &nbsp;&nbsp;・🔥2：残室 ≤200 または 価格 ≥30,000円<br>
+        &nbsp;&nbsp;・🔥3：残室 ≤150 または 価格 ≥35,000円<br>
+        &nbsp;&nbsp;・🔥4：残室 ≤100 または 価格 ≥40,000円<br>
+        &nbsp;&nbsp;・🔥5：残室 ≤70 または 価格 ≥50,000円<br>
       </div>
     </div>
-  </div>
+  </main>
+
   <script src="app.js"></script>
 </body>
 </html>
