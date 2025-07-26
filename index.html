@@ -2,22 +2,30 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>【めちゃいいツール】ミナミエリア 空室＆平均価格カレンダー</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <header>
-    <img src="バナー画像3.png" alt="めちゃいいツールロゴ" class="main-banner" />
-    <h1>空室＆平均価格カレンダー</h1>
-    <p class="subtitle">（空室・料金・イベント一括可視化）</p>
+    <img src="バナー画像3.png" alt="めちゃいいツールロゴ" class="main-banner"/>
+    <div class="title-group">
+      <h1>空室＆平均価格カレンダー</h1>
+      <p class="subtitle">（空室・料金・イベント一括可視化）</p>
+    </div>
   </header>
 
-  <main>
-    <!-- 折れ線グラフエリア（初期は非表示） -->
+  <div class="nav-buttons">
+    <button id="prev-month">⬅️ 前月</button>
+    <button id="current-month">📅 当月</button>
+    <button id="next-month">➡️ 次月</button>
+  </div>
+
+  <div class="main-content">
+    <!-- 左：グラフエリア -->
     <section id="graph-area" class="graph-area hidden">
-      <div class="graph-button-container">
+      <div class="graph-controls">
         <button id="close-graph">❌ グラフを閉じる</button>
         <button id="prev-day">＜前日</button>
         <button id="next-day">翌日＞</button>
@@ -27,23 +35,15 @@
       <canvas id="price-chart"></canvas>
     </section>
 
-    <!-- カレンダー切り替えボタン -->
-    <div class="calendar-controls">
-      <button id="prev-month">⬅️ 前月</button>
-      <button id="current-month">📅 当月</button>
-      <button id="next-month">➡️ 次月</button>
-    </div>
-
-    <!-- ２か月カレンダー -->
+    <!-- 右：カレンダー２か月 -->
     <div id="calendar-container" class="calendar-container"></div>
+  </div>
 
-    <!-- フッター凡例＋最終更新 -->
-    <div class="footer-notice">
-      <p>※ 🔴京セラ／🔵ヤンマー／⚫その他イベントは自動表示</p>
-      <p id="last-updated">最終更新：--</p>
-      <p class="hint">日付をクリックすると推移グラフが表示されます</p>
-    </div>
-  </main>
+  <footer>
+    <p>※ 🔴京セラ／🔵ヤンマー／⚫その他イベントは自動表示</p>
+    <p id="last-updated">最終更新：--</p>
+    <p class="hint">日付をクリックすると推移グラフが表示されます</p>
+  </footer>
 
   <script src="app.js"></script>
 </body>
