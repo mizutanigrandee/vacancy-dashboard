@@ -1,228 +1,259 @@
-/* style.css */
+// ========== データ & 祝日設定 ==========
+const DATA_PATH  = "./vacancy_price_cache.json";
+const PREV_PATH  = "./vacancy_price_cache_previous.json";
+const EVENT_PATH = "./event_data.json";
+const HIST_PATH  = "./historical_data.json";
+const HOLIDAYS   = [/* … */];
 
-/* ── ヘッダー＆ロゴ調整 ── */
-.app-header {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 16px 0;
-  background: linear-gradient(90deg, #2D9CDB 0%, #E743B2 100%);
-}
-.app-banner {
-  width: 40%;
-  height: auto;
-}
+// グローバル状態
+let calendarData   = {},
+    prevData       = {},
+    eventData      = {},
+    historicalData = {};
+let currentYM = [], selectedDate = null;
 
-/* ── 月送りボタンとヘッダーの間隔 ── */
-.nav-button-container {
-  margin-top: 16px;
-  display: flex;
-  justify-content: center;
-  gap: 9px;
-  margin-bottom: 12px;
-}
+// 起動時初期化
+window.onload = async () => {
+  await loadAll();
+  initMonth();
+  if (!selectedDate) selectedDate = todayIso();
+  renderPage();
+  updateLastUpdate();
+  setupMonthButtons();
+};
 
-/* ── 全体レイアウト ── */
-body {
-  font-family: "Segoe UI", "Yu Gothic", "Meiryo", sans-serif;
-  background-color: #f9fbfc;
-  color: #222;
-  margin: 0;
-  padding: 0;
-}
-.calendar-main {
-  width: 100%;
-}
-.main-flexbox {
-  display: flex;
-  gap: 36px;
-  align-items: flex-start;
-  justify-content: center;
-  max-width: none;
-  margin: 0 auto;
-  width: 100%;
-}
-.graph-side {
-  min-width: 450px;
-  max-width: 450px;
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 2px 16px rgba(65,95,140,0.11);
-  margin-bottom: 12px;
-  padding: 16px;
-}
-.calendar-container {
-  display: flex;
-  gap: 32px;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-}
-
-/* ── 月カレンダー ── */
-.month-calendar {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 14px rgba(65,95,140,0.09);
-  padding: 14px 13px 8px 13px;
-  min-width: 680px;
-  max-width: 720px;
-  margin-bottom: 12px;
-}
-.month-header {
-  font-size: 1.22rem;
-  font-weight: bold;
-  color: #2e6fa2;
-  text-align: center;
-  margin-bottom: 8px;
-}
-
-/* ── 曜日行（上下を短く中央配置） ── */
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  grid-template-rows: 20px repeat(6, 1fr);
-  gap: 3px;
-}
-.calendar-dow {
-  aspect-ratio: auto;
-  height: 20px !important;
-  padding: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  background: #e9f0f6 !important;
-  color: #2e6fa2 !important;
-  font-size: 11px !important;
-  border-radius: 4px !important;
-}
-
-/* ── 日付セル ── */
-.calendar-cell {
-  background: #f6f9ff;
-  border: 1px solid #e1e7ed;
-  border-radius: 7px;
-  aspect-ratio: 1 / 1;
-  min-height: 0;
-  padding: 6px 4px 5px 4px;
-  position: relative;
-  transition: box-shadow 0.2s;
-  cursor: pointer;
-}
-.calendar-cell.selected {
-  background: #d2edfa !important;
-  box-shadow: 0 0 0 2px #5ac8fa !important;
-}
-.sunday-bg    { background: #f7e4e4 !important; }
-.saturday-bg  { background: #e3edff !important; }
-.holiday-bg   { background: #fff3e5 !important; }
-
-/* ── 過去日付のグレーアウト（背景のみ） ── */
-.calendar-cell.past-date {
-  background: #f0f0f0 !important;
-}
-
-/* ── 日付数字 ── */
-.cell-date {
-  font-size: 0.65rem;
-  font-weight: 700;
-  position: absolute;
-  top: 4px;
-  left: 4px;
-}
-
-/* ── 在庫＆前日差分（括弧付き） ── */
-.cell-main {
-  margin-top: 20px;
-  margin-bottom: 2px;
-}
-.cell-vacancy {
-  font-size: 1.08rem;
-  font-weight: bold;
-}
-.cell-vacancy-diff.plus  { color: #1976d2; font-size: 12px; margin-left: 2px; }
-.cell-vacancy-diff.minus { color: #d32f2f; font-size: 12px; margin-left: 2px; }
-.cell-vacancy-diff.flat  { color: #666;   font-size: 12px; margin-left: 2px; }
-
-/* ── 価格＆矢印 ── */
-.cell-price {
-  font-size: 0.97rem;
-  color: #2e6fa2;
-  margin-bottom: 1px;
-}
-.cell-price-diff.up   { color: #d32f2f; }
-.cell-price-diff.down { color: #1565c0; }
-.cell-price-diff.flat { color: #666;   }
-
-/* ── 需要シンボル（炎アイコン右上） ── */
-.cell-demand-badge {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  font-size: 1.1rem;
-  font-weight: bold;
-}
-.cell-demand-badge.lv1 { color: #ffa600; }
-.cell-demand-badge.lv2 { color: #ff6600; }
-.cell-demand-badge.lv3 { color: #e94e77; }
-.cell-demand-badge.lv4 { color: #be0c0c; }
-.cell-demand-badge.lv5 { color: #421c16; }
-
-/* ── イベントリスト ── */
-.cell-event-list {
-  margin-top: 2px;
-}
-.cell-event {
-  font-size: 0.96rem;
-  color: #357ebd;
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  margin-top: 2px;
-}
-
-/* ── グラフボタン群 ── */
-.graph-btns {
-  display: flex;
-  justify-content: center;
-  gap: 9px;
-  margin-bottom: 12px;
-}
-.graph-btns button {
-  background: #f3f7fa;
-  color: #2e6fa2;
-  border: 1px solid #b9cfdd;
-  border-radius: 5px;
-  font-size: 1.03rem;
-  padding: 5px 16px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.graph-btns button:hover {
-  background: #d4e8f7;
-}
-
-/* ── レスポンシブ ── */
-@media screen and (max-width: 1100px) {
-  .main-flexbox,
-  .calendar-container {
-    flex-direction: column;
-    gap: 18px;
-  }
-  .graph-side,
-  .month-calendar {
-    min-width: 96vw;
-    max-width: 98vw;
+// ヘルパー
+const todayIso = () => new Date().toISOString().slice(0,10);
+async function loadJson(path) {
+  try {
+    const res = await fetch(path);
+    if (!res.ok) return {};
+    return await res.json();
+  } catch {
+    return {};
   }
 }
-@media screen and (max-width: 700px) {
-  .main-flexbox,
-  .calendar-container {
-    flex-direction: column;
-    gap: 12px;
+async function loadAll() {
+  calendarData   = await loadJson(DATA_PATH);
+  prevData       = await loadJson(PREV_PATH);
+  eventData      = await loadJson(EVENT_PATH);
+  historicalData = await loadJson(HIST_PATH);
+}
+function isHoliday(date) {
+  return HOLIDAYS.includes(date);
+}
+
+// 月送りボタン設定
+function setupMonthButtons() {
+  document.getElementById("prevMonthBtn").onclick    = () => { shiftMonth(-1); renderPage(); };
+  document.getElementById("currentMonthBtn").onclick = () => { initMonth();   renderPage(); };
+  document.getElementById("nextMonthBtn").onclick    = () => { shiftMonth(1);  renderPage(); };
+}
+function initMonth() {
+  const t = new Date(),
+        y = t.getFullYear(),
+        m = t.getMonth() + 1;
+  currentYM = [[y, m], m === 12 ? [y+1,1] : [y, m+1]];
+}
+function shiftMonth(diff) {
+  let [y,m] = currentYM[0];
+  m += diff;
+  if (m < 1)      { y--; m = 12; }
+  else if (m > 12){ y++; m = 1;  }
+  currentYM = [[y,m], m === 12 ? [y+1,1] : [y, m+1]];
+}
+
+// 全体再描画
+function renderPage() {
+  document.querySelector(".calendar-main").innerHTML = `
+    <div class="main-flexbox">
+      <div class="graph-side" id="graph-container"></div>
+      <div class="calendar-container" id="calendar-container"></div>
+    </div>`;
+  renderGraph(selectedDate);
+  renderCalendars();
+}
+
+// カレンダー描画
+function renderCalendars() {
+  const container = document.getElementById("calendar-container");
+  container.innerHTML = "";
+  for (const [y,m] of currentYM) {
+    container.appendChild(renderMonth(y,m));
   }
-  .graph-side,
-  .month-calendar {
-    min-width: 97vw;
-    max-width: 99vw;
+}
+function renderMonth(y,m) {
+  const wrap = document.createElement("div");
+  wrap.className = "month-calendar";
+  wrap.innerHTML = `<div class="month-header">${y}年${m}月</div>`;
+
+  const grid = document.createElement("div");
+  grid.className = "calendar-grid";
+
+  // 曜日ヘッダー
+  ["日","月","火","水","木","金","土"].forEach(d => {
+    const c = document.createElement("div");
+    c.className = "calendar-cell calendar-dow";
+    c.textContent = d;
+    grid.appendChild(c);
+  });
+
+  // 空セル
+  const firstDay = new Date(y,m-1,1).getDay(),
+        lastDate = new Date(y,m,0).getDate();
+  for (let i=0; i<firstDay; i++){
+    const e = document.createElement("div");
+    e.className = "calendar-cell";
+    grid.appendChild(e);
   }
+
+  // 各日セル
+  for (let d=1; d<=lastDate; d++){
+    const iso = `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const cell = document.createElement("div");
+    cell.className = "calendar-cell";
+    cell.dataset.date = iso;
+
+    // ③過去日付グレーアウト
+    if (iso < todayIso()) cell.classList.add("past-date");
+
+    // 土日祝色分け
+    const idx = (grid.children.length) % 7;
+    if      (isHoliday(iso))     cell.classList.add("holiday-bg");
+    else if (idx === 0)          cell.classList.add("sunday-bg");
+    else if (idx === 6)          cell.classList.add("saturday-bg");
+
+    // データ取得＆差分
+    const cur = calendarData[iso] || {},
+          prv = prevData[iso]      || {};
+    const dv  = typeof cur.vacancy_diff === "number"
+                ? cur.vacancy_diff
+                : (cur.vacancy||0) - (prv.vacancy||0);
+    const dp  = typeof cur.avg_price_diff === "number"
+                ? cur.avg_price_diff
+                : Math.round((cur.avg_price||0) - (prv.avg_price||0));
+    const stock = cur.vacancy != null ? `${cur.vacancy}件` : "-";
+    const price = cur.avg_price != null ? cur.avg_price.toLocaleString() : "-";
+
+    // ①括弧付き差分テキスト
+    const dvText = dv > 0 ? `(+${dv})` : dv < 0 ? `(${dv})` : `(±0)`;
+
+    // 需要シンボル
+    let lvl = 0;
+    if (cur.vacancy!=null && cur.avg_price!=null){
+      if (cur.vacancy<=70  || cur.avg_price>=50000) lvl=5;
+      else if (cur.vacancy<=100 || cur.avg_price>=40000) lvl=4;
+      else if (cur.vacancy<=150 || cur.avg_price>=35000) lvl=3;
+      else if (cur.vacancy<=200 || cur.avg_price>=30000) lvl=2;
+      else if (cur.vacancy<=250 || cur.avg_price>=25000) lvl=1;
+    }
+    const badge = lvl ? `<div class="cell-demand-badge lv${lvl}">🔥${lvl}</div>` : "";
+
+    // イベント
+    const evs = (eventData[iso] || [])
+                  .map(ev => `<div class="cell-event">${ev.icon} ${ev.name}</div>`)
+                  .join("");
+
+    // セル内HTML
+    cell.innerHTML = `
+      <div class="cell-date">${d}</div>
+      <div class="cell-main">
+        <span class="cell-vacancy">${stock}</span>
+        <span class="cell-vacancy-diff ${dv>0?"plus":dv<0?"minus":"flat"}">${dvText}</span>
+      </div>
+      <div class="cell-price">
+        ￥${price}
+        <span class="cell-price-diff ${dp>0?"up":dp<0?"down":"flat"}>${dp>0?"↑":dp<0?"↓":"→"}</span>
+      </div>
+      ${badge}
+      <div class="cell-event-list">${evs}</div>
+    `;
+    cell.onclick = () => { selectedDate = iso; renderPage(); };
+    grid.appendChild(cell);
+  }
+
+  wrap.appendChild(grid);
+  return wrap;
+}
+
+// グラフ描画
+function renderGraph(dateStr){
+  const gc = document.getElementById("graph-container");
+  if (!dateStr) { gc.innerHTML=""; return; }
+
+  const allDates = Object.keys(historicalData).sort(),
+        idx = allDates.indexOf(dateStr);
+
+  gc.innerHTML = `
+    <div class="graph-btns">
+      <button onclick="closeGraph()">✗ グラフを閉じる</button>
+      <button onclick="nav(-1)">< 前日</button>
+      <button onclick="nav(1)">翌日 ></button>
+    </div>
+    <h3>${dateStr} の在庫・価格推移</h3>
+    <canvas id="stockChart" width="420" height="180"></canvas>
+    <canvas id="priceChart" width="420" height="180"></canvas>
+  `;
+
+  window.nav = diff => {
+    const ni = idx + diff;
+    if (ni >= 0 && ni < allDates.length) {
+      selectedDate = allDates[ni];
+      renderPage();
+    }
+  };
+  window.closeGraph = () => {
+    selectedDate = todayIso();
+    renderPage();
+  };
+
+  // Chart.js描画
+  const hist = historicalData[dateStr] || {}, labels = [], sv = [], pv = [];
+  Object.keys(hist).sort().forEach(d => {
+    labels.push(d);
+    sv.push(hist[d].vacancy);
+    pv.push(hist[d].avg_price);
+  });
+
+  if (window.sc) window.sc.destroy();
+  if (window.pc) window.pc.destroy();
+
+  if (labels.length) {
+    window.sc = new Chart(
+      document.getElementById("stockChart").getContext("2d"),
+      {
+        type: "line",
+        data: { labels, datasets: [{ data: sv, fill: false, borderColor: "#2196f3", pointRadius: 2 }] },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, title: { display: true, text: "在庫数" } },
+            x: { title: { display: true, text: "日付" } }
+          }
+        }
+      }
+    );
+    window.pc = new Chart(
+      document.getElementById("priceChart").getContext("2d"),
+      {
+        type: "line",
+        data: { labels, datasets: [{ data: pv, fill: false, borderColor: "#e91e63", pointRadius: 2 }] },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: false, title: { display: true, text: "平均価格（円）" } },
+            x: { title: { display: true, text: "日付" } }
+          }
+        }
+      }
+    );
+  }
+}
+
+// 最終更新日時
+function updateLastUpdate(){
+  const el = document.getElementById("last-update"),
+        d  = new Date(),
+        z  = n => String(n).padStart(2,"0");
+  el.textContent = `最終更新日時：${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}`;
 }
