@@ -1,137 +1,143 @@
-// ---- 基本設定 ----
-let current = new Date();
-let offset = 0;
+const API_URL = './vacancy_price_cache.json'; // 本番データをここに指定
+const EVENT_URL = './event_data.json'; // イベント情報
 
-// 必要なファイルパスは、運用環境のルート or public配下に必ず配置してください
-const VACANCY_JSON = "vacancy_price_cache.json";
-const EVENT_JSON = "event_data.json";
-const HISTORY_JSON = "historical_data.json";
-
-let calendarData = {};
+let currentOffset = 0;
+let rawData = {};
 let eventData = {};
-let historicalData = {};
 
-let selectedDate = formatDate(current);
+document.addEventListener('DOMContentLoaded', async () => {
+  await fetchData();
+  renderCalendar(currentOffset);
+  setupButtons();
+});
 
-// --- データロード ---
-function fetchAllAndRender() {
-  Promise.all([
-    fetch(VACANCY_JSON).then(res => res.json()),
-    fetch(EVENT_JSON).then(res => res.json()).catch(()=>{return {}}),
-    fetch(HISTORY_JSON).then(res => res.json()).catch(()=>{return {}})
-  ]).then(([calData, evtData, histData]) => {
-    calendarData = calData;
-    eventData = evtData;
-    historicalData = histData;
-    redrawAll();
-  }).catch(e => {
-    alert("JSONファイルが見つからない、または壊れています。: " + e.message);
-  });
+async function fetchData() {
+  const [res1, res2] = await Promise.all([
+    fetch(API_URL).then(r => r.json()),
+    fetch(EVENT_URL).then(r => r.json())
+  ]);
+  rawData = res1;
+  eventData = res2;
+  document.getElementById("last-updated").textContent = `最終更新：${new Date().toLocaleDateString()}`;
 }
 
-function formatDate(dt) {
-  return dt.toISOString().slice(0,10);
+function setupButtons() {
+  document.getElementById('prev-month').onclick = () => {
+    currentOffset--;
+    renderCalendar(currentOffset);
+  };
+  document.getElementById('current-month').onclick = () => {
+    currentOffset = 0;
+    renderCalendar(currentOffset);
+  };
+  document.getElementById('next-month').onclick = () => {
+    currentOffset++;
+    renderCalendar(currentOffset);
+  };
 }
 
-// --- カレンダー描画 ---
-function getFirstMonth() {
-  const now = new Date();
-  now.setMonth(now.getMonth() + offset);
-  now.setDate(1);
-  return new Date(now);
-}
-function getSecondMonth() {
-  const now = new Date();
-  now.setMonth(now.getMonth() + offset + 1);
-  now.setDate(1);
-  return new Date(now);
-}
-
-function redrawAll() {
-  renderCalendar(getFirstMonth(), "calendar1", "month1-title");
-  renderCalendar(getSecondMonth(), "calendar2", "month2-title");
-  renderChart(selectedDate || formatDate(current));
-}
-
-function renderCalendar(monthDate, tableId, titleId) {
-  const yyyy = monthDate.getFullYear();
-  const mm = monthDate.getMonth() + 1;
-  document.getElementById(titleId).textContent = `${yyyy}年${mm}月`;
-  const table = document.getElementById(tableId);
-  let html = `<tr>${"日月火水木金土".split("").map((w) => `<th>${w}</th>`).join("")}</tr>`;
-  const first = new Date(yyyy, mm-1, 1);
-  let day = 1 - first.getDay();
-  for (let w = 0; w < 6; w++) {
-    html += "<tr>";
-    for (let d = 0; d < 7; d++) {
-      const date = new Date(yyyy, mm-1, day);
-      const ds = formatDate(date);
-      let cls = [];
-      if (d === 0) cls.push("sunday");
-      if (d === 6) cls.push("saturday");
-      if (ds === selectedDate) cls.push("selected");
-      const rec = (calendarData && calendarData[ds]) || {};
-      const ev = (eventData && eventData[ds]) || [];
-      html += `<td class="${cls.join(" ")}" data-date="${ds}">
-        <div class="day-num">${date.getMonth() === mm-1 ? date.getDate() : ""}</div>
-        ${rec.vacancy ? `<div class="vacancy">${rec.vacancy}件${rec.vacancy_diff !== undefined && rec.vacancy_diff !== 0 ? `<span class="${rec.vacancy_diff>0?'diff-up':'diff-down'}">(${rec.vacancy_diff>0?'+':''}${rec.vacancy_diff})</span>` : ""}</div>` : ""}
-        ${rec.avg_price ? `<div class="avg-price">￥${Number(rec.avg_price).toLocaleString()}${rec.avg_price_diff !== undefined && rec.avg_price_diff !== 0 ? `<span class="${rec.avg_price_diff>0?'diff-up':'diff-down'}">${rec.avg_price_diff>0?'↑':'↓'}</span>` : ""}</div>` : ""}
-        ${(rec.demand || rec.demand_symbol) ? `<div class="demand">🔥${rec.demand || rec.demand_symbol}</div>` : ""}
-        ${ev.length ? `<div class="event">${ev.map(e=>`${e.icon?e.icon:""} ${e.name}`).join("<br>")}</div>` : ""}
-      </td>`;
-      day++;
-    }
-    html += "</tr>";
+function renderCalendar(offset) {
+  const container = document.getElementById('calendar-container');
+  container.innerHTML = '';
+  const baseDate = new Date();
+  baseDate.setMonth(baseDate.getMonth() + offset);
+  for (let i = 0; i < 2; i++) {
+    const date = new Date(baseDate);
+    date.setMonth(baseDate.getMonth() + i);
+    container.appendChild(createCalendar(date));
   }
-  table.innerHTML = html;
-  // 日付クリック
-  Array.from(table.querySelectorAll("td[data-date]")).forEach(td => {
-    td.onclick = () => {
-      selectedDate = td.getAttribute("data-date");
-      redrawAll();
-    }
-  });
 }
 
-// --- グラフ描画 ---
-function renderChart(dateStr) {
-  document.getElementById("graph-title").textContent = `${dateStr} の在庫・価格推移`;
-  let dataObj = (historicalData && historicalData[dateStr]) || {};
-  let labels = [], vacancy = [], price = [];
-  if (dataObj && typeof dataObj === "object") {
-    let rows = Object.entries(dataObj)
-      .map(([dt, rec]) => ({date: dt, vacancy: rec.vacancy, price: rec.avg_price}))
-      .sort((a,b) => a.date.localeCompare(b.date));
-    labels = rows.map(r => r.date);
-    vacancy = rows.map(r => r.vacancy);
-    price = rows.map(r => r.price);
+function createCalendar(date) {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const first = new Date(year, month, 1);
+  const last = new Date(year, month + 1, 0);
+  const startDay = first.getDay();
+
+  const table = document.createElement('table');
+  const header = document.createElement('caption');
+  header.textContent = `${year}年${month + 1}月`;
+  table.appendChild(header);
+
+  const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+  const tr = document.createElement('tr');
+  weekdays.forEach(day => {
+    const th = document.createElement('th');
+    th.textContent = day;
+    tr.appendChild(th);
+  });
+  table.appendChild(tr);
+
+  let trBody = document.createElement('tr');
+  for (let i = 0; i < startDay; i++) {
+    const td = document.createElement('td');
+    td.className = 'empty';
+    trBody.appendChild(td);
   }
-  const ctx = document.getElementById('mainChart').getContext('2d');
-  if (window._chart) window._chart.destroy();
-  window._chart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: labels,
-      datasets: [
-        { label: '在庫数', data: vacancy, borderColor: '#2d7bcb', backgroundColor: 'rgba(70,145,220,0.07)', yAxisID: 'y', tension: 0.15, pointRadius: 2, borderWidth: 2 },
-        { label: '平均単価(円)', data: price, borderColor: '#e15759', backgroundColor: 'rgba(225,87,89,0.07)', yAxisID: 'y2', tension: 0.13, pointRadius: 2, borderWidth: 2 }
-      ]
-    },
-    options: {
-      responsive: false,
-      plugins: { legend: { display: true, labels: {font: {size: 13}} } },
-      scales: {
-        y: { type: 'linear', position: 'left', beginAtZero:true, title: { display:true, text:"在庫数" }, min:0 },
-        y2: { type: 'linear', position: 'right', beginAtZero:true, title: { display:true, text:"平均単価(円)" }, min:0, grid: { drawOnChartArea: false } }
-      }
+
+  for (let d = 1; d <= last.getDate(); d++) {
+    if ((startDay + d - 1) % 7 === 0 && d > 1) {
+      table.appendChild(trBody);
+      trBody = document.createElement('tr');
     }
-  });
+
+    const td = document.createElement('td');
+    const cellDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const info = rawData[cellDate];
+
+    td.className = ['日', '土'].includes(weekdays[(startDay + d - 1) % 7])
+      ? weekdays[(startDay + d - 1) % 7] === '日' ? 'sunday' : 'saturday'
+      : '';
+
+    const dayNum = document.createElement('div');
+    dayNum.className = 'date-number';
+    dayNum.textContent = d;
+    td.appendChild(dayNum);
+
+    if (info) {
+      const v = document.createElement('span');
+      v.className = 'vacancy';
+      v.innerHTML = `${info.vacancy}件 ${info.previous_vacancy !== undefined ? `(${formatDiff(info.vacancy - info.previous_vacancy)})` : ''}`;
+      td.appendChild(v);
+
+      const p = document.createElement('span');
+      p.className = 'price';
+      p.innerHTML = `¥${info.avg_price.toLocaleString()} ${priceArrow(info.avg_price, info.previous_avg_price)}`;
+      td.appendChild(p);
+    }
+
+    if (eventData[cellDate]) {
+      const ev = document.createElement('div');
+      ev.className = 'event';
+      ev.innerHTML = eventData[cellDate];
+      td.appendChild(ev);
+    }
+
+    trBody.appendChild(td);
+  }
+
+  while (trBody.children.length < 7) {
+    const td = document.createElement('td');
+    td.className = 'empty';
+    trBody.appendChild(td);
+  }
+  table.appendChild(trBody);
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'calendar';
+  wrapper.appendChild(table);
+  return wrapper;
 }
 
-// --- ナビゲーション ---
-document.getElementById("prevMonthBtn").onclick = ()=>{ offset--; redrawAll(); }
-document.getElementById("nextMonthBtn").onclick = ()=>{ offset++; redrawAll(); }
-document.getElementById("todayBtn").onclick = ()=>{ offset=0; redrawAll(); }
+function formatDiff(num) {
+  if (num > 0) return `<span class="up">+${num}</span>`;
+  if (num < 0) return `<span class="down">${num}</span>`;
+  return '±0';
+}
 
-// ---- ページ初期化 ----
-window.onload = fetchAllAndRender;
+function priceArrow(curr, prev) {
+  if (curr > prev) return `<span class="up">↑</span>`;
+  if (curr < prev) return `<span class="down">↓</span>`;
+  return '';
+}
