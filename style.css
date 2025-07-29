@@ -19,7 +19,6 @@
   gap: 9px;
   margin-bottom: 12px;
 }
-/* ── ボタン共通デザイン ── */
 .custom-button {
   display: flex;
   align-items: center;
@@ -84,7 +83,6 @@ body {
   max-width: 100%;
   display: block;
 }
-
 .calendar-container {
   display: flex;
   gap: 32px;
@@ -109,8 +107,6 @@ body {
   text-align: center;
   margin-bottom: 8px;
 }
-
-/* ── 曜日行 ── */
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -132,14 +128,14 @@ body {
   box-sizing: border-box;
 }
 
-/* ── 日付セル（高さ・幅拡大・3行分ゆとり）── */
+/* ── 日付セル（PCは高さ120px）── */
 .calendar-cell {
   background: #f6f9ff;
   border: 1px solid #e1e7ed;
   border-radius: 7px;
-  min-height: 108px;
-  height: 114px;
-  padding: 8px 4px 8px 4px;
+  min-height: 120px;
+  height: 124px;
+  padding: 10px 5px 8px 5px;
   position: relative;
   transition: box-shadow 0.2s;
   cursor: pointer;
@@ -162,20 +158,20 @@ body {
 
 /* ── 日付数字 ── */
 .cell-date {
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 700;
   position: absolute;
-  top: 8px;
+  top: 10px;
   left: 9px;
 }
 
 /* ── 在庫＆前日差分（括弧付き） ── */
 .cell-main {
-  margin-top: 32px;
+  margin-top: 33px;
   margin-bottom: 7px;
 }
 .cell-vacancy {
-  font-size: 1.20rem;
+  font-size: 1.19rem;
   font-weight: bold;
 }
 .cell-vacancy-diff.plus  { color: #1976d2; font-size: 13px; margin-left: 2px; }
@@ -184,7 +180,7 @@ body {
 
 /* ── 価格＆矢印 ── */
 .cell-price {
-  font-size: 1.13rem;
+  font-size: 1.09rem;
   color: #222 !important;
   margin-bottom: 2px;
 }
@@ -195,9 +191,9 @@ body {
 /* ── 需要シンボル（炎アイコン右上絶対配置） ── */
 .cell-demand-badge {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  font-size: 1.23rem;
+  top: 9px;
+  right: 9px;
+  font-size: 1.18rem;
   font-weight: bold;
   z-index: 10;
   pointer-events: none;
@@ -210,7 +206,7 @@ body {
 
 /* ── イベントリスト ── */
 .cell-event-list {
-  margin-top: 4px;
+  margin-top: 6px;
 }
 .cell-event {
   font-size: 13px;
@@ -221,7 +217,7 @@ body {
   line-height: 1.2;
   word-break: break-all;
   white-space: normal;
-  max-width: 96%;
+  max-width: 95%;
 }
 .cell-event-icon {
   color: #357ebd;
@@ -275,16 +271,9 @@ body {
     line-height: 32px !important;
   }
   .calendar-cell {
-    min-height: 95px;
-    height: 104px;
+    min-height: 90px;
+    height: 100px;
   }
-}
-
-/* ── グラフcanvasサイズ最適化 ── */
-.graph-side canvas {
-  width: 100% !important;
-  max-width: 100%;
-  display: block;
 }
 
 /* ── 注釈エリア ── */
@@ -335,46 +324,44 @@ body {
     letter-spacing: 0.3px;
   }
   .calendar-cell {
-    min-height: 83px !important;
-    height: 93px !important;
-    padding: 8px 2px 7px 2px !important;
-    font-size: 13.2px !important;
+    min-height: 95px !important;
+    height: 104px !important;
+    padding: 13px 3px 9px 3px !important;
+    font-size: 15px !important;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
   }
   .cell-main {
-    margin-top: 26px !important;
-    margin-bottom: 3px !important;
+    margin-top: 40px !important;
+    margin-bottom: 5px !important;
   }
   .cell-date {
-    font-size: 12.8px !important;
-    top: 6px !important;
-    left: 7px !important;
+    font-size: 14px !important;
+    top: 9px !important;
+    left: 8px !important;
   }
   .cell-vacancy,
   .cell-price {
-    font-size: 15.7px !important;
+    font-size: 17px !important;
     font-weight: bold !important;
-    letter-spacing: 0.1px;
-    line-height: 1.04;
+    letter-spacing: 0.3px;
   }
   .cell-vacancy-diff,
   .cell-price-diff {
-    font-size: 12px !important;
+    font-size: 13px !important;
     margin-left: 3px !important;
   }
   .cell-demand-badge {
-    font-size: 14px !important;
-    top: 6px !important;
-    right: 8px !important;
+    font-size: 15px !important;
+    top: 9px !important;
+    right: 9px !important;
   }
   .cell-event-list,
   .cell-event {
-    font-size: 12.3px !important;
-    max-width: 97% !important;
-    line-height: 1.08 !important;
+    font-size: 13px !important;
+    max-width: 98% !important;
   }
   .app-banner {
     width: 95vw !important;
