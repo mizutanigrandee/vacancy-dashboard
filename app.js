@@ -62,11 +62,11 @@ function shiftMonth(diff) {
 function renderPage() {
   document.querySelector(".calendar-main").innerHTML = `
     <div class="main-flexbox">
-      <div class="graph-side" id="graph-container"></div>
       <div class="calendar-container" id="calendar-container"></div>
+      <div class="graph-side" id="graph-container"></div>
     </div>`;
-  renderGraph(selectedDate);
   renderCalendars();
+  renderGraph(selectedDate);
 }
 
 // ========== カレンダー描画 ==========
@@ -153,22 +153,20 @@ function renderMonth(y,m) {
       .map(ev => `<div class="cell-event" style="font-size:11px; color:#222; white-space:normal; line-height:1.1;">${ev.icon} <span style="color:#222;">${ev.name}</span></div>`)
       .join("");
 
-
-// セル内HTML
-cell.innerHTML = `
-  <div class="cell-date">${d}</div>
-  <div class="cell-main">
-    <span class="cell-vacancy">${stock}</span>
-    <span class="cell-vacancy-diff ${dv>0?"plus":dv<0?"minus":"flat"}">${dvText}</span>
-  </div>
-  <div class="cell-price" style="color:#222;">
-    ￥${price}
-    <span class="cell-price-diff ${dp>0?"up":dp<0?"down":"flat"}">${dp>0?"↑":dp<0?"↓":"→"}</span>
-  </div>
-  ${badge}
-  <div class="cell-event-list">${evs}</div>
-`;
-
+    // セル内HTML（祝日名は出さない）
+    cell.innerHTML = `
+      <div class="cell-date">${d}</div>
+      <div class="cell-main">
+        <span class="cell-vacancy">${stock}</span>
+        <span class="cell-vacancy-diff ${dv>0?"plus":dv<0?"minus":"flat"}">${dvText}</span>
+      </div>
+      <div class="cell-price" style="color:#222;">
+        ￥${price}
+        <span class="cell-price-diff ${dp>0?"up":dp<0?"down":"flat"}">${dp>0?"↑":dp<0?"↓":"→"}</span>
+      </div>
+      ${badge}
+      <div class="cell-event-list">${evs}</div>
+    `;
 
     cell.onclick = () => { selectedDate = iso; renderPage(); };
     grid.appendChild(cell);
@@ -178,7 +176,7 @@ cell.innerHTML = `
   return wrap;
 }
 
-// ========== グラフ描画（変更なしでOK） ==========
+// ========== グラフ描画 ==========
 function renderGraph(dateStr){
   const gc = document.getElementById("graph-container");
   if (!dateStr) { gc.innerHTML=""; return; }
@@ -193,8 +191,8 @@ function renderGraph(dateStr){
       <button onclick="nav(1)">翌日 ></button>
     </div>
     <h3>${dateStr} の在庫・価格推移</h3>
-    <canvas id="stockChart" width="420" height="250"></canvas>
-    <canvas id="priceChart" width="420" height="250"></canvas>
+    <canvas id="stockChart" width="600" height="250"></canvas>
+    <canvas id="priceChart" width="600" height="250"></canvas>
   `;
 
   window.nav = diff => {
@@ -217,7 +215,6 @@ function renderGraph(dateStr){
     pv.push(hist[d].avg_price);
   });
 
-  // Chart.js描画
   if (window.sc) window.sc.destroy();
   if (window.pc) window.pc.destroy();
 
@@ -231,7 +228,7 @@ function renderGraph(dateStr){
         options: {
           plugins: { legend: { display: false } },
           scales: {
-            y: { beginAtZero: true, min: 0, max: 400, title: { display: true, text: "在庫数" } },
+            y: { beginAtZero: true, min: 0, max: 350, title: { display: true, text: "在庫数" } },
             x: { title: { display: true, text: "日付" } }
           }
         }
@@ -246,15 +243,14 @@ function renderGraph(dateStr){
         options: {
           plugins: { legend: { display: false } },
           scales: {
-            y: { beginAtZero: true, min: 0, max: 40000, title: { display: true, text: "平均価格（円）" } },
+            y: { beginAtZero: true, min: 0, max: 35000, title: { display: true, text: "平均価格（円）" } },
             x: { title: { display: true, text: "日付" } }
           }
         }
       }
     );
   }
-} // ← ★これが抜けていると以降が全て壊れます
-
+}
 
 // ========== 最終更新日時 ==========
 function updateLastUpdate(){
