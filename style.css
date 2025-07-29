@@ -1,3 +1,9 @@
+/* 変更ポイント
+- .calendar-cell の min-height, height を 108px/114pxに拡大（PC用）
+- スマホ時も 95px/104px 程度に
+- 各 .cell-main 余白も調整
+*/
+
 /* ── ヘッダー＆ロゴ調整 ── */
 .app-header {
   display: flex;
@@ -110,7 +116,7 @@ body {
   margin-bottom: 8px;
 }
 
-/* ── 曜日行（高さ・幅完全統一/中央揃え） ── */
+/* ── 曜日行 ── */
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -132,14 +138,14 @@ body {
   box-sizing: border-box;
 }
 
-/* ── 日付セル（高さ・幅）── */
+/* ── 日付セル（高さ・幅拡大）── */
 .calendar-cell {
   background: #f6f9ff;
   border: 1px solid #e1e7ed;
   border-radius: 7px;
-  min-height: 76px;
-  height: 82px;
-  padding: 6px 4px 5px 4px;
+  min-height: 108px;
+  height: 114px;
+  padding: 8px 5px 7px 5px;
   position: relative;
   transition: box-shadow 0.2s;
   cursor: pointer;
@@ -162,31 +168,31 @@ body {
 
 /* ── 日付数字 ── */
 .cell-date {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 700;
   position: absolute;
-  top: 4px;
-  left: 4px;
+  top: 6px;
+  left: 7px;
 }
 
 /* ── 在庫＆前日差分（括弧付き） ── */
 .cell-main {
-  margin-top: 20px;
-  margin-bottom: 2px;
+  margin-top: 26px;
+  margin-bottom: 5px;
 }
 .cell-vacancy {
-  font-size: 1.08rem;
+  font-size: 1.18rem;
   font-weight: bold;
 }
-.cell-vacancy-diff.plus  { color: #1976d2; font-size: 12px; margin-left: 2px; }
-.cell-vacancy-diff.minus { color: #d32f2f; font-size: 12px; margin-left: 2px; }
-.cell-vacancy-diff.flat  { color: #666;   font-size: 12px; margin-left: 2px; }
+.cell-vacancy-diff.plus  { color: #1976d2; font-size: 13px; margin-left: 2px; }
+.cell-vacancy-diff.minus { color: #d32f2f; font-size: 13px; margin-left: 2px; }
+.cell-vacancy-diff.flat  { color: #666;   font-size: 13px; margin-left: 2px; }
 
 /* ── 価格＆矢印 ── */
 .cell-price {
-  font-size: 0.97rem;
+  font-size: 1.10rem;
   color: #222 !important;
-  margin-bottom: 1px;
+  margin-bottom: 2px;
 }
 .cell-price-diff.up   { color: #d32f2f; }
 .cell-price-diff.down { color: #1565c0; }
@@ -195,9 +201,9 @@ body {
 /* ── 需要シンボル（炎アイコン右上絶対配置） ── */
 .cell-demand-badge {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  font-size: 1.1rem;
+  top: 7px;
+  right: 7px;
+  font-size: 1.18rem;
   font-weight: bold;
   z-index: 10;
   pointer-events: none;
@@ -210,15 +216,15 @@ body {
 
 /* ── イベントリスト ── */
 .cell-event-list {
-  margin-top: 2px;
+  margin-top: 3px;
 }
 .cell-event {
-  font-size: 11px;
+  font-size: 13px;
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
   margin-top: 2px;
-  line-height: 1.1;
+  line-height: 1.2;
   word-break: break-all;
   white-space: normal;
   max-width: 95%;
@@ -275,8 +281,8 @@ body {
     line-height: 32px !important;
   }
   .calendar-cell {
-    min-height: 54px;
-    height: 60px;
+    min-height: 82px;
+    height: 95px;
   }
 }
 
@@ -300,7 +306,7 @@ body {
   box-shadow: 0 1.5px 8px rgba(0,0,0,0.04);
 }
 
-/* ── ここからスマホ向けは1ブロックでOK ── */
+/* ── スマホ向け ── */
 @media screen and (max-width: 700px) {
   body, html {
     overflow-x: hidden !important;
@@ -335,44 +341,44 @@ body {
     letter-spacing: 0.3px;
   }
   .calendar-cell {
-    min-height: 60px !important;
-    height: 65px !important;
-    padding: 8px 2px 5px 2px !important;
-    font-size: 14px !important;
+    min-height: 95px !important;
+    height: 104px !important;
+    padding: 10px 2px 7px 2px !important;
+    font-size: 15px !important;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
   }
   .cell-main {
-    margin-top: 19px !important;
-    margin-bottom: 2px !important;
+    margin-top: 30px !important;
+    margin-bottom: 3px !important;
   }
   .cell-date {
-    font-size: 12.5px !important;
-    top: 6px !important;
-    left: 6px !important;
+    font-size: 13.8px !important;
+    top: 8px !important;
+    left: 7px !important;
   }
   .cell-vacancy,
   .cell-price {
-    font-size: 15px !important;
+    font-size: 17px !important;
     font-weight: bold !important;
-    letter-spacing: 0.2px;
+    letter-spacing: 0.3px;
   }
   .cell-vacancy-diff,
   .cell-price-diff {
-    font-size: 12px !important;
-    margin-left: 2px !important;
+    font-size: 13px !important;
+    margin-left: 3px !important;
   }
   .cell-demand-badge {
-    font-size: 13px !important;
-    top: 5px !important;
-    right: 6px !important;
+    font-size: 15px !important;
+    top: 8px !important;
+    right: 8px !important;
   }
   .cell-event-list,
   .cell-event {
-    font-size: 11px !important;
-    max-width: 95% !important;
+    font-size: 13px !important;
+    max-width: 98% !important;
   }
   .app-banner {
     width: 95vw !important;
