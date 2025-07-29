@@ -229,7 +229,7 @@ function renderGraph(dateStr){
         options: {
           plugins: { legend: { display: false } },
           scales: {
-            y: { beginAtZero: true, min: 0, max: 350, title: { display: true, text: "在庫数" } },
+            y: { beginAtZero: true, min: 0, max: 400, title: { display: true, text: "在庫数" } },
             x: { title: { display: true, text: "日付" } }
           }
         }
@@ -244,7 +244,7 @@ function renderGraph(dateStr){
         options: {
           plugins: { legend: { display: false } },
           scales: {
-            y: { beginAtZero: true, min: 0, max: 35000, title: { display: true, text: "平均価格（円）" } },
+            y: { beginAtZero: true, min: 0, max: 40000, title: { display: true, text: "平均価格（円）" } },
             x: { title: { display: true, text: "日付" } }
           }
         }
