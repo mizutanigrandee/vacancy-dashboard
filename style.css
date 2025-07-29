@@ -116,10 +116,8 @@ body {
   grid-template-columns: repeat(7, 1fr);
   gap: 3px;
 }
-
-/* ←↓この2つを徹底修正！ */
 .calendar-dow {
-  height: 46px !important;       /* 曜日セル高さ */
+  height: 46px !important;
   min-width: 0 !important;
   max-width: 100% !important;
   display: flex !important;
@@ -139,8 +137,8 @@ body {
   background: #f6f9ff;
   border: 1px solid #e1e7ed;
   border-radius: 7px;
-  min-height: 76px;    /* 必要に応じて増減してください（例：76px～92pxくらい） */
-  height: 82px;        /* 必要に応じて */
+  min-height: 76px;
+  height: 82px;
   padding: 6px 4px 5px 4px;
   position: relative;
   transition: box-shadow 0.2s;
@@ -158,8 +156,6 @@ body {
 .sunday-bg    { background: #f7e4e4 !important; }
 .saturday-bg  { background: #e3edff !important; }
 .holiday-bg   { background: #fff3e5 !important; }
-
-/* ── 過去日付のグレーアウト（背景のみ） ── */
 .calendar-cell.past-date {
   background: #f0f0f0 !important;
 }
@@ -189,7 +185,7 @@ body {
 /* ── 価格＆矢印 ── */
 .cell-price {
   font-size: 0.97rem;
-  color: #222 !important;   /* ←強制的に黒に */
+  color: #222 !important;
   margin-bottom: 1px;
 }
 .cell-price-diff.up   { color: #d32f2f; }
@@ -259,7 +255,7 @@ body {
   background: #d4e8f7;
 }
 
-/* ── レスポンシブ ── */
+/* ── PC/タブレット用レスポンシブ ── */
 @media screen and (max-width: 1100px) {
   .main-flexbox,
   .calendar-container {
@@ -283,42 +279,6 @@ body {
     height: 60px;
   }
 }
-@media screen and (max-width: 700px) {
-  .main-flexbox,
-  .calendar-container {
-    flex-direction: column;
-    gap: 12px;
-  }
-  .graph-side,
-  .month-calendar {
-    min-width: 97vw;
-    max-width: 99vw;
-  }
-  .calendar-dow {
-    min-width: 18px !important;
-    max-width: 80vw !important;
-    font-size: 11px !important;
-    height: 18px !important;
-    line-height: 18px !important;
-  }
-  .calendar-cell {
-    min-height: 32px;
-    height: 36px;
-    font-size: 11px;
-  }
-}
-
-@media screen and (max-width: 700px) {
-  .main-flexbox {
-    flex-direction: column !important;
-  }
-  .graph-side {
-    order: 2 !important;
-  }
-  .calendar-container {
-    order: 1 !important;
-  }
-}
 
 /* ── グラフcanvasサイズ最適化 ── */
 .graph-side canvas {
@@ -327,6 +287,7 @@ body {
   display: block;
 }
 
+/* ── 注釈エリア ── */
 .footer-note {
   font-size: 15px;
   color: #555;
@@ -338,14 +299,8 @@ body {
   max-width: 900px;
   box-shadow: 0 1.5px 8px rgba(0,0,0,0.04);
 }
-@media screen and (max-width: 700px) {
-  .footer-note {
-    font-size: 12.3px;
-    padding: 10px 5vw 8px 5vw;
-    max-width: 97vw;
-  }
-}
 
+/* ── ここからスマホ向けは1ブロックでOK ── */
 @media screen and (max-width: 700px) {
   body, html {
     overflow-x: hidden !important;
@@ -380,89 +335,14 @@ body {
     letter-spacing: 0.3px;
   }
   .calendar-cell {
-    min-height: 28px !important;
-    height: 35px !important;
-    padding: 2px 1.5px 2px 1.5px !important;
-    font-size: 11px !important;
-    box-sizing: border-box;
-  }
-  .cell-date {
-    font-size: 11px !important;
-    top: 2px !important;
-    left: 2px !important;
-  }
-  .cell-vacancy,
-  .cell-price {
-    font-size: 10.2px !important;
-  }
-  .cell-vacancy-diff,
-  .cell-price-diff {
-    font-size: 9px !important;
-    margin-left: 1.5px !important;
-  }
-  .cell-demand-badge {
-    font-size: 13px !important;
-    top: 1.5px !important;
-    right: 2px !important;
-  }
-  .cell-event-list,
-  .cell-event {
-    font-size: 9px !important;
-    max-width: 95% !important;
-  }
-}
-
-@media screen and (max-width: 700px) {
-  .calendar-cell {
-    min-height: 48px !important;
-    height: 54px !important;
-    /* 上書き必須: 余白や内部要素も合わせて再調整 */
-    padding: 4px 1.5px 2px 1.5px !important;
-    font-size: 12px !important;
-    box-sizing: border-box;
-  }
-  .cell-main {
-    margin-top: 13px !important; /* 数字や炎バッジとのバランスを調整 */
-    margin-bottom: 1px !important;
-  }
-  .cell-date {
-    font-size: 11.8px !important;
-    top: 3px !important;
-    left: 3px !important;
-  }
-}
-
-@media screen and (max-width: 700px) {
-  .app-banner {
-    width: 95vw !important;
-    max-width: 99vw !important;
-    height: auto !important;
-    min-width: 70vw !important;
-    display: block;
-    margin: 0 auto;
-  }
-}
-
-@media screen and (max-width: 700px) {
-  .cell-vacancy,
-  .cell-price {
-    font-size: 15px !important;
-    font-weight: bold !important;
-    letter-spacing: 0.2px;
-  }
-  .cell-vacancy-diff,
-  .cell-price-diff {
-    font-size: 12px !important;
-  }
-}
-
-@media screen and (max-width: 700px) {
-  .calendar-cell {
     min-height: 60px !important;
     height: 65px !important;
     padding: 8px 2px 5px 2px !important;
     font-size: 14px !important;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
   }
   .cell-main {
     margin-top: 19px !important;
@@ -482,6 +362,29 @@ body {
   .cell-vacancy-diff,
   .cell-price-diff {
     font-size: 12px !important;
+    margin-left: 2px !important;
+  }
+  .cell-demand-badge {
+    font-size: 13px !important;
+    top: 5px !important;
+    right: 6px !important;
+  }
+  .cell-event-list,
+  .cell-event {
+    font-size: 11px !important;
+    max-width: 95% !important;
+  }
+  .app-banner {
+    width: 95vw !important;
+    max-width: 99vw !important;
+    height: auto !important;
+    min-width: 70vw !important;
+    display: block;
+    margin: 0 auto;
+  }
+  .footer-note {
+    font-size: 12.3px;
+    padding: 10px 5vw 8px 5vw;
+    max-width: 97vw;
   }
 }
-
