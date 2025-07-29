@@ -317,9 +317,7 @@ body {
 /* ── グラフcanvasサイズ最適化 ── */
 .graph-side canvas {
   width: 100% !important;
-  height: auto !important;
   max-width: 100%;
-  aspect-ratio: 2.4/1;
-  min-height: 180px;
   display: block;
 }
+
