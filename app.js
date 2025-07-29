@@ -13,9 +13,8 @@ let calendarData   = {},
     historicalData = {};
 let currentYM = [], selectedDate = null;
 
-// ========== 祝日判定（ローカルjs方式。japanese-holidays.jsを別途読み込み必須） ==========
+// ========== 祝日判定（ローカルjs方式） ==========
 function isHoliday(date) {
-  // "YYYY-MM-DD" 形式 or Date型 どちらも可
   if (!window.JapaneseHolidays) return null;
   return window.JapaneseHolidays.isHoliday(date);
 }
@@ -60,15 +59,24 @@ function shiftMonth(diff) {
 
 // ========== ページ全体再描画 ==========
 function renderPage() {
-  document.querySelector(".calendar-main").innerHTML = `
-    <div class="main-flexbox">
-      <div class="graph-side" id="graph-container"></div>
-      <div class="calendar-container" id="calendar-container"></div>
-    </div>`;
+  // 画面幅によってカレンダー・グラフの並び順を切り替え
+  let isMobile = window.innerWidth <= 700;
+  if (isMobile) {
+    document.querySelector(".calendar-main").innerHTML = `
+      <div class="main-flexbox">
+        <div class="calendar-container" id="calendar-container"></div>
+        <div class="graph-side" id="graph-container"></div>
+      </div>`;
+  } else {
+    document.querySelector(".calendar-main").innerHTML = `
+      <div class="main-flexbox">
+        <div class="graph-side" id="graph-container"></div>
+        <div class="calendar-container" id="calendar-container"></div>
+      </div>`;
+  }
   renderGraph(selectedDate);
   renderCalendars();
 }
-
 
 // ========== カレンダー描画 ==========
 function renderCalendars() {
@@ -90,7 +98,7 @@ function renderMonth(y,m) {
   // 曜日ヘッダー
   ["日","月","火","水","木","金","土"].forEach(d => {
     const c = document.createElement("div");
-    c.className = "calendar-cell calendar-dow";
+    c.className = "calendar-dow";
     c.textContent = d;
     grid.appendChild(c);
   });
@@ -154,14 +162,14 @@ function renderMonth(y,m) {
       .map(ev => `<div class="cell-event" style="font-size:11px; color:#222; white-space:normal; line-height:1.1;">${ev.icon} <span style="color:#222;">${ev.name}</span></div>`)
       .join("");
 
-    // セル内HTML（祝日名は出さない）
+    // セル内HTML
     cell.innerHTML = `
       <div class="cell-date">${d}</div>
       <div class="cell-main">
         <span class="cell-vacancy">${stock}</span>
         <span class="cell-vacancy-diff ${dv>0?"plus":dv<0?"minus":"flat"}">${dvText}</span>
       </div>
-      <div class="cell-price" style="color:#222;">
+      <div class="cell-price">
         ￥${price}
         <span class="cell-price-diff ${dp>0?"up":dp<0?"down":"flat"}">${dp>0?"↑":dp<0?"↓":"→"}</span>
       </div>
@@ -185,17 +193,16 @@ function renderGraph(dateStr){
   const allDates = Object.keys(historicalData).sort(),
         idx = allDates.indexOf(dateStr);
 
-gc.innerHTML = `
-  <div class="graph-btns">
-    <button onclick="closeGraph()">✗ 当日へ戻る</button>
-    <button onclick="nav(-1)">< 前日</button>
-    <button onclick="nav(1)">翌日 ></button>
-  </div>
-  <h3>${dateStr} の在庫・価格推移</h3>
-  <canvas id="stockChart"></canvas>
-  <canvas id="priceChart"></canvas>
-`;
-
+  gc.innerHTML = `
+    <div class="graph-btns">
+      <button onclick="closeGraph()">✗ 当日へ戻る</button>
+      <button onclick="nav(-1)">< 前日</button>
+      <button onclick="nav(1)">翌日 ></button>
+    </div>
+    <h3>${dateStr} の在庫・価格推移</h3>
+    <canvas id="stockChart"></canvas>
+    <canvas id="priceChart"></canvas>
+  `;
 
   window.nav = diff => {
     const ni = idx + diff;
@@ -229,6 +236,8 @@ gc.innerHTML = `
         data: { labels, datasets: [{ data: sv, fill: false, borderColor: "#2196f3", pointRadius: 2 }] },
         options: {
           plugins: { legend: { display: false } },
+          responsive: true,
+          maintainAspectRatio: false,
           scales: {
             y: { beginAtZero: true, min: 0, max: 400, title: { display: true, text: "在庫数" } },
             x: { title: { display: true, text: "日付" } }
@@ -244,6 +253,8 @@ gc.innerHTML = `
         data: { labels, datasets: [{ data: pv, fill: false, borderColor: "#e91e63", pointRadius: 2 }] },
         options: {
           plugins: { legend: { display: false } },
+          responsive: true,
+          maintainAspectRatio: false,
           scales: {
             y: { beginAtZero: true, min: 0, max: 40000, title: { display: true, text: "平均価格（円）" } },
             x: { title: { display: true, text: "日付" } }
@@ -270,4 +281,6 @@ window.onload = async () => {
   renderPage();
   updateLastUpdate();
   setupMonthButtons();
+  // リサイズ時にも順序を即時反映（PC/スマホ切替で崩れない）
+  window.addEventListener('resize', () => { renderPage(); });
 };
