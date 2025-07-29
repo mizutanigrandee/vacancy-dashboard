@@ -345,3 +345,69 @@ body {
     max-width: 97vw;
   }
 }
+
+@media screen and (max-width: 700px) {
+  body, html {
+    overflow-x: hidden !important;
+  }
+  .calendar-main,
+  .main-flexbox,
+  .calendar-container {
+    width: 100vw !important;
+    min-width: 100vw !important;
+    max-width: 100vw !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .month-calendar {
+    min-width: 99vw !important;
+    max-width: 99vw !important;
+    width: 99vw !important;
+    padding: 7px 2px 3px 2px !important;
+    margin: 0 0 9px 0 !important;
+    box-shadow: 0 1.5px 8px rgba(0,0,0,0.04);
+  }
+  .calendar-grid {
+    gap: 0px !important;
+  }
+  .calendar-dow {
+    min-width: 1px !important;
+    max-width: 13vw !important;
+    font-size: 12px !important;
+    height: 21px !important;
+    line-height: 21px !important;
+    padding: 0 !important;
+    letter-spacing: 0.3px;
+  }
+  .calendar-cell {
+    min-height: 28px !important;
+    height: 35px !important;
+    padding: 2px 1.5px 2px 1.5px !important;
+    font-size: 11px !important;
+    box-sizing: border-box;
+  }
+  .cell-date {
+    font-size: 11px !important;
+    top: 2px !important;
+    left: 2px !important;
+  }
+  .cell-vacancy,
+  .cell-price {
+    font-size: 10.2px !important;
+  }
+  .cell-vacancy-diff,
+  .cell-price-diff {
+    font-size: 9px !important;
+    margin-left: 1.5px !important;
+  }
+  .cell-demand-badge {
+    font-size: 13px !important;
+    top: 1.5px !important;
+    right: 2px !important;
+  }
+  .cell-event-list,
+  .cell-event {
+    font-size: 9px !important;
+    max-width: 95% !important;
+  }
+}
