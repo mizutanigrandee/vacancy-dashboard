@@ -154,20 +154,21 @@ function renderMonth(y,m) {
       .join("");
 
 
-    // セル内HTML（祝日名は出さない）
-    cell.innerHTML = `
-      <div class="cell-date">${d}</div>
-      <div class="cell-main">
-        <span class="cell-vacancy">${stock}</span>
-        <span class="cell-vacancy-diff ${dv>0?"plus":dv<0?"minus":"flat"}">${dvText}</span>
-      </div>
-      <div class="cell-price">
-        ￥${price}
-        <span class="cell-price-diff ${dp>0?"up":dp<0?"down":"flat"}">${dp>0?"↑":dp<0?"↓":"→"}</span>
-      </div>
-      ${badge}
-      <div class="cell-event-list">${evs}</div>
-    `;
+// セル内HTML
+cell.innerHTML = `
+  <div class="cell-date">${d}</div>
+  <div class="cell-main">
+    <span class="cell-vacancy">${stock}</span>
+    <span class="cell-vacancy-diff ${dv>0?"plus":dv<0?"minus":"flat"}">${dvText}</span>
+  </div>
+  <div class="cell-price" style="color:#222;">
+    ￥${price}
+    <span class="cell-price-diff ${dp>0?"up":dp<0?"down":"flat"}">${dp>0?"↑":dp<0?"↓":"→"}</span>
+  </div>
+  ${badge}
+  <div class="cell-event-list">${evs}</div>
+`;
+
 
     cell.onclick = () => { selectedDate = iso; renderPage(); };
     grid.appendChild(cell);
