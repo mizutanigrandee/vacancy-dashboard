@@ -443,3 +443,17 @@ body {
   }
 }
 
+@media screen and (max-width: 700px) {
+  .cell-vacancy,
+  .cell-price {
+    font-size: 15px !important;
+    font-weight: bold !important;
+    letter-spacing: 0.2px;
+  }
+  .cell-vacancy-diff,
+  .cell-price-diff {
+    font-size: 12px !important;
+  }
+}
+
+
