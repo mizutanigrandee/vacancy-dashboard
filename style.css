@@ -108,24 +108,29 @@ body {
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  grid-template-rows: 36px repeat(6, 1fr);
+  grid-template-rows: 42px repeat(6, 1fr); /* 42px = 日付セルの高さと揃える */
   gap: 3px;
 }
+
 .calendar-dow {
-  height: 36px !important;
-  min-width: 54px !important;
-  max-width: 90px !important;
-  padding: 0 !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: 42px !important;  /* 日付セルの高さと同じに */
+  padding: 2px 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   background: #e9f0f6 !important;
   color: #2e6fa2 !important;
-  font-size: 18px !important;
+  font-size: 15px !important;
   font-weight: bold !important;
-  border-radius: 6px !important;
+  border-radius: 4px !important;
   letter-spacing: 1px;
 }
+
+/* 価格を黒字で強制（もしJSのstyle指定と併用したくない場合は） */
+.cell-price { color: #222 !important; }
+
 
 /* ── 日付セル ── */
 .calendar-cell {
