@@ -79,6 +79,12 @@ body {
   margin-bottom: 12px;
   padding: 16px;
 }
+.graph-side canvas {
+  width: 100% !important;
+  max-width: 100%;
+  display: block;
+}
+
 .calendar-container {
   display: flex;
   gap: 32px;
