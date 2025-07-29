@@ -58,21 +58,21 @@ function shiftMonth(diff) {
 }
 
 // ========== ページ全体再描画 ==========
+// ここで崩れや空白になるので、テンプレ文字列はインデントなし・1行で出力！
 function renderPage() {
-  // 画面幅によってカレンダー・グラフの並び順を切り替え
   let isMobile = window.innerWidth <= 700;
   if (isMobile) {
-    document.querySelector(".calendar-main").innerHTML = `
-      <div class="main-flexbox">
-        <div class="calendar-container" id="calendar-container"></div>
-        <div class="graph-side" id="graph-container"></div>
-      </div>`;
+    document.querySelector(".calendar-main").innerHTML =
+      '<div class="main-flexbox">' +
+        '<div class="calendar-container" id="calendar-container"></div>' +
+        '<div class="graph-side" id="graph-container"></div>' +
+      '</div>';
   } else {
-    document.querySelector(".calendar-main").innerHTML = `
-      <div class="main-flexbox">
-        <div class="graph-side" id="graph-container"></div>
-        <div class="calendar-container" id="calendar-container"></div>
-      </div>`;
+    document.querySelector(".calendar-main").innerHTML =
+      '<div class="main-flexbox">' +
+        '<div class="graph-side" id="graph-container"></div>' +
+        '<div class="calendar-container" id="calendar-container"></div>' +
+      '</div>';
   }
   renderGraph(selectedDate);
   renderCalendars();
@@ -90,7 +90,7 @@ function renderCalendars() {
 function renderMonth(y,m) {
   const wrap = document.createElement("div");
   wrap.className = "month-calendar";
-  wrap.innerHTML = `<div class="month-header">${y}年${m}月</div>`;
+  wrap.innerHTML = '<div class="month-header">' + y + '年' + m + '月</div>';
 
   const grid = document.createElement("div");
   grid.className = "calendar-grid";
@@ -114,7 +114,7 @@ function renderMonth(y,m) {
 
   // 各日セル
   for (let d=1; d<=lastDate; d++){
-    const iso = `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const iso = y + '-' + String(m).padStart(2,"0") + '-' + String(d).padStart(2,"0");
     const cell = document.createElement("div");
     cell.className = "calendar-cell";
     cell.dataset.date = iso;
@@ -157,25 +157,23 @@ function renderMonth(y,m) {
     }
     const badge = lvl ? `<div class="cell-demand-badge lv${lvl}">🔥${lvl}</div>` : "";
 
-    // ▼イベント表示（小さく黒字＆折り返し）
+    // イベント
     const evs = (eventData[iso] || [])
       .map(ev => `<div class="cell-event" style="font-size:11px; color:#222; white-space:normal; line-height:1.1;">${ev.icon} <span style="color:#222;">${ev.name}</span></div>`)
       .join("");
 
-    // セル内HTML
-    cell.innerHTML = `
-      <div class="cell-date">${d}</div>
-      <div class="cell-main">
-        <span class="cell-vacancy">${stock}</span>
-        <span class="cell-vacancy-diff ${dv>0?"plus":dv<0?"minus":"flat"}">${dvText}</span>
-      </div>
-      <div class="cell-price">
-        ￥${price}
-        <span class="cell-price-diff ${dp>0?"up":dp<0?"down":"flat"}">${dp>0?"↑":dp<0?"↓":"→"}</span>
-      </div>
-      ${badge}
-      <div class="cell-event-list">${evs}</div>
-    `;
+    cell.innerHTML =
+      '<div class="cell-date">' + d + '</div>' +
+      '<div class="cell-main">' +
+        '<span class="cell-vacancy">' + stock + '</span>' +
+        '<span class="cell-vacancy-diff ' + (dv>0?'plus':dv<0?'minus':'flat') + '">' + dvText + '</span>' +
+      '</div>' +
+      '<div class="cell-price">' +
+        '￥' + price +
+        '<span class="cell-price-diff ' + (dp>0?'up':dp<0?'down':'flat') + '">' + (dp>0?'↑':dp<0?'↓':'→') + '</span>' +
+      '</div>' +
+      badge +
+      '<div class="cell-event-list">' + evs + '</div>';
 
     cell.onclick = () => { selectedDate = iso; renderPage(); };
     grid.appendChild(cell);
@@ -193,18 +191,15 @@ function renderGraph(dateStr){
   const allDates = Object.keys(historicalData).sort(),
         idx = allDates.indexOf(dateStr);
 
-gc.innerHTML = `
-  <div class="graph-btns">
-    <button onclick="closeGraph()">✗ 当日へ戻る</button>
-    <button onclick="nav(-1)">< 前日</button>
-    <button onclick="nav(1)">翌日 ></button>
-  </div>
-  <h3>${dateStr} の在庫・価格推移</h3>
-  <canvas id="stockChart" width="600" height="250"></canvas>
-  <canvas id="priceChart" width="600" height="250"></canvas>
-`;
-
-
+  gc.innerHTML =
+    '<div class="graph-btns">' +
+      '<button onclick="closeGraph()">✗ 当日へ戻る</button>' +
+      '<button onclick="nav(-1)">< 前日</button>' +
+      '<button onclick="nav(1)">翌日 ></button>' +
+    '</div>' +
+    `<h3>${dateStr} の在庫・価格推移</h3>` +
+    '<canvas id="stockChart" width="600" height="250"></canvas>' +
+    '<canvas id="priceChart" width="600" height="250"></canvas>';
 
   window.nav = diff => {
     const ni = idx + diff;
@@ -231,40 +226,39 @@ gc.innerHTML = `
 
   if (labels.length) {
     // 在庫数グラフ
-window.sc = new Chart(
-  document.getElementById("stockChart").getContext("2d"),
-  {
-    type: "line",
-    data: { labels, datasets: [{ data: sv, fill: false, borderColor: "#2196f3", pointRadius: 2 }] },
-    options: {
-      plugins: { legend: { display: false } },
-      responsive: false, // ← trueだと親divサイズに引っ張られる
-      // maintainAspectRatio: false, ← これを消す！
-      scales: {
-        y: { beginAtZero: true, min: 0, max: 400, title: { display: true, text: "在庫数" } },
-        x: { title: { display: true, text: "日付" } }
+    window.sc = new Chart(
+      document.getElementById("stockChart").getContext("2d"),
+      {
+        type: "line",
+        data: { labels, datasets: [{ data: sv, fill: false, borderColor: "#2196f3", pointRadius: 2 }] },
+        options: {
+          plugins: { legend: { display: false } },
+          responsive: false,
+          scales: {
+            y: { beginAtZero: true, min: 0, max: 400, title: { display: true, text: "在庫数" } },
+            x: { title: { display: true, text: "日付" } }
+          }
+        }
       }
-    }
-  }
-);
-// 価格グラフも同様
-window.pc = new Chart(
-  document.getElementById("priceChart").getContext("2d"),
-  {
-    type: "line",
-    data: { labels, datasets: [{ data: pv, fill: false, borderColor: "#e91e63", pointRadius: 2 }] },
-    options: {
-      plugins: { legend: { display: false } },
-      responsive: false, // ← ここもfalse
-      // maintainAspectRatio: false, ← これを消す！
-      scales: {
-        y: { beginAtZero: true, min: 0, max: 40000, title: { display: true, text: "平均価格（円）" } },
-        x: { title: { display: true, text: "日付" } }
+    );
+    // 価格グラフ
+    window.pc = new Chart(
+      document.getElementById("priceChart").getContext("2d"),
+      {
+        type: "line",
+        data: { labels, datasets: [{ data: pv, fill: false, borderColor: "#e91e63", pointRadius: 2 }] },
+        options: {
+          plugins: { legend: { display: false } },
+          responsive: false,
+          scales: {
+            y: { beginAtZero: true, min: 0, max: 40000, title: { display: true, text: "平均価格（円）" } },
+            x: { title: { display: true, text: "日付" } }
+          }
+        }
       }
-    }
+    );
   }
-);
-
+}
 
 // ========== 最終更新日時 ==========
 function updateLastUpdate(){
@@ -282,6 +276,5 @@ window.onload = async () => {
   renderPage();
   updateLastUpdate();
   setupMonthButtons();
-  // リサイズ時にも順序を即時反映（PC/スマホ切替で崩れない）
   window.addEventListener('resize', () => { renderPage(); });
 };
