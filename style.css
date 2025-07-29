@@ -138,14 +138,16 @@ body {
   background: #f6f9ff;
   border: 1px solid #e1e7ed;
   border-radius: 7px;
-  aspect-ratio: 1 / 1;
-  min-height: 0;
+  min-height: 42px;
+  height: 70px;     /* 必要に応じて80px, 90px等もOK */
   padding: 6px 4px 5px 4px;
   position: relative;
   transition: box-shadow 0.2s;
   cursor: pointer;
   overflow: hidden;
+  box-sizing: border-box;
 }
+
 .calendar-cell.selected {
   background: #d2edfa !important;
   box-shadow: 0 0 0 2px #5ac8fa !important;
