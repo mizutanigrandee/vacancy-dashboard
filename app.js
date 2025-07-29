@@ -231,41 +231,40 @@ gc.innerHTML = `
 
   if (labels.length) {
     // 在庫数グラフ
-    window.sc = new Chart(
-      document.getElementById("stockChart").getContext("2d"),
-      {
-        type: "line",
-        data: { labels, datasets: [{ data: sv, fill: false, borderColor: "#2196f3", pointRadius: 2 }] },
-        options: {
-          plugins: { legend: { display: false } },
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: { beginAtZero: true, min: 0, max: 400, title: { display: true, text: "在庫数" } },
-            x: { title: { display: true, text: "日付" } }
-          }
-        }
+window.sc = new Chart(
+  document.getElementById("stockChart").getContext("2d"),
+  {
+    type: "line",
+    data: { labels, datasets: [{ data: sv, fill: false, borderColor: "#2196f3", pointRadius: 2 }] },
+    options: {
+      plugins: { legend: { display: false } },
+      responsive: false, // ← trueだと親divサイズに引っ張られる
+      // maintainAspectRatio: false, ← これを消す！
+      scales: {
+        y: { beginAtZero: true, min: 0, max: 400, title: { display: true, text: "在庫数" } },
+        x: { title: { display: true, text: "日付" } }
       }
-    );
-    // 価格グラフ
-    window.pc = new Chart(
-      document.getElementById("priceChart").getContext("2d"),
-      {
-        type: "line",
-        data: { labels, datasets: [{ data: pv, fill: false, borderColor: "#e91e63", pointRadius: 2 }] },
-        options: {
-          plugins: { legend: { display: false } },
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: { beginAtZero: true, min: 0, max: 40000, title: { display: true, text: "平均価格（円）" } },
-            x: { title: { display: true, text: "日付" } }
-          }
-        }
-      }
-    );
+    }
   }
-}
+);
+// 価格グラフも同様
+window.pc = new Chart(
+  document.getElementById("priceChart").getContext("2d"),
+  {
+    type: "line",
+    data: { labels, datasets: [{ data: pv, fill: false, borderColor: "#e91e63", pointRadius: 2 }] },
+    options: {
+      plugins: { legend: { display: false } },
+      responsive: false, // ← ここもfalse
+      // maintainAspectRatio: false, ← これを消す！
+      scales: {
+        y: { beginAtZero: true, min: 0, max: 40000, title: { display: true, text: "平均価格（円）" } },
+        x: { title: { display: true, text: "日付" } }
+      }
+    }
+  }
+);
+
 
 // ========== 最終更新日時 ==========
 function updateLastUpdate(){
