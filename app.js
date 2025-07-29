@@ -216,39 +216,41 @@ function renderGraph(dateStr){
     pv.push(hist[d].avg_price);
   });
 
-  if (window.sc) window.sc.destroy();
-  if (window.pc) window.pc.destroy();
+// Chart.js描画
+if (window.sc) window.sc.destroy();
+if (window.pc) window.pc.destroy();
 
-  if (labels.length) {
-    window.sc = new Chart(
-      document.getElementById("stockChart").getContext("2d"),
-      {
-        type: "line",
-        data: { labels, datasets: [{ data: sv, fill: false, borderColor: "#2196f3", pointRadius: 2 }] },
-        options: {
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { beginAtZero: true, title: { display: true, text: "在庫数" } },
-            x: { title: { display: true, text: "日付" } }
-          }
+if (labels.length) {
+  // 在庫数グラフ
+  window.sc = new Chart(
+    document.getElementById("stockChart").getContext("2d"),
+    {
+      type: "line",
+      data: { labels, datasets: [{ data: sv, fill: false, borderColor: "#2196f3", pointRadius: 2 }] },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, min: 0, max: 350, title: { display: true, text: "在庫数" } },
+          x: { title: { display: true, text: "日付" } }
         }
       }
-    );
-    window.pc = new Chart(
-      document.getElementById("priceChart").getContext("2d"),
-      {
-        type: "line",
-        data: { labels, datasets: [{ data: pv, fill: false, borderColor: "#e91e63", pointRadius: 2 }] },
-        options: {
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { beginAtZero: false, title: { display: true, text: "平均価格（円）" } },
-            x: { title: { display: true, text: "日付" } }
-          }
+    }
+  );
+  // 価格グラフ
+  window.pc = new Chart(
+    document.getElementById("priceChart").getContext("2d"),
+    {
+      type: "line",
+      data: { labels, datasets: [{ data: pv, fill: false, borderColor: "#e91e63", pointRadius: 2 }] },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, min: 0, max: 35000, title: { display: true, text: "平均価格（円）" } },
+          x: { title: { display: true, text: "日付" } }
         }
       }
-    );
-  }
+    }
+  );
 }
 
 // ========== 最終更新日時 ==========
