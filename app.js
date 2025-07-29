@@ -192,8 +192,8 @@ function renderGraph(dateStr){
       <button onclick="nav(1)">翌日 ></button>
     </div>
     <h3>${dateStr} の在庫・価格推移</h3>
-    <canvas id="stockChart" width="420" height="360"></canvas>
-    <canvas id="priceChart" width="420" height="360"></canvas>
+    <canvas id="stockChart" width="420" height="250"></canvas>
+    <canvas id="priceChart" width="420" height="250"></canvas>
   `;
 
   window.nav = diff => {
