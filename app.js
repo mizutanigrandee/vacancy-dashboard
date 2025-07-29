@@ -205,6 +205,7 @@ gc.innerHTML = `
 `;
 
 
+
   window.nav = diff => {
     const ni = idx + diff;
     if (ni >= 0 && ni < allDates.length) {
