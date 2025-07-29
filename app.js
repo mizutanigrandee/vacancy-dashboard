@@ -62,12 +62,13 @@ function shiftMonth(diff) {
 function renderPage() {
   document.querySelector(".calendar-main").innerHTML = `
     <div class="main-flexbox">
-      <div class="calendar-container" id="calendar-container"></div>
       <div class="graph-side" id="graph-container"></div>
+      <div class="calendar-container" id="calendar-container"></div>
     </div>`;
-  renderCalendars();
   renderGraph(selectedDate);
+  renderCalendars();
 }
+
 
 // ========== カレンダー描画 ==========
 function renderCalendars() {
