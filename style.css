@@ -143,9 +143,9 @@ body {
   background: #f6f9ff;
   border: 1px solid #e1e7ed;
   border-radius: 7px;
-  min-height: 108px;
-  height: 114px;
-  padding: 8px 5px 7px 5px;
+  min-height: 105px;
+  height: 115px;
+  padding: 6px 4px 5px 4px;
   position: relative;
   transition: box-shadow 0.2s;
   cursor: pointer;
@@ -341,8 +341,8 @@ body {
     letter-spacing: 0.3px;
   }
   .calendar-cell {
-    min-height: 95px !important;
-    height: 104px !important;
+    min-height: 62px !important;
+    height: 70px !important;
     padding: 10px 2px 7px 2px !important;
     font-size: 15px !important;
     box-sizing: border-box;
