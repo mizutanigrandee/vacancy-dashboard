@@ -305,3 +305,12 @@ body {
   }
 }
 
+.graph-side canvas {
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100%;
+  aspect-ratio: 2.4/1;   /* 横600:縦250 の比率 */
+  min-height: 180px;
+  display: block;
+}
+
