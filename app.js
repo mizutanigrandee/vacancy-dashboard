@@ -4,12 +4,13 @@ const DATA_PATH  = "./vacancy_price_cache.json";
 const PREV_PATH  = "./vacancy_price_cache_previous.json";
 const EVENT_PATH = "./event_data.json";
 const HIST_PATH  = "./historical_data.json";
-const SPIKE_PATH = "./demand_spike_history.json"; // 追加
+const SPIKE_PATH = "./demand_spike_history.json"; // スパイクバナー
 
 let calendarData   = {},
     prevData       = {},
     eventData      = {},
-    historicalData = {};
+    historicalData = {},
+    spikeData      = {};
 let currentYM = [], selectedDate = null;
 
 // ========== 祝日判定 ==========
@@ -22,9 +23,10 @@ function isHoliday(date) {
 // ========== ヘルパー ==========
 
 const todayIso = () => new Date().toISOString().slice(0,10);
+
 async function loadJson(path) {
   try {
-    const res = await fetch(path);
+    const res = await fetch(path + '?t=' + (new Date().getTime()));
     if (!res.ok) return {};
     return await res.json();
   } catch {
@@ -36,6 +38,7 @@ async function loadAll() {
   prevData       = await loadJson(PREV_PATH);
   eventData      = await loadJson(EVENT_PATH);
   historicalData = await loadJson(HIST_PATH);
+  spikeData      = await loadJson(SPIKE_PATH);
 }
 
 // ========== 月送りボタン設定 ==========
@@ -59,69 +62,63 @@ function shiftMonth(diff) {
   currentYM = [[y,m], m === 12 ? [y+1,1] : [y, m+1]];
 }
 
-// ========== 需要急騰バナー描画 ==========
-
-async function renderSpikeBanner() {
-  try {
-    const res = await fetch(SPIKE_PATH);
-    if (!res.ok) return;
-    const data = await res.json();
-    const dates = Object.keys(data).sort().reverse().slice(0, 3);
-    let chips = [];
-    for (const up_date of dates) {
-      for (const spike of data[up_date]) {
-        const price_txt = `<span style='color:#d35400;'>単価${spike.price_diff>0?'↑':'↓'} ${Math.abs(spike.price_diff).toLocaleString()}円</span>（${(spike.price_ratio*100).toFixed(1)}%）`;
-        const vac_txt = `<span style='color:#2980b9;'>客室${spike.vacancy_diff<0?'減':'増'} ${Math.abs(spike.vacancy_diff)}件</span>（${(spike.vacancy_ratio*100).toFixed(1)}%）`;
-        const chip = `
-          <span class="spike-chip">
-            <span class="spike-up-date">【${up_date.replace(/^\d{4}-/, '').replace('-', '/')} UP】</span>
-            <span class="spike-main"><b>該当日 <span class="spike-date">${spike.spike_date}</span></b></span>
-            ${price_txt}　${vac_txt}
-            <span class="spike-summary">平均￥${Number(spike.price).toLocaleString()}／残${spike.vacancy}</span>
-          </span>`;
-        chips.push(chip);
-        if (chips.length >= 10) break;
-      }
-      if (chips.length >= 10) break;
-    }
-    if (chips.length > 0) {
-      document.getElementById("spike-banner").innerHTML = `
-        <div class="spike-banner-box">
-          <div class="spike-banner-title">
-            <span style="font-size:20px;color:#e67e22;margin-right:9px;">🚀</span>
-            <span style="font-weight:800;color:#e67e22;font-size:16px;letter-spacing:0.5px;margin-right:9px;">需要急騰検知日</span>
-            <span style="font-size:12.5px;color:#ae8d3a;">（直近3日分・最大10件）</span>
-          </div>
-          <div class="spike-banner-row">${chips.join("")}</div>
-        </div>`;
-    } else {
-      document.getElementById("spike-banner").innerHTML = "";
-    }
-  } catch (e) {
-    document.getElementById("spike-banner").innerHTML = "";
-  }
-}
-
 // ========== ページ全体再描画 ==========
 
 function renderPage() {
   let isMobile = window.innerWidth <= 700;
-  if (isMobile) {
-    document.querySelector(".calendar-main").innerHTML =
-      '<div class="main-flexbox">' +
-        '<div class="calendar-container" id="calendar-container"></div>' +
+  document.querySelector(".calendar-main").innerHTML =
+    '<div class="main-flexbox">' +
+      '<div>' +
+        '<div id="spike-banner"></div>' +
         '<div class="graph-side" id="graph-container"></div>' +
-      '</div>';
-  } else {
-    document.querySelector(".calendar-main").innerHTML =
-      '<div class="main-flexbox">' +
-        '<div class="graph-side" id="graph-container"></div>' +
-        '<div class="calendar-container" id="calendar-container"></div>' +
-      '</div>';
-  }
+      '</div>' +
+      '<div class="calendar-container" id="calendar-container"></div>' +
+    '</div>';
+  renderSpikeBanner();
   renderGraph(selectedDate);
   renderCalendars();
-  renderSpikeBanner(); // ここでバナー描画
+}
+
+// ========== スパイクバナー描画 ==========
+
+function renderSpikeBanner() {
+  const el = document.getElementById("spike-banner");
+  el.innerHTML = "";
+  // 最新3日×10件
+  if (!spikeData || Object.keys(spikeData).length === 0) return;
+
+  const dates = Object.keys(spikeData).sort().reverse().slice(0,3);
+  let chips = [];
+  for (const up_date of dates) {
+    for (const spike of spikeData[up_date]) {
+      chips.push(
+        `<div class="spike-chip">
+          <span class="spike-up-date">【${up_date.slice(5).replace('-','/')} UP】</span>
+          <span class="spike-main">該当日 <span class="spike-date">${spike.spike_date}</span></span>
+          <span style="color:#d35400;">単価${spike.price_diff>0?'↑':'↓'} ${Math.abs(spike.price_diff).toLocaleString()}円</span>
+          <span style="color:#2980b9;">客室${spike.vacancy_diff<0?'減':'増'} ${Math.abs(spike.vacancy_diff)}件</span>
+          <span class="spike-summary">平均￥${spike.price.toLocaleString()}／残${spike.vacancy}</span>
+        </div>`
+      );
+      if (chips.length >= 10) break;
+    }
+    if (chips.length >= 10) break;
+  }
+  if (chips.length) {
+    el.innerHTML =
+      `<div class="spike-banner-box">
+        <div class="spike-banner-title">
+          <span style="font-size:1.15em;color:#e67e22;margin-right:7px;">🚀</span>
+          <span style="font-weight:800;color:#e67e22;font-size:1em;letter-spacing:0.5px;margin-right:7px;">
+            需要急騰検知日
+          </span>
+          <span style="font-size:0.9em;color:#ae8d3a;">（直近3日分・最大10件）</span>
+        </div>
+        <div class="spike-banner-row">
+          ${chips.join("")}
+        </div>
+      </div>`;
+  }
 }
 
 // ========== カレンダー描画 ==========
@@ -156,7 +153,6 @@ function renderMonth(y,m) {
     e.className = "calendar-cell";
     grid.appendChild(e);
   }
-
   for (let d=1; d<=lastDate; d++){
     const iso = y + '-' + String(m).padStart(2,"0") + '-' + String(d).padStart(2,"0");
     const cell = document.createElement("div");
@@ -164,12 +160,10 @@ function renderMonth(y,m) {
     cell.dataset.date = iso;
 
     let holidayName = isHoliday(iso);
-
     const idx = (grid.children.length) % 7;
     if      (holidayName) cell.classList.add("holiday-bg");
     else if (idx === 0)   cell.classList.add("sunday-bg");
     else if (idx === 6)   cell.classList.add("saturday-bg");
-
     if (iso < todayIso()) cell.classList.add("past-date");
 
     const cur = calendarData[iso] || {},
@@ -182,7 +176,6 @@ function renderMonth(y,m) {
                 : Math.round((cur.avg_price||0) - (prv.avg_price||0));
     const stock = cur.vacancy != null ? `${cur.vacancy}件` : "-";
     const price = cur.avg_price != null ? cur.avg_price.toLocaleString() : "-";
-
     const dvText = dv > 0 ? `(+${dv})` : dv < 0 ? `(${dv})` : `(±0)`;
 
     let lvl = 0;
@@ -194,9 +187,8 @@ function renderMonth(y,m) {
       else if (cur.vacancy<=250 || cur.avg_price>=25000) lvl=1;
     }
     const badge = lvl ? `<div class="cell-demand-badge lv${lvl}">🔥${lvl}</div>` : "";
-
     const evs = (eventData[iso] || [])
-      .map(ev => `<div class="cell-event" style="font-size:11px; color:#222; white-space:normal; line-height:1.1;">${ev.icon} <span style="color:#222;">${ev.name}</span></div>`)
+      .map(ev => `<div class="cell-event" style="font-size:9px; color:#222; white-space:normal; line-height:1.1;">${ev.icon} <span style="color:#222;">${ev.name}</span></div>`)
       .join("");
 
     cell.innerHTML =
@@ -235,9 +227,9 @@ function renderGraph(dateStr){
       '<button onclick="nav(-1)">< 前日</button>' +
       '<button onclick="nav(1)">翌日 ></button>' +
     '</div>' +
-    `<h3>${dateStr} の在庫・価格推移</h3>` +
-    '<canvas id="stockChart" width="600" height="250"></canvas>' +
-    '<canvas id="priceChart" width="600" height="250"></canvas>';
+    `<h3 style="font-size:1rem;">${dateStr} の在庫・価格推移</h3>` +
+    '<canvas id="stockChart" width="350" height="120"></canvas>' +
+    '<canvas id="priceChart" width="350" height="120"></canvas>';
 
   window.nav = diff => {
     const ni = idx + diff;
@@ -266,7 +258,7 @@ function renderGraph(dateStr){
       document.getElementById("stockChart").getContext("2d"),
       {
         type: "line",
-        data: { labels, datasets: [{ data: sv, fill: false, borderColor: "#2196f3", pointRadius: 2 }] },
+        data: { labels, datasets: [{ data: sv, fill: false, borderColor: "#2196f3", pointRadius: 1 }] },
         options: {
           plugins: { legend: { display: false } },
           responsive: false,
@@ -282,7 +274,7 @@ function renderGraph(dateStr){
       document.getElementById("priceChart").getContext("2d"),
       {
         type: "line",
-        data: { labels, datasets: [{ data: pv, fill: false, borderColor: "#e91e63", pointRadius: 2 }] },
+        data: { labels, datasets: [{ data: pv, fill: false, borderColor: "#e91e63", pointRadius: 1 }] },
         options: {
           plugins: { legend: { display: false } },
           responsive: false,
@@ -297,21 +289,19 @@ function renderGraph(dateStr){
   }
 }
 
-// ========== 最終更新日時（vacancy_price_cache.json から取得） ==========
+// ========== 最終更新日時 ==========
 
-async function updateLastUpdate(){
-  try {
-    const res = await fetch('./vacancy_price_cache.json');
-    if (!res.ok) throw new Error();
-    const data = await res.json();
-    if (data.last_update) {
-      document.getElementById("last-update").textContent = `最終更新日時：${data.last_update}（JST）`;
-    } else {
-      document.getElementById("last-update").textContent = "最終更新日時：取得できません";
-    }
-  } catch {
-    document.getElementById("last-update").textContent = "最終更新日時：取得できません";
+function updateLastUpdate(){
+  const el = document.getElementById("last-update");
+  let dtStr = "";
+  if (calendarData && calendarData.last_update) {
+    dtStr = calendarData.last_update;
+  } else {
+    const d  = new Date(),
+          z  = n => String(n).padStart(2,"0");
+    dtStr = `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}`;
   }
+  el.textContent = `最終更新日時：${dtStr}`;
 }
 
 // ========== 起動時初期化 ==========
