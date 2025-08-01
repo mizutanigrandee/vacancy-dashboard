@@ -317,20 +317,20 @@ body {
     margin-bottom: 2px !important;
   }
   .cell-date {
-    font-size: 8.6px !important;
+    font-size: 8.1px !important;
     top: 3.5px !important;
     left: 4.5px !important;
   }
   .cell-vacancy,
   .cell-price {
-    font-size: 10px !important;
+    font-size: 7px !important;
     font-weight: 700 !important;
     letter-spacing: 0.05px;
     line-height: 1.05;
   }
   .cell-vacancy-diff,
   .cell-price-diff {
-    font-size: 9px !important;
+    font-size: 7px !important;
     margin-left: 2px !important;
   }
   .cell-demand-badge {
@@ -343,7 +343,7 @@ body {
     max-width: 92% !important;
   }
   .cell-event {
-    font-size: 8.8px !important;
+    font-size: 5px !important;
     line-height: 1.13 !important;
     max-width: 100% !important;
     white-space: normal !important;
