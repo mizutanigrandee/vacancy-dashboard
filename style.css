@@ -167,7 +167,7 @@ body {
 
 /* ── 在庫＆前日差分（括弧付き） ── */
 .cell-main {
-  margin-top: 28px !important;
+  margin-top: 20px !important;
   margin-bottom: 3px !important;  /* ← 6pxから3pxへ変更！ */
 }
 .cell-vacancy {
@@ -194,7 +194,7 @@ body {
   position: absolute;
   top: 9px;
   right: 9px;
-  font-size: 1.18rem;
+  font-size: 0.9rem;
   font-weight: bold;
   z-index: 10;
   pointer-events: none;
@@ -346,7 +346,7 @@ body {
   }
   .cell-vacancy,
   .cell-price {
-    font-size: 1.12rem !important;
+    font-size: 1.0rem !important;
     font-weight: bold !important;
     letter-spacing: 0.1px;
     line-height: 1.1;
