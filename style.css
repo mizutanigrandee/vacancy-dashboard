@@ -266,115 +266,87 @@ body {
     margin: 0 auto !important;
   }
 
-  /* メインのフレックスボックスを縦並びにし幅を最大化 */
   .main-flexbox {
     flex-direction: column !important;
     width: 100vw !important;
     max-width: 100vw !important;
   }
 
-  /* グラフの横幅制限と余白 */
   .graph-side {
     min-width: auto !important;
     max-width: 96vw !important;
     width: 96vw !important;
     margin-bottom: 16px !important;
   }
-
-  /* カレンダーの横幅を最大化 */
   .calendar-container {
     width: 100vw !important;
     max-width: 100vw !important;
   }
-
-  /* 月カレンダー */
   .month-calendar {
     min-width: 99vw !important;
     max-width: 99vw !important;
     width: 99vw !important;
-    padding: 7px 2px 3px 2px !important;
-    margin: 0 0 9px 0 !important;
+    padding: 4px 1px 2px 1px !important;
+    margin: 0 0 6px 0 !important;
     box-shadow: 0 1.5px 8px rgba(0,0,0,0.04);
   }
-
-  /* カレンダーグリッド */
   .calendar-grid {
     gap: 0px !important;
   }
-
-  /* 曜日行 */
   .calendar-dow {
-    min-width: 1px !important;
-    max-width: 13vw !important;
-    font-size: 12px !important;
-    height: 21px !important;
-    line-height: 21px !important;
+    font-size: 9px !important;
+    height: 18px !important;
+    line-height: 18px !important;
     padding: 0 !important;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.2px;
   }
-
-  /* 日付セル */
   .calendar-cell {
-    min-height: 95px !important;
-    height: 104px !important;
-    padding: 13px 3px 9px 3px !important;
-    font-size: 15px !important;
+    min-height: 58px !important;  /* ここ重要！高さも圧縮 */
+    height: 62px !important;
+    padding: 5px 2px 4px 2px !important;
+    font-size: 9.2px !important;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
   }
-
-  /* 在庫＆価格の余白調整 */
   .cell-main {
-    margin-top: 20px !important;
+    margin-top: 12px !important;   /* 行間を詰める */
     margin-bottom: 2px !important;
   }
-
-  /* 日付数字 */
   .cell-date {
-    font-size: 10px !important;
-    top: 9px !important;
-    left: 8px !important;
+    font-size: 8.6px !important;
+    top: 3.5px !important;
+    left: 4.5px !important;
   }
-
-  /* 在庫数＆価格の文字サイズ・太字 */
   .cell-vacancy,
   .cell-price {
-    font-size: 0.8rem !important;
+    font-size: 10px !important;
     font-weight: 700 !important;
-    letter-spacing: 0.1px;
-    line-height: 1.1;
+    letter-spacing: 0.05px;
+    line-height: 1.05;
   }
-
-  /* 在庫＆価格差分 */
   .cell-vacancy-diff,
   .cell-price-diff {
-    font-size: 10px !important;
-    margin-left: 3px !important;
+    font-size: 9px !important;
+    margin-left: 2px !important;
   }
-
-  /* 需要シンボル（炎アイコン） */
   .cell-demand-badge {
-    font-size: 10px !important;
-    top: 9px !important;
-    right: 9px !important;
+    font-size: 9px !important;
+    top: 5px !important;
+    right: 5px !important;
   }
-
-  /* イベントリスト */
   .cell-event-list {
-    margin-top: 4px !important;
-    max-width: 90% !important;
+    margin-top: 2px !important;
+    max-width: 92% !important;
   }
   .cell-event {
-    font-size: 10px !important;
-    line-height: 1.2 !important;
+    font-size: 8.8px !important;
+    line-height: 1.13 !important;
     max-width: 100% !important;
     white-space: normal !important;
     word-break: break-word !important;
   }
-
-  /* バナー画像 */
   .app-banner {
     width: 95vw !important;
     max-width: 99vw !important;
@@ -383,11 +355,9 @@ body {
     display: block;
     margin: 0 auto;
   }
-
-  /* 注釈エリア */
   .footer-note {
-    font-size: 12.3px;
-    padding: 10px 5vw 8px 5vw;
+    font-size: 10px;
+    padding: 6px 2vw 6px 2vw;
     max-width: 97vw;
   }
 }
