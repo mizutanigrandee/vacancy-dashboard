@@ -1,13 +1,3 @@
-/* ── 全体背景と基本設定 ── */
-body {
-  font-family: "Segoe UI", "Yu Gothic", "Meiryo", sans-serif;
-  background-color: #f9fbfc;
-  color: #222;
-  margin: 0;
-  padding: 0;
-}
-.calendar-main { width: 100%; }
-
 /* ── ヘッダー＆ロゴ調整 ── */
 .app-header {
   display: flex;
@@ -21,68 +11,49 @@ body {
   height: auto;
 }
 
-/* ── 需要急騰検知日バナー（🚀ミニ通知風） ── */
+/* ── 需要急騰検知日バナー（ミニ通知＋カード風）── */
 .demand-spike-banner {
   background: #fff8ed;
   border: 1.5px solid #ffd799;
-  border-radius: 10px;
-  box-shadow: 0 1px 6px rgba(240, 135, 25, 0.15);
+  border-radius: 13px;
+  box-shadow: 0 2px 9px rgba(240, 135, 25, 0.12);
   font-size: 0.85rem;
   color: #cc5200;
-  padding: 6px 12px;
-  max-width: 280px;
-  line-height: 1.3;
+  padding: 9px 16px 8px 16px;
+  max-width: 300px;
+  min-width: 190px;
+  line-height: 1.35;
   overflow-y: auto;
-  max-height: 160px;
+  max-height: 172px;
+  margin-bottom: 12px;
+  margin-top: 18px;
+  transition: box-shadow 0.18s;
 }
-
-/* PC版：画面左側に固定、ミニ通知風 */
-@media (min-width: 992px) {
-  .demand-spike-banner {
-    position: fixed;
-    top: 70px;
-    left: 20px;
-    z-index: 100;
-    margin: 0;
-    max-width: 260px;
-    font-size: 0.82rem;
-    padding: 8px 10px;
-    box-shadow: 0 2px 10px rgba(240, 135, 25, 0.2);
-  }
+.demand-spike-banner .banner-title {
+  display: flex;
+  align-items: center;
+  font-size: 1.09em;
+  font-weight: 700;
+  color: #e67e22;
+  margin-bottom: 4px;
+  letter-spacing: 0.01em;
 }
-
-/* スマホ版：画面上部に横幅ほぼいっぱい、コンパクトに */
-@media (max-width: 991px) {
-  .demand-spike-banner {
-    position: relative;
-    width: 95vw;
-    max-width: 100vw;
-    font-size: 0.78rem;
-    padding: 6px 10px;
-    margin: 8px auto 12px auto;
-    max-height: none;
-  }
-}
-
-/* バナー内リスト全体 */
 .demand-spike-list {
   margin: 0;
   padding: 0;
   list-style: none;
-  max-height: 160px;
+  max-height: 125px;
   overflow-y: auto;
 }
-
-/* バナー内個別アイテム */
 .demand-spike-item {
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   padding-bottom: 3px;
   border-bottom: 0.5px dashed #ffd799;
   font-weight: 600;
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 8px;
-  font-size: 0.88em;
+  gap: 4px 7px;
+  font-size: 0.97em;
   color: #a05f00;
 }
 .demand-spike-item:last-child {
@@ -99,7 +70,40 @@ body {
 .demand-spike-item .note {
   color: #6b4d14;
   font-weight: 400;
-  font-size: 0.82em;
+  font-size: 0.86em;
+}
+
+/* PC：左サイド固定 */
+@media (min-width: 992px) {
+  .demand-spike-banner {
+    position: fixed;
+    top: 72px;
+    left: 26px;
+    margin: 0;
+    max-width: 260px;
+    min-width: 170px;
+    font-size: 0.80rem;
+    padding: 10px 12px 10px 14px;
+    box-shadow: 0 3px 16px rgba(240,135,25,0.14);
+  }
+  .calendar-main {
+    margin-left: 220px; /* バナー分だけ右にオフセット。必要に応じて調整 */
+  }
+}
+
+/* スマホ：上部幅いっぱい・余白調整 */
+@media (max-width: 991px) {
+  .demand-spike-banner {
+    position: relative;
+    width: 94vw;
+    max-width: 99vw;
+    font-size: 0.76rem;
+    padding: 8px 7px 7px 12px;
+    margin: 10px auto 11px auto;
+    min-width: 0;
+    left: unset; top: unset;
+  }
+  .demand-spike-banner .banner-title { font-size: 0.98em; }
 }
 
 /* ── 月送りボタン ── */
@@ -141,6 +145,15 @@ body {
 }
 
 /* ── 全体レイアウト ── */
+body {
+  font-family: "Segoe UI", "Yu Gothic", "Meiryo", sans-serif;
+  background-color: #f9fbfc;
+  color: #222;
+  margin: 0;
+  padding: 0;
+}
+.calendar-main { width: 100%; }
+/* ── メインレイアウト ── */
 .main-flexbox {
   display: flex;
   gap: 16px;
@@ -170,7 +183,6 @@ body {
   flex-wrap: wrap;
   justify-content: flex-start;
 }
-
 /* ── 月カレンダー ── */
 .month-calendar {
   background: #fff;
@@ -441,4 +453,8 @@ body {
     padding: 6px 2vw 6px 2vw;
     max-width: 97vw;
   }
+  .spike-banner-header { font-size: 16px !important; }
+  .spike-chip { font-size: 10.6px !important; padding: 4px 4.5vw 4px 5px !important; }
+  .spike-main { font-size: 11.5px !important; }
+  .spike-date { font-size: 9px !important; }
 }
