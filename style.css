@@ -169,7 +169,7 @@ body {
   margin-bottom: 2px !important;
 }
 .cell-vacancy {
-  font-size: 1.14rem;
+  font-size: 0.9rem;
   font-weight: bold;
 }
 .cell-vacancy-diff.plus  { color: #1976d2; font-size: 12px; margin-left: 2px; }
@@ -178,7 +178,7 @@ body {
 
 /* ── 価格＆矢印 ── */
 .cell-price {
-  font-size: 1.09rem;
+  font-size: 0.9rem;
   color: #222 !important;
   font-weight: bold;   /* ← 価格も太字に！ */
   margin-bottom: 2px;
@@ -192,7 +192,7 @@ body {
   position: absolute;
   top: 9px;
   right: 9px;
-  font-size: 1.08rem;
+  font-size: 1.01rem;
   font-weight: bold;
   z-index: 10;
   pointer-events: none;
