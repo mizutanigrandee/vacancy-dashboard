@@ -180,7 +180,7 @@ body {
 
 /* ── 価格＆矢印 ── */
 .cell-price {
-  font-size: 1.09rem;
+  font-size: 1.0rem;
   color: #222 !important;
   margin-bottom: 0px;
   font-weight: bold;   /* ← 太字を追加！ */
