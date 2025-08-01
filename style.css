@@ -11,6 +11,62 @@
   height: auto;
 }
 
+/* ── 需要急騰バナー ── */
+.spike-banner-box {
+  background: #fff8e6;
+  border: 2px solid #ffdca7;
+  border-radius: 13px;
+  padding: 12px 24px 10px 24px;
+  max-width: 850px;
+  margin: 16px auto 20px auto;
+}
+.spike-banner-title {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.spike-banner-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 0;
+  align-items: center;
+  margin-top: 2px;
+}
+.spike-chip {
+  background: #fffdfa;
+  border-radius: 7px;
+  border: 1.1px solid #ffdca7;
+  display: inline-block;
+  font-size: 14.2px;
+  line-height: 1.22;
+  margin-right: 10px;
+  margin-bottom: 3px;
+  padding: 6px 12px 5px 8px;
+}
+.spike-up-date {
+  color: #e67e22;
+  font-weight: 700;
+  margin-right: 8px;
+}
+.spike-main {
+  font-weight: 900;
+  color: #222;
+  font-size: 15px;
+  margin-right: 2px;
+}
+.spike-date {
+  letter-spacing: 1px;
+}
+.spike-summary {
+  color: #555;
+  font-size: 12.3px;
+  margin-left: 8px;
+}
+@media screen and (max-width: 700px) {
+  .spike-banner-box { padding: 8px 2vw 6px 2vw; max-width: 98vw;}
+  .spike-chip { font-size: 9.8px; padding: 4px 4vw 3px 2vw; margin-right: 3.5px;}
+}
+
 /* ── 月送りボタン ── */
 .nav-button-container {
   margin-top: 16px;
@@ -61,15 +117,15 @@ body {
 /* ── メインレイアウト ── */
 .main-flexbox {
   display: flex;
-  gap: 16px;         /* ← ここを大きく狭める！（例：従来36px→16px） */
+  gap: 16px;
   align-items: flex-start;
   justify-content: center;
-  max-width: 100vw;  /* ←横幅を制限 */
+  max-width: 100vw;
   margin: 0 auto;
   width: 100vw;
 }
 .graph-side {
-  min-width: 340px;     /* ←従来450px→340px前後へ */
+  min-width: 340px;
   max-width: 370px;
   background: #fff;
   border-radius: 14px;
@@ -82,22 +138,20 @@ body {
   max-width: 100%;
   display: block;
 }
-/* ── カレンダー/グリッド細部調整（必要に応じて） ── */
 .calendar-container {
   display: flex;
-  gap: 16px;      /* ← ここも揃える */
+  gap: 16px;
   flex-wrap: wrap;
   justify-content: flex-start;
 }
-
-/* ── 月カレンダー ── */
+/* 月カレンダー */
 .month-calendar {
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 14px rgba(65,95,140,0.09);
-  padding: 12px 6px 6px 6px;      /* ←パディングも少し狭める */
-  min-width: 615px;               /* ←従来680pxなど→615px前後に縮小 */
-  max-width: 650px;               /* ←従来720px→650pxくらい */
+  padding: 12px 6px 6px 6px;
+  min-width: 615px;
+  max-width: 650px;
   margin-bottom: 12px;
 }
 .month-header {
@@ -127,8 +181,7 @@ body {
   letter-spacing: 1px;
   box-sizing: border-box;
 }
-
-/* ── 日付セル（PC）── */
+/* 日付セル（PC） */
 .calendar-cell {
   background: #f6f9ff;
   border: 1px solid #e1e7ed;
@@ -153,8 +206,7 @@ body {
 .saturday-bg  { background: #e3edff !important; }
 .holiday-bg   { background: #fff3e5 !important; }
 .calendar-cell.past-date { background: #f0f0f0 !important; }
-
-/* ── 日付数字 ── */
+/* 日付数字 */
 .cell-date {
   font-size: 0.88rem;
   font-weight: 700;
@@ -162,8 +214,7 @@ body {
   top: 9px;
   left: 10px;
 }
-
-/* ── 在庫＆前日差分 ── */
+/* 在庫＆前日差分 */
 .cell-main {
   margin-top: 25px !important;
   margin-bottom: 2px !important;
@@ -175,19 +226,17 @@ body {
 .cell-vacancy-diff.plus  { color: #1976d2; font-size: 12px; margin-left: 2px; }
 .cell-vacancy-diff.minus { color: #d32f2f; font-size: 12px; margin-left: 2px; }
 .cell-vacancy-diff.flat  { color: #666;   font-size: 12px; margin-left: 2px; }
-
-/* ── 価格＆矢印 ── */
+/* 価格＆矢印 */
 .cell-price {
   font-size: 0.9rem;
   color: #222 !important;
-  font-weight: bold;   /* ← 価格も太字に！ */
+  font-weight: bold;
   margin-bottom: 2px;
 }
 .cell-price-diff.up   { color: #d32f2f; }
 .cell-price-diff.down { color: #1565c0; }
 .cell-price-diff.flat { color: #666;   }
-
-/* ── 需要シンボル（炎）── */
+/* 需要シンボル（炎） */
 .cell-demand-badge {
   position: absolute;
   top: 9px;
@@ -202,8 +251,7 @@ body {
 .cell-demand-badge.lv3 { color: #e94e77; }
 .cell-demand-badge.lv4 { color: #be0c0c; }
 .cell-demand-badge.lv5 { color: #421c16; }
-
-/* ── イベントリスト ── */
+/* イベントリスト */
 .cell-event-list {
   margin-top: 2px !important;
   max-width: 98%;
@@ -229,8 +277,7 @@ body {
   font-weight: 600 !important;
   margin-left: 2px;
 }
-
-/* ── グラフボタン群 ── */
+/* グラフボタン群 */
 .graph-btns {
   display: flex;
   justify-content: center;
@@ -250,9 +297,6 @@ body {
 .graph-btns button:hover {
   background: #d4e8f7;
 }
-
-
-
 /* ── スマホ最適化 ── */
 @media screen and (max-width: 700px) {
   body, html {
@@ -267,13 +311,11 @@ body {
     padding: 0 !important;
     margin: 0 auto !important;
   }
-
   .main-flexbox {
     flex-direction: column !important;
     width: 100vw !important;
     max-width: 100vw !important;
   }
-
   .graph-side {
     min-width: auto !important;
     max-width: 96vw !important;
@@ -303,7 +345,7 @@ body {
     letter-spacing: 0.2px;
   }
   .calendar-cell {
-    min-height: 58px !important;  /* ここ重要！高さも圧縮 */
+    min-height: 58px !important;
     height: 62px !important;
     padding: 5px 2px 4px 2px !important;
     font-size: 9.2px !important;
@@ -313,7 +355,7 @@ body {
     justify-content: flex-start;
   }
   .cell-main {
-    margin-top: 12px !important;   /* 行間を詰める */
+    margin-top: 12px !important;
     margin-bottom: 2px !important;
   }
   .cell-date {
