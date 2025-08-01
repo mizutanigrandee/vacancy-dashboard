@@ -1,4 +1,13 @@
-/* ── ヘッダー＆ロゴ調整 ── */
+/* ── 全体背景とレイアウト ── */
+body {
+  background: linear-gradient(120deg, #cbe7fa 0%, #f7c1e6 100%);
+  min-height: 100vh;
+  font-family: 'Noto Sans JP', 'Yu Gothic', YuGothic, Meiryo, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── ヘッダー＆ロゴ ── */
 .app-header {
   display: flex;
   justify-content: center;
@@ -10,88 +19,101 @@
   width: 40%;
   height: auto;
 }
+@media (max-width: 767px) {
+  .app-header {
+    padding: 8px 0;
+  }
+  .app-banner {
+    width: 70%;
+  }
+}
 
-/* ── 需要スパイク履歴バナー（🚀バナー） ── */
-.spike-banner-box {
-  width: 100%;
-  max-width: 890px;
-  margin: 20px auto 15px auto;
-  padding: 13px 23px 12px 23px;
-  background: #fff8e6;
-  border: 2px solid #ffdca7;
-  border-radius: 13px;
-  box-shadow: 0 2px 12px rgba(255, 196, 107, 0.09);
+/* ── 需要急騰検知日バナー ── */
+.demand-spike-banner {
+  background: #fff8ed;
+  border: 1.5px solid #ffd799;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(240, 135, 25, 0.08);
+  font-size: 0.97rem;
+  color: #cc5200;
+  padding: 8px 14px;
+  margin: 10px 0 14px 0;
+  max-width: 340px;
+  transition: box-shadow 0.2s;
 }
-.spike-banner-header {
-  font-size: 20px;
-  font-weight: 700;
-  color: #e67e22;
-  margin-right: 9px;
-  vertical-align: middle;
+.demand-spike-banner:hover {
+  box-shadow: 0 4px 18px rgba(240, 135, 25, 0.12);
 }
-.spike-banner-meta {
-  font-size: 13px;
-  color: #ae8d3a;
-  font-weight: 400;
-  margin-left: 8px;
+
+/* PC版：左サイド通知風（画面幅広い時のみ） */
+@media (min-width: 992px) {
+  .demand-spike-banner {
+    position: absolute;
+    top: 46px;
+    left: 30px;
+    margin: 0;
+    max-width: 320px;
+    z-index: 10;
+    font-size: 0.93rem;
+  }
 }
-.spike-chip-row {
+
+/* スマホ：画面上部、幅いっぱい、さらにコンパクト */
+@media (max-width: 991px) {
+  .demand-spike-banner {
+    position: static;
+    width: 96vw;
+    max-width: 99vw;
+    font-size: 0.90rem;
+    padding: 7px 8px 7px 12px;
+    margin: 6px auto 12px auto;
+    left: unset;
+    top: unset;
+  }
+}
+
+/* バナー内リスト */
+.demand-spike-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 142px;
+  overflow-y: auto;
+}
+.demand-spike-item {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 0;
-  align-items: center;
-  margin-top: 5px;
-  margin-bottom: 0;
+  align-items: baseline;
+  margin-bottom: 3px;
+  padding-bottom: 2px;
+  border-bottom: 0.5px dashed #ffd799;
+  font-size: 0.99em;
+  gap: 6px 9px;
 }
-.spike-chip {
-  background: #fffdfa;
-  border-radius: 8px;
-  padding: 6px 14px 6px 10px;
-  border: 1.2px solid #ffdca7;
-  display: flex;
-  align-items: center;
-  font-size: 14.2px;
-  line-height: 1.22;
-  margin-right: 12px;
-  margin-bottom: 4px;
-  font-family: inherit;
-  box-shadow: 0 1.2px 5px rgba(255, 186, 86, 0.07);
+.demand-spike-item:last-child {
+  border-bottom: none;
 }
-.spike-date {
-  color: #e67e22;
-  font-weight: 700;
-  font-size: 13px;
-  margin-right: 7px;
-  letter-spacing: 0.7px;
+.demand-spike-item .date {
+  font-weight: 600;
+  font-size: 0.93em;
+  color: #ff9910;
 }
-.spike-main {
-  font-weight: 900;
-  color: #222;
-  font-size: 15px;
-  margin-right: 3px;
-  display: flex;
-  align-items: center;
-  gap: 7px;
+.demand-spike-item .main {
+  font-weight: 500;
+  color: #cc5200;
 }
-.spike-avg {
-  color: #555;
-  font-size: 12.3px;
-  font-weight: 400;
-  margin-left: 8px;
+.demand-spike-item .note {
+  font-size: 0.86em;
+  color: #4b4029;
 }
-.spike-price.up   { color: #d35400; margin-left: 4px; }
-.spike-price.down { color: #1976d2; margin-left: 4px; }
-.spike-vacancy.dec { color: #2980b9; margin-left: 6px; }
-.spike-vacancy.inc { color: #e43a3a; margin-left: 6px; }
-@media (max-width: 850px) {
-  .spike-banner-box { max-width: 98vw; padding: 8px 4vw; }
-  .spike-chip { font-size: 12px; padding: 5px 7px 5px 7px; }
-  .spike-main { font-size: 12.8px; }
-  .spike-date { font-size: 11.2px; }
-}
-/* PCでもバナー上部余白をやや広く */
-@media (min-width: 700px) {
-  .spike-banner-box { margin-top: 22px; }
+@media (max-width: 991px) {
+  .demand-spike-item {
+    font-size: 0.95em;
+    gap: 3px 5px;
+  }
+  .demand-spike-item .note {
+    font-size: 0.80em;
+  }
 }
 
 /* ── 月送りボタン ── */
@@ -114,335 +136,225 @@
   background: #fff;
   color: #1a1a1a;
   text-decoration: none;
-  font-size: 1.0rem;
-  font-weight: 500;
-  margin: 0 10px 10px 0;
-  box-shadow: 0 1.5px 7px rgba(0,0,0,0.03);
-  transition: background 0.18s, color 0.18s, border 0.18s;
-}
-.custom-button .icon {
-  font-size: 1.15em;
-  margin-right: 8px;
-  line-height: 1;
-  display: inline-block;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: box-shadow 0.18s;
+  box-shadow: 0 1px 6px rgba(20,30,60,0.05);
 }
 .custom-button:hover {
-  background: #f3f3fa;
-  border-color: #e53939;
-  color: #e53939 !important;
+  background: #eaf6ff;
+  box-shadow: 0 4px 12px rgba(45,156,219,0.09);
+}
+@media (max-width: 767px) {
+  .nav-button-container {
+    gap: 5px;
+    margin-top: 10px;
+    margin-bottom: 9px;
+  }
+  .custom-button {
+    min-width: 70px;
+    font-size: 0.97rem;
+    padding: 7px 0;
+  }
 }
 
-/* ── 全体レイアウト ── */
-body {
-  font-family: "Segoe UI", "Yu Gothic", "Meiryo", sans-serif;
-  background-color: #f9fbfc;
-  color: #222;
-  margin: 0;
-  padding: 0;
-}
-.calendar-main { width: 100%; }
-/* ── メインレイアウト ── */
-.main-flexbox {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-  justify-content: center;
-  max-width: 100vw;
-  margin: 0 auto;
-  width: 100vw;
-}
-.graph-side {
-  min-width: 340px;
-  max-width: 370px;
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 2px 16px rgba(65,95,140,0.11);
-  margin-bottom: 12px;
-  padding: 12px;
-}
-.graph-side canvas {
-  width: 100% !important;
-  max-width: 100%;
-  display: block;
-}
+/* ── カレンダー本体 ── */
 .calendar-container {
   display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-}
-/* ── 月カレンダー ── */
-.month-calendar {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 14px rgba(65,95,140,0.09);
-  padding: 12px 6px 6px 6px;
-  min-width: 615px;
-  max-width: 650px;
-  margin-bottom: 12px;
-}
-.month-header {
-  font-size: 1.22rem;
-  font-weight: bold;
-  color: #2e6fa2;
-  text-align: center;
-  margin-bottom: 8px;
-}
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 3px;
-}
-.calendar-dow {
-  height: 46px !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  background: #e9f0f6 !important;
-  color: #2e6fa2 !important;
-  font-size: 15px !important;
-  font-weight: bold !important;
-  border-radius: 4px !important;
-  letter-spacing: 1px;
-  box-sizing: border-box;
-}
-
-/* ── 日付セル（PC）── */
-.calendar-cell {
-  background: #f6f9ff;
-  border: 1px solid #e1e7ed;
-  border-radius: 7px;
-  min-height: 112px;
-  height: 116px;
-  padding: 9px 5px 6px 5px;
-  position: relative;
-  transition: box-shadow 0.2s;
-  cursor: pointer;
-  overflow: hidden;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-}
-.calendar-cell.selected {
-  background: #d2edfa !important;
-  box-shadow: 0 0 0 2px #5ac8fa !important;
-}
-.sunday-bg    { background: #f7e4e4 !important; }
-.saturday-bg  { background: #e3edff !important; }
-.holiday-bg   { background: #fff3e5 !important; }
-.calendar-cell.past-date { background: #f0f0f0 !important; }
-
-/* ── 日付数字 ── */
-.cell-date {
-  font-size: 0.88rem;
-  font-weight: 700;
-  position: absolute;
-  top: 9px;
-  left: 10px;
-}
-
-/* ── 在庫＆前日差分 ── */
-.cell-main {
-  margin-top: 25px !important;
-  margin-bottom: 2px !important;
-}
-.cell-vacancy {
-  font-size: 0.9rem;
-  font-weight: bold;
-}
-.cell-vacancy-diff.plus  { color: #1976d2; font-size: 12px; margin-left: 2px; }
-.cell-vacancy-diff.minus { color: #d32f2f; font-size: 12px; margin-left: 2px; }
-.cell-vacancy-diff.flat  { color: #666;   font-size: 12px; margin-left: 2px; }
-
-/* ── 価格＆矢印 ── */
-.cell-price {
-  font-size: 0.9rem;
-  color: #222 !important;
-  font-weight: bold;
-  margin-bottom: 2px;
-}
-.cell-price-diff.up   { color: #d32f2f; }
-.cell-price-diff.down { color: #1565c0; }
-.cell-price-diff.flat { color: #666;   }
-
-/* ── 需要シンボル（炎）── */
-.cell-demand-badge {
-  position: absolute;
-  top: 9px;
-  right: 9px;
-  font-size: 1.01rem;
-  font-weight: bold;
-  z-index: 10;
-  pointer-events: none;
-}
-.cell-demand-badge.lv1 { color: #ffa600; }
-.cell-demand-badge.lv2 { color: #ff6600; }
-.cell-demand-badge.lv3 { color: #e94e77; }
-.cell-demand-badge.lv4 { color: #be0c0c; }
-.cell-demand-badge.lv5 { color: #421c16; }
-
-/* ── イベントリスト ── */
-.cell-event-list {
-  margin-top: 2px !important;
-  max-width: 98%;
-}
-.cell-event {
-  font-size: 11.5px;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  margin-top: 1px;
-  line-height: 1.09;
-  word-break: break-all;
-  white-space: normal;
-  max-width: 98%;
-}
-.cell-event-icon {
-  color: #357ebd;
-  flex-shrink: 0;
-  font-weight: normal;
-}
-.cell-event-name {
-  color: #222 !important;
-  font-weight: 600 !important;
-  margin-left: 2px;
-}
-
-/* ── グラフボタン群 ── */
-.graph-btns {
-  display: flex;
   justify-content: center;
-  gap: 9px;
-  margin-bottom: 12px;
+  gap: 24px;
+  margin: 0 8px 36px 8px;
 }
-.graph-btns button {
-  background: #f3f7fa;
-  color: #2e6fa2;
-  border: 1px solid #b9cfdd;
-  border-radius: 5px;
-  font-size: 1.03rem;
-  padding: 5px 16px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.graph-btns button:hover {
-  background: #d4e8f7;
-}
-
-/* ── スマホ最適化 ── */
-@media screen and (max-width: 700px) {
-  body, html {
-    overflow-x: hidden !important;
-  }
-  .calendar-main,
-  .main-flexbox,
+@media (max-width: 991px) {
   .calendar-container {
-    width: 100vw !important;
-    min-width: 100vw !important;
-    max-width: 100vw !important;
-    padding: 0 !important;
-    margin: 0 auto !important;
-  }
-
-  .main-flexbox {
-    flex-direction: column !important;
-    width: 100vw !important;
-    max-width: 100vw !important;
-  }
-
-  .graph-side {
-    min-width: auto !important;
-    max-width: 96vw !important;
-    width: 96vw !important;
-    margin-bottom: 16px !important;
-  }
-  .calendar-container {
-    width: 100vw !important;
-    max-width: 100vw !important;
-  }
-  .month-calendar {
-    min-width: 99vw !important;
-    max-width: 99vw !important;
-    width: 99vw !important;
-    padding: 4px 1px 2px 1px !important;
-    margin: 0 0 6px 0 !important;
-    box-shadow: 0 1.5px 8px rgba(0,0,0,0.04);
-  }
-  .calendar-grid {
-    gap: 0px !important;
-  }
-  .calendar-dow {
-    font-size: 9px !important;
-    height: 18px !important;
-    line-height: 18px !important;
-    padding: 0 !important;
-    letter-spacing: 0.2px;
-  }
-  .calendar-cell {
-    min-height: 58px !important;
-    height: 62px !important;
-    padding: 5px 2px 4px 2px !important;
-    font-size: 9.2px !important;
-    box-sizing: border-box;
-    display: flex;
     flex-direction: column;
-    justify-content: flex-start;
+    gap: 16px;
   }
-  .cell-main {
-    margin-top: 12px !important;
-    margin-bottom: 2px !important;
+}
+
+.calendar {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 2px 15px rgba(80,100,180,0.08);
+  padding: 16px 12px 20px 12px;
+  min-width: 330px;
+  max-width: 540px;
+  margin: 0 2px;
+  overflow-x: auto;
+}
+@media (max-width: 991px) {
+  .calendar {
+    min-width: unset;
+    max-width: 99vw;
+    padding: 10px 3px 14px 3px;
+    border-radius: 13px;
   }
-  .cell-date {
-    font-size: 8.1px !important;
-    top: 3.5px !important;
-    left: 4.5px !important;
+}
+
+.calendar-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 5px;
+  color: #2D9CDB;
+  letter-spacing: 0.01em;
+}
+
+/* 曜日・日付表示 */
+.calendar-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 2px;
+  margin-top: 7px;
+}
+.calendar-table th {
+  font-size: 0.96em;
+  color: #6597e8;
+  font-weight: 700;
+  text-align: center;
+  padding: 4px 0;
+}
+.calendar-table td {
+  font-size: 0.99em;
+  text-align: center;
+  border-radius: 8px;
+  padding: 8px 1px 5px 1px;
+  vertical-align: top;
+  background: #f4f7fb;
+  color: #262c35;
+  min-width: 38px;
+  min-height: 58px;
+  position: relative;
+  transition: background 0.15s;
+}
+
+/* 祝日・需要急騰日・イベント装飾 */
+.calendar-table .holiday {
+  background: #ffeaea !important;
+  color: #c81d36 !important;
+  font-weight: 600;
+}
+.calendar-table .demand-spike {
+  background: #ffeabf !important;
+  border: 1.3px solid #ffb347;
+}
+.calendar-table .event {
+  border-bottom: 2px solid #d07aff;
+}
+.calendar-table .today {
+  border: 1.9px solid #2D9CDB;
+  background: #e7f5ff;
+}
+
+/* 過去日グレーアウト */
+.calendar-table .past-day {
+  background: #ebebeb !important;
+  color: #161616 !important;
+  opacity: 0.55;
+}
+
+/* 在庫数・平均価格・前日差分UI */
+.stock-info {
+  font-size: 0.97em;
+  margin: 2px 0 1px 0;
+}
+.price-info {
+  font-size: 0.94em;
+  font-weight: 600;
+}
+.price-info .up {
+  color: #e54b4b;
+  font-size: 1.02em;
+}
+.price-info .down {
+  color: #3677e6;
+  font-size: 1.02em;
+}
+.diff-info {
+  font-size: 0.90em;
+  margin-left: 3px;
+  color: #888;
+}
+
+/* 需要シンボル（炎など） */
+.demand-icon {
+  font-size: 1.12em;
+  margin-right: 2px;
+  vertical-align: middle;
+}
+
+/* イベントラベル */
+.event-label {
+  display: inline-block;
+  font-size: 0.82em;
+  background: #ecebfc;
+  color: #4e418d;
+  border-radius: 8px;
+  padding: 1px 8px;
+  margin-top: 4px;
+  margin-bottom: 1px;
+  letter-spacing: 0.03em;
+}
+
+/* ── グラフエリア ── */
+.graph-section {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 1px 10px rgba(50,80,140,0.07);
+  padding: 14px 19px 14px 15px;
+  margin: 0 9px 24px 9px;
+  max-width: 500px;
+}
+@media (max-width: 767px) {
+  .graph-section {
+    padding: 10px 2px 11px 2px;
+    margin: 0 2px 10px 2px;
+    max-width: 98vw;
   }
-  .cell-vacancy,
-  .cell-price {
-    font-size: 7px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.05px;
-    line-height: 1.05;
+}
+
+/* ── 最終更新時刻表示 ── */
+.last-update {
+  position: fixed;
+  left: 13px;
+  bottom: 12px;
+  font-size: 0.92em;
+  background: #f6f6ff;
+  padding: 5px 14px;
+  border-radius: 14px;
+  color: #8772b4;
+  box-shadow: 0 2px 6px rgba(120, 90, 190, 0.09);
+  z-index: 9;
+  opacity: 0.88;
+}
+@media (max-width: 767px) {
+  .last-update {
+    position: static;
+    margin-top: 20px;
+    padding: 6px 12px;
+    text-align: center;
+    font-size: 0.97em;
+    width: 96vw;
   }
-  .cell-vacancy-diff,
-  .cell-price-diff {
-    font-size: 7px !important;
-    margin-left: 2px !important;
+}
+
+/* ── スクロールバー美化 ── */
+::-webkit-scrollbar {
+  width: 10px;
+  background: #f5f6fa;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #dad7ef;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #b3b3d2;
+}
+
+/* ── レスポンシブ微調整 ── */
+@media (max-width: 767px) {
+  body {
+    font-size: 0.97em;
   }
-  .cell-demand-badge {
-    font-size: 9px !important;
-    top: 5px !important;
-    right: 5px !important;
-  }
-  .cell-event-list {
-    margin-top: 2px !important;
-    max-width: 92% !important;
-  }
-  .cell-event {
-    font-size: 5px !important;
-    line-height: 1.13 !important;
-    max-width: 100% !important;
-    white-space: normal !important;
-    word-break: break-word !important;
-  }
-  .app-banner {
-    width: 95vw !important;
-    max-width: 99vw !important;
-    height: auto !important;
-    min-width: 70vw !important;
-    display: block;
-    margin: 0 auto;
-  }
-  .footer-note {
-    font-size: 10px;
-    padding: 6px 2vw 6px 2vw;
-    max-width: 97vw;
-  }
-  .spike-banner-header { font-size: 16px !important; }
-  .spike-chip { font-size: 10.6px !important; padding: 4px 4.5vw 4px 5px !important; }
-  .spike-main { font-size: 11.5px !important; }
-  .spike-date { font-size: 9px !important; }
 }
