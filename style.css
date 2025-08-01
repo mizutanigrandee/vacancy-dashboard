@@ -1,3 +1,13 @@
+/* ── 全体背景と基本設定 ── */
+body {
+  font-family: "Segoe UI", "Yu Gothic", "Meiryo", sans-serif;
+  background-color: #f9fbfc;
+  color: #222;
+  margin: 0;
+  padding: 0;
+}
+.calendar-main { width: 100%; }
+
 /* ── ヘッダー＆ロゴ調整 ── */
 .app-header {
   display: flex;
@@ -11,87 +21,85 @@
   height: auto;
 }
 
-/* ── 需要スパイク履歴バナー（🚀バナー） ── */
-.spike-banner-box {
-  width: 100%;
-  max-width: 890px;
-  margin: 20px auto 15px auto;
-  padding: 13px 23px 12px 23px;
-  background: #fff8e6;
-  border: 2px solid #ffdca7;
-  border-radius: 13px;
-  box-shadow: 0 2px 12px rgba(255, 196, 107, 0.09);
+/* ── 需要急騰検知日バナー（🚀ミニ通知風） ── */
+.demand-spike-banner {
+  background: #fff8ed;
+  border: 1.5px solid #ffd799;
+  border-radius: 10px;
+  box-shadow: 0 1px 6px rgba(240, 135, 25, 0.15);
+  font-size: 0.85rem;
+  color: #cc5200;
+  padding: 6px 12px;
+  max-width: 280px;
+  line-height: 1.3;
+  overflow-y: auto;
+  max-height: 160px;
 }
-.spike-banner-header {
-  font-size: 20px;
-  font-weight: 700;
-  color: #e67e22;
-  margin-right: 9px;
-  vertical-align: middle;
+
+/* PC版：画面左側に固定、ミニ通知風 */
+@media (min-width: 992px) {
+  .demand-spike-banner {
+    position: fixed;
+    top: 70px;
+    left: 20px;
+    z-index: 100;
+    margin: 0;
+    max-width: 260px;
+    font-size: 0.82rem;
+    padding: 8px 10px;
+    box-shadow: 0 2px 10px rgba(240, 135, 25, 0.2);
+  }
 }
-.spike-banner-meta {
-  font-size: 13px;
-  color: #ae8d3a;
-  font-weight: 400;
-  margin-left: 8px;
+
+/* スマホ版：画面上部に横幅ほぼいっぱい、コンパクトに */
+@media (max-width: 991px) {
+  .demand-spike-banner {
+    position: relative;
+    width: 95vw;
+    max-width: 100vw;
+    font-size: 0.78rem;
+    padding: 6px 10px;
+    margin: 8px auto 12px auto;
+    max-height: none;
+  }
 }
-.spike-chip-row {
+
+/* バナー内リスト全体 */
+.demand-spike-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+/* バナー内個別アイテム */
+.demand-spike-item {
+  margin-bottom: 4px;
+  padding-bottom: 3px;
+  border-bottom: 0.5px dashed #ffd799;
+  font-weight: 600;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 0;
-  align-items: center;
-  margin-top: 5px;
-  margin-bottom: 0;
+  gap: 4px 8px;
+  font-size: 0.88em;
+  color: #a05f00;
 }
-.spike-chip {
-  background: #fffdfa;
-  border-radius: 8px;
-  padding: 6px 14px 6px 10px;
-  border: 1.2px solid #ffdca7;
-  display: flex;
-  align-items: center;
-  font-size: 14.2px;
-  line-height: 1.22;
-  margin-right: 12px;
-  margin-bottom: 4px;
-  font-family: inherit;
-  box-shadow: 0 1.2px 5px rgba(255, 186, 86, 0.07);
+.demand-spike-item:last-child {
+  border-bottom: none;
 }
-.spike-date {
-  color: #e67e22;
+.demand-spike-item .date {
   font-weight: 700;
-  font-size: 13px;
-  margin-right: 7px;
-  letter-spacing: 0.7px;
+  color: #f28c00;
 }
-.spike-main {
-  font-weight: 900;
-  color: #222;
-  font-size: 15px;
-  margin-right: 3px;
-  display: flex;
-  align-items: center;
-  gap: 7px;
+.demand-spike-item .main {
+  flex-grow: 1;
+  color: #cc5200;
 }
-.spike-avg {
-  color: #555;
-  font-size: 12.3px;
+.demand-spike-item .note {
+  color: #6b4d14;
   font-weight: 400;
-  margin-left: 8px;
-}
-.spike-price.up   { color: #d35400; margin-left: 4px; }
-.spike-price.down { color: #1976d2; margin-left: 4px; }
-.spike-vacancy.dec { color: #2980b9; margin-left: 6px; }
-.spike-vacancy.inc { color: #e43a3a; margin-left: 6px; }
-@media (max-width: 850px) {
-  .spike-banner-box { max-width: 98vw; padding: 8px 4vw; }
-  .spike-chip { font-size: 12px; padding: 5px 7px 5px 7px; }
-  .spike-main { font-size: 12.8px; }
-  .spike-date { font-size: 11.2px; }
-}
-/* PCでもバナー上部余白をやや広く */
-@media (min-width: 700px) {
-  .spike-banner-box { margin-top: 22px; }
+  font-size: 0.82em;
 }
 
 /* ── 月送りボタン ── */
@@ -133,15 +141,6 @@
 }
 
 /* ── 全体レイアウト ── */
-body {
-  font-family: "Segoe UI", "Yu Gothic", "Meiryo", sans-serif;
-  background-color: #f9fbfc;
-  color: #222;
-  margin: 0;
-  padding: 0;
-}
-.calendar-main { width: 100%; }
-/* ── メインレイアウト ── */
 .main-flexbox {
   display: flex;
   gap: 16px;
@@ -171,6 +170,7 @@ body {
   flex-wrap: wrap;
   justify-content: flex-start;
 }
+
 /* ── 月カレンダー ── */
 .month-calendar {
   background: #fff;
@@ -441,8 +441,4 @@ body {
     padding: 6px 2vw 6px 2vw;
     max-width: 97vw;
   }
-  .spike-banner-header { font-size: 16px !important; }
-  .spike-chip { font-size: 10.6px !important; padding: 4px 4.5vw 4px 5px !important; }
-  .spike-main { font-size: 11.5px !important; }
-  .spike-date { font-size: 9px !important; }
 }
