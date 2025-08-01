@@ -5,12 +5,14 @@ const DATA_PATH  = "./vacancy_price_cache.json";
 const PREV_PATH  = "./vacancy_price_cache_previous.json";
 const EVENT_PATH = "./event_data.json";
 const HIST_PATH  = "./historical_data.json";
+const SPIKE_PATH = "./demand_spike_history.json";   // ←追加
 
 // グローバル状態
 let calendarData   = {},
     prevData       = {},
     eventData      = {},
-    historicalData = {};
+    historicalData = {},
+    spikeData      = {};   // ←追加
 let currentYM = [], selectedDate = null;
 
 // ========== 祝日判定（ローカルjs方式） ==========
@@ -35,6 +37,51 @@ async function loadAll() {
   prevData       = await loadJson(PREV_PATH);
   eventData      = await loadJson(EVENT_PATH);
   historicalData = await loadJson(HIST_PATH);
+  spikeData      = await loadJson(SPIKE_PATH);   // ←追加
+}
+
+// ========== 需要スパイク履歴バナー ==========
+// サマリー：直近3日分×最大10件
+function renderSpikeBanner() {
+  const bannerDiv = document.getElementById("spike-banner");
+  if (!spikeData || Object.keys(spikeData).length === 0) {
+    bannerDiv.innerHTML = "";
+    return;
+  }
+  // 直近3日
+  const sortedDates = Object.keys(spikeData).sort((a, b) => b.localeCompare(a)).slice(0, 3);
+  let chips = [];
+  for (const up_date of sortedDates) {
+    for (const spike of spikeData[up_date]) {
+      const spikeDate = spike.spike_date || "";
+      const priceDiff = spike.price_diff || 0;
+      const priceRatio = spike.price_ratio ? (spike.price_ratio * 100).toFixed(1) : "0";
+      const price = spike.price ? spike.price.toLocaleString() : "-";
+      const vacancyDiff = spike.vacancy_diff || 0;
+      const vacancyRatio = spike.vacancy_ratio ? (spike.vacancy_ratio * 100).toFixed(1) : "0";
+      const vacancy = spike.vacancy ? spike.vacancy.toLocaleString() : "-";
+      const priceTxt = `<span class='spike-price ${priceDiff > 0 ? "up" : "down"}'>単価${priceDiff > 0 ? "↑" : "↓"} ${Math.abs(priceDiff).toLocaleString()}円</span>（${priceRatio}%）`;
+      const vacTxt = `<span class='spike-vacancy ${vacancyDiff < 0 ? "dec" : "inc"}'>客室${vacancyDiff < 0 ? "減" : "増"} ${Math.abs(vacancyDiff)}</span>（${vacancyRatio}%）`;
+      chips.push(
+        `<div class="spike-chip">
+          <span class="spike-date">[${up_date.replace(/^(\d{4})-(\d{2})-(\d{2})$/, "$2/$3 UP")}]</span>
+          <span class="spike-main"><b>該当日 ${spikeDate}</b> ${priceTxt} ${vacTxt} <span class="spike-avg">平均￥${price}／残${vacancy}</span></span>
+        </div>`
+      );
+      if (chips.length >= 10) break;
+    }
+    if (chips.length >= 10) break;
+  }
+  if (chips.length === 0) {
+    bannerDiv.innerHTML = "";
+    return;
+  }
+  bannerDiv.innerHTML =
+    `<div class="spike-banner-box">
+      <span class="spike-banner-header">🚀 需要急騰検知日</span>
+      <span class="spike-banner-meta">（直近3日・最大10件）</span>
+      <div class="spike-chip-row">${chips.join("")}</div>
+    </div>`;
 }
 
 // ========== 月送りボタン設定 ==========
@@ -73,6 +120,7 @@ function renderPage() {
         '<div class="calendar-container" id="calendar-container"></div>' +
       '</div>';
   }
+  renderSpikeBanner(); // ←需要急騰バナー描画
   renderGraph(selectedDate);
   renderCalendars();
 }
