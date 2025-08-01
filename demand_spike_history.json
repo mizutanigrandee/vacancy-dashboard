@@ -1,1 +1,33 @@
-{}
+{
+  "2025-08-01": [
+    {
+      "spike_date": "2025-09-01",
+      "price_diff": 5100,
+      "price_ratio": 0.211,
+      "vacancy_diff": -35,
+      "vacancy_ratio": -0.108,
+      "price": 29123,
+      "vacancy": 212
+    }
+  ],
+  "2025-07-31": [
+    {
+      "spike_date": "2025-08-05",
+      "price_diff": 1250,
+      "price_ratio": 0.059,
+      "vacancy_diff": -19,
+      "vacancy_ratio": -0.061,
+      "price": 21120,
+      "vacancy": 178
+    },
+    {
+      "spike_date": "2025-08-04",
+      "price_diff": 980,
+      "price_ratio": 0.044,
+      "vacancy_diff": -8,
+      "vacancy_ratio": -0.027,
+      "price": 18900,
+      "vacancy": 221
+    }
+  ]
+}
