@@ -279,9 +279,6 @@ window.onload = async () => {
   setupMonthButtons();
   window.addEventListener('resize', () => { renderPage(); });
 };
-  renderGraph(selectedDate);
-  renderCalendars();
-}
 
 // ========== カレンダー描画 ==========
 function renderCalendars() {
