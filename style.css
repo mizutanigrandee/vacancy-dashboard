@@ -58,32 +58,34 @@ body {
   padding: 0;
 }
 .calendar-main { width: 100%; }
+/* ── メインレイアウト ── */
 .main-flexbox {
   display: flex;
-  gap: 36px;
+  gap: 16px;         /* ← ここを大きく狭める！（例：従来36px→16px） */
   align-items: flex-start;
   justify-content: center;
-  max-width: none;
+  max-width: 100vw;  /* ←横幅を制限 */
   margin: 0 auto;
-  width: 100%;
+  width: 100vw;
 }
 .graph-side {
-  min-width: 450px;
-  max-width: 450px;
+  min-width: 340px;     /* ←従来450px→340px前後へ */
+  max-width: 370px;
   background: #fff;
   border-radius: 14px;
   box-shadow: 0 2px 16px rgba(65,95,140,0.11);
   margin-bottom: 12px;
-  padding: 16px;
+  padding: 12px;
 }
 .graph-side canvas {
   width: 100% !important;
   max-width: 100%;
   display: block;
 }
+/* ── カレンダー/グリッド細部調整（必要に応じて） ── */
 .calendar-container {
   display: flex;
-  gap: 32px;
+  gap: 16px;      /* ← ここも揃える */
   flex-wrap: wrap;
   justify-content: flex-start;
 }
@@ -93,9 +95,9 @@ body {
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 14px rgba(65,95,140,0.09);
-  padding: 14px 13px 8px 13px;
-  min-width: 680px;
-  max-width: 720px;
+  padding: 12px 6px 6px 6px;      /* ←パディングも少し狭める */
+  min-width: 615px;               /* ←従来680pxなど→615px前後に縮小 */
+  max-width: 650px;               /* ←従来720px→650pxくらい */
   margin-bottom: 12px;
 }
 .month-header {
