@@ -223,13 +223,13 @@ function renderGraph(dateStr){
 
   gc.innerHTML =
     '<div class="graph-btns">' +
-      '<button onclick="closeGraph()">✗ 当日へ戻る</button>' +
+      '<button onclick="closeGraph()"> 当日へ戻る</button>' +
       '<button onclick="nav(-1)">< 前日</button>' +
       '<button onclick="nav(1)">翌日 ></button>' +
     '</div>' +
-    `<h3 style="font-size:1rem;">${dateStr} の在庫・価格推移</h3>` +
-    '<canvas id="stockChart" width="350" height="120"></canvas>' +
-    '<canvas id="priceChart" width="350" height="120"></canvas>';
+    `<h3>${dateStr} の在庫・価格推移</h3>` +
+    '<canvas id="stockChart" width="600" height="250"></canvas>' +
+    '<canvas id="priceChart" width="600" height="250"></canvas>';
 
   window.nav = diff => {
     const ni = idx + diff;
