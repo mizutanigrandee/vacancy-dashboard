@@ -363,15 +363,3 @@ body {
     max-width: 97vw;
   }
 }
-
-/* === 需要急騰検知バナー小型化用（追加分だけ！）=== */
-.spike-banner-box {
-  max-width: 340px;
-  font-size: 0.82em;
-  padding: 7px 16px 6px 16px;
-}
-.spike-chip {
-  font-size: 11px;
-  line-height: 1.15;
-  padding: 3px 7px 2px 5px;
-}
