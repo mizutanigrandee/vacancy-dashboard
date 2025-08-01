@@ -171,7 +171,7 @@ body {
   margin-bottom: 3px !important;  /* ← 6pxから3pxへ変更！ */
 }
 .cell-vacancy {
-  font-size: 1.19rem;
+  font-size: 1.0rem;
   font-weight: bold;
 }
 .cell-vacancy-diff.plus  { color: #1976d2; font-size: 13px; margin-left: 2px; }
