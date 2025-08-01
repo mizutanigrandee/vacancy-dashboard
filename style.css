@@ -336,7 +336,7 @@ body {
     justify-content: flex-start;
   }
   .cell-main {
-    margin-top: 40px !important;
+    margin-top: 20px !important;
     margin-bottom: 2px !important;   /* ←5px→2pxへ！ */
   }
   .cell-date {
