@@ -11,48 +11,31 @@
   height: auto;
 }
 
-/* ── メインレイアウト ── */
-.main-flexbox {
-  display: flex;
-  gap: 18px;
-  align-items: flex-start;
-  justify-content: center;
-  max-width: 100vw;
-  margin: 0 auto;
-  width: 100vw;
-}
-
-/* ── 需要急騰バナー（カード/左サイド寄せ）── */
-.demand-spike-column {
-  min-width: 236px;
-  max-width: 275px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;   /* 右寄せで隣のカレンダーと適度な間隔 */
-}
+/* ── 需要急騰検知日バナー（ミニ通知＋カード風）── */
 .demand-spike-banner {
   background: #fff8ed;
-  border: 1.6px solid #ffd799;
+  border: 1.5px solid #ffd799;
   border-radius: 13px;
-  box-shadow: 0 3px 14px rgba(240, 135, 25, 0.12);
-  font-size: 0.93rem;
+  box-shadow: 0 2px 9px rgba(240, 135, 25, 0.12);
+  font-size: 0.85rem;
   color: #cc5200;
-  padding: 13px 16px 10px 16px;
-  max-width: 270px;
-  min-width: 185px;
+  padding: 9px 16px 8px 16px;
+  max-width: 300px;
+  min-width: 190px;
   line-height: 1.35;
-  margin-bottom: 15px;
+  overflow-y: auto;
+  max-height: 172px;
+  margin-bottom: 12px;
   margin-top: 18px;
   transition: box-shadow 0.18s;
 }
 .demand-spike-banner .banner-title {
   display: flex;
   align-items: center;
-  font-size: 1.13em;
+  font-size: 1.09em;
   font-weight: 700;
   color: #e67e22;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   letter-spacing: 0.01em;
 }
 .demand-spike-list {
@@ -63,14 +46,14 @@
   overflow-y: auto;
 }
 .demand-spike-item {
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   padding-bottom: 3px;
   border-bottom: 0.5px dashed #ffd799;
   font-weight: 600;
   display: flex;
   flex-wrap: wrap;
   gap: 4px 7px;
-  font-size: 0.99em;
+  font-size: 0.97em;
   color: #a05f00;
 }
 .demand-spike-item:last-child {
@@ -90,64 +73,38 @@
   font-size: 0.86em;
 }
 
-/* カレンダー本体 */
-.calendar-main {
-  width: 100%;
-}
-.calendar-container {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-}
-
-/* --- PC版のみ：バナーの左寄せ/カレンダー幅バランス --- */
-@media (min-width: 900px) {
-  .main-flexbox {
-    flex-direction: row;
-    align-items: flex-start;
-  }
-  .demand-spike-column {
-    margin-right: 9px;
-    min-width: 236px;
-    max-width: 275px;
-    padding-top: 7px;
+/* PC：左サイド固定 */
+@media (min-width: 992px) {
+  .demand-spike-banner {
+    position: fixed;
+    top: 72px;
+    left: 26px;
+    margin: 0;
+    max-width: 260px;
+    min-width: 170px;
+    font-size: 0.80rem;
+    padding: 10px 12px 10px 14px;
+    box-shadow: 0 3px 16px rgba(240,135,25,0.14);
   }
   .calendar-main {
-    flex-grow: 1;
-    min-width: 0;
+    margin-left: 220px; /* バナー分だけ右にオフセット。必要に応じて調整 */
   }
 }
 
-/* --- スマホ：バナーは上部・幅いっぱい＆縮小 --- */
-@media (max-width: 899px) {
-  .main-flexbox {
-    flex-direction: column;
-    gap: 8px;
-    align-items: stretch;
-  }
-  .demand-spike-column {
-    width: 100%;
-    max-width: 99vw;
-    min-width: unset;
-    align-items: stretch;
-    margin-right: 0;
-    padding-top: 0;
-  }
+/* スマホ：上部幅いっぱい・余白調整 */
+@media (max-width: 991px) {
   .demand-spike-banner {
     position: relative;
-    width: 97vw;
+    width: 94vw;
     max-width: 99vw;
+    font-size: 0.76rem;
+    padding: 8px 7px 7px 12px;
+    margin: 10px auto 11px auto;
     min-width: 0;
-    font-size: 0.85rem;
-    margin-top: 11px;
-    margin-bottom: 13px;
-    padding: 8px 8px 8px 10px;
-    left: unset;
-    top: unset;
-    box-shadow: 0 2px 9px rgba(240, 135, 25, 0.10);
+    left: unset; top: unset;
   }
   .demand-spike-banner .banner-title { font-size: 0.98em; }
+}
 
 /* ── 月送りボタン ── */
 .nav-button-container {
