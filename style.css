@@ -333,7 +333,7 @@ body {
 
   /* 日付数字 */
   .cell-date {
-    font-size: 14px !important;
+    font-size: 10px !important;
     top: 9px !important;
     left: 8px !important;
   }
@@ -341,7 +341,7 @@ body {
   /* 在庫数＆価格の文字サイズ・太字 */
   .cell-vacancy,
   .cell-price {
-    font-size: 1.12rem !important;
+    font-size: 0.8rem !important;
     font-weight: 700 !important;
     letter-spacing: 0.1px;
     line-height: 1.1;
@@ -350,13 +350,13 @@ body {
   /* 在庫＆価格差分 */
   .cell-vacancy-diff,
   .cell-price-diff {
-    font-size: 13px !important;
+    font-size: 10px !important;
     margin-left: 3px !important;
   }
 
   /* 需要シンボル（炎アイコン） */
   .cell-demand-badge {
-    font-size: 15px !important;
+    font-size: 10px !important;
     top: 9px !important;
     right: 9px !important;
   }
@@ -367,7 +367,7 @@ body {
     max-width: 90% !important;
   }
   .cell-event {
-    font-size: 11.5px !important;
+    font-size: 10px !important;
     line-height: 1.2 !important;
     max-width: 100% !important;
     white-space: normal !important;
