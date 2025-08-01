@@ -14,9 +14,6 @@
     <img src="バナー画像3.png" class="app-banner" alt="バナー">
   </header>
 
-  <!-- 🚀需要急騰日履歴バナー -->
-  <div id="spike-banner"></div>
-
   <!-- 月送りボタン -->
   <div class="nav-button-container">
     <button id="prevMonthBtn" class="custom-button"><span class="icon">⬅️</span> 前月</button>
@@ -25,8 +22,14 @@
   </div>
 
   <main class="calendar-main">
-    <div class="graph-side" id="graph-container"></div>
-    <div class="calendar-container" id="calendar-container"></div>
+    <div class="main-flexbox">
+      <div>
+        <!-- 🚀需要急騰日履歴バナー：グラフ直上/左上 -->
+        <div id="spike-banner"></div>
+        <div class="graph-side" id="graph-container"></div>
+      </div>
+      <div class="calendar-container" id="calendar-container"></div>
+    </div>
   </main>
 
   <footer class="app-footer">
@@ -47,7 +50,6 @@
     </div>
   </footer>
 
-  <!-- 最後にapp.js -->
   <script src="app.js"></script>
 </body>
 </html>
