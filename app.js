@@ -1,25 +1,26 @@
 // ========== データ & 祝日設定 ==========
 
-// ファイルパス定義
 const DATA_PATH  = "./vacancy_price_cache.json";
 const PREV_PATH  = "./vacancy_price_cache_previous.json";
 const EVENT_PATH = "./event_data.json";
 const HIST_PATH  = "./historical_data.json";
+const SPIKE_PATH = "./demand_spike_history.json"; // 追加
 
-// グローバル状態
 let calendarData   = {},
     prevData       = {},
     eventData      = {},
     historicalData = {};
 let currentYM = [], selectedDate = null;
 
-// ========== 祝日判定（ローカルjs方式） ==========
+// ========== 祝日判定 ==========
+
 function isHoliday(date) {
   if (!window.JapaneseHolidays) return null;
   return window.JapaneseHolidays.isHoliday(date);
 }
 
 // ========== ヘルパー ==========
+
 const todayIso = () => new Date().toISOString().slice(0,10);
 async function loadJson(path) {
   try {
@@ -38,6 +39,7 @@ async function loadAll() {
 }
 
 // ========== 月送りボタン設定 ==========
+
 function setupMonthButtons() {
   document.getElementById("prevMonthBtn").onclick    = () => { shiftMonth(-1); renderPage(); };
   document.getElementById("currentMonthBtn").onclick = () => { initMonth();   renderPage(); };
@@ -57,8 +59,51 @@ function shiftMonth(diff) {
   currentYM = [[y,m], m === 12 ? [y+1,1] : [y, m+1]];
 }
 
+// ========== 需要急騰バナー描画 ==========
+
+async function renderSpikeBanner() {
+  try {
+    const res = await fetch(SPIKE_PATH);
+    if (!res.ok) return;
+    const data = await res.json();
+    const dates = Object.keys(data).sort().reverse().slice(0, 3);
+    let chips = [];
+    for (const up_date of dates) {
+      for (const spike of data[up_date]) {
+        const price_txt = `<span style='color:#d35400;'>単価${spike.price_diff>0?'↑':'↓'} ${Math.abs(spike.price_diff).toLocaleString()}円</span>（${(spike.price_ratio*100).toFixed(1)}%）`;
+        const vac_txt = `<span style='color:#2980b9;'>客室${spike.vacancy_diff<0?'減':'増'} ${Math.abs(spike.vacancy_diff)}件</span>（${(spike.vacancy_ratio*100).toFixed(1)}%）`;
+        const chip = `
+          <span class="spike-chip">
+            <span class="spike-up-date">【${up_date.replace(/^\d{4}-/, '').replace('-', '/')} UP】</span>
+            <span class="spike-main"><b>該当日 <span class="spike-date">${spike.spike_date}</span></b></span>
+            ${price_txt}　${vac_txt}
+            <span class="spike-summary">平均￥${Number(spike.price).toLocaleString()}／残${spike.vacancy}</span>
+          </span>`;
+        chips.push(chip);
+        if (chips.length >= 10) break;
+      }
+      if (chips.length >= 10) break;
+    }
+    if (chips.length > 0) {
+      document.getElementById("spike-banner").innerHTML = `
+        <div class="spike-banner-box">
+          <div class="spike-banner-title">
+            <span style="font-size:20px;color:#e67e22;margin-right:9px;">🚀</span>
+            <span style="font-weight:800;color:#e67e22;font-size:16px;letter-spacing:0.5px;margin-right:9px;">需要急騰検知日</span>
+            <span style="font-size:12.5px;color:#ae8d3a;">（直近3日分・最大10件）</span>
+          </div>
+          <div class="spike-banner-row">${chips.join("")}</div>
+        </div>`;
+    } else {
+      document.getElementById("spike-banner").innerHTML = "";
+    }
+  } catch (e) {
+    document.getElementById("spike-banner").innerHTML = "";
+  }
+}
+
 // ========== ページ全体再描画 ==========
-// ここで崩れや空白になるので、テンプレ文字列はインデントなし・1行で出力！
+
 function renderPage() {
   let isMobile = window.innerWidth <= 700;
   if (isMobile) {
@@ -76,9 +121,11 @@ function renderPage() {
   }
   renderGraph(selectedDate);
   renderCalendars();
+  renderSpikeBanner(); // ここでバナー描画
 }
 
 // ========== カレンダー描画 ==========
+
 function renderCalendars() {
   const container = document.getElementById("calendar-container");
   container.innerHTML = "";
@@ -95,7 +142,6 @@ function renderMonth(y,m) {
   const grid = document.createElement("div");
   grid.className = "calendar-grid";
 
-  // 曜日ヘッダー
   ["日","月","火","水","木","金","土"].forEach(d => {
     const c = document.createElement("div");
     c.className = "calendar-dow";
@@ -103,7 +149,6 @@ function renderMonth(y,m) {
     grid.appendChild(c);
   });
 
-  // 空セル
   const firstDay = new Date(y,m-1,1).getDay(),
         lastDate = new Date(y,m,0).getDate();
   for (let i=0; i<firstDay; i++){
@@ -112,26 +157,21 @@ function renderMonth(y,m) {
     grid.appendChild(e);
   }
 
-  // 各日セル
   for (let d=1; d<=lastDate; d++){
     const iso = y + '-' + String(m).padStart(2,"0") + '-' + String(d).padStart(2,"0");
     const cell = document.createElement("div");
     cell.className = "calendar-cell";
     cell.dataset.date = iso;
 
-    // 祝日判定
     let holidayName = isHoliday(iso);
 
-    // 土日祝色分け
     const idx = (grid.children.length) % 7;
     if      (holidayName) cell.classList.add("holiday-bg");
     else if (idx === 0)   cell.classList.add("sunday-bg");
     else if (idx === 6)   cell.classList.add("saturday-bg");
 
-    // 過去日付グレーアウト
     if (iso < todayIso()) cell.classList.add("past-date");
 
-    // データ取得＆差分
     const cur = calendarData[iso] || {},
           prv = prevData[iso]      || {};
     const dv  = typeof cur.vacancy_diff === "number"
@@ -143,10 +183,8 @@ function renderMonth(y,m) {
     const stock = cur.vacancy != null ? `${cur.vacancy}件` : "-";
     const price = cur.avg_price != null ? cur.avg_price.toLocaleString() : "-";
 
-    // 括弧付き差分テキスト
     const dvText = dv > 0 ? `(+${dv})` : dv < 0 ? `(${dv})` : `(±0)`;
 
-    // 需要シンボル
     let lvl = 0;
     if (cur.vacancy!=null && cur.avg_price!=null){
       if (cur.vacancy<=70  || cur.avg_price>=50000) lvl=5;
@@ -157,7 +195,6 @@ function renderMonth(y,m) {
     }
     const badge = lvl ? `<div class="cell-demand-badge lv${lvl}">🔥${lvl}</div>` : "";
 
-    // イベント
     const evs = (eventData[iso] || [])
       .map(ev => `<div class="cell-event" style="font-size:11px; color:#222; white-space:normal; line-height:1.1;">${ev.icon} <span style="color:#222;">${ev.name}</span></div>`)
       .join("");
@@ -184,6 +221,7 @@ function renderMonth(y,m) {
 }
 
 // ========== グラフ描画 ==========
+
 function renderGraph(dateStr){
   const gc = document.getElementById("graph-container");
   if (!dateStr) { gc.innerHTML=""; return; }
@@ -213,7 +251,6 @@ function renderGraph(dateStr){
     renderPage();
   };
 
-  // Chart.js描画
   const hist = historicalData[dateStr] || {}, labels = [], sv = [], pv = [];
   Object.keys(hist).sort().forEach(d => {
     labels.push(d);
@@ -225,7 +262,6 @@ function renderGraph(dateStr){
   if (window.pc) window.pc.destroy();
 
   if (labels.length) {
-    // 在庫数グラフ
     window.sc = new Chart(
       document.getElementById("stockChart").getContext("2d"),
       {
@@ -242,7 +278,6 @@ function renderGraph(dateStr){
         }
       }
     );
-    // 価格グラフ
     window.pc = new Chart(
       document.getElementById("priceChart").getContext("2d"),
       {
@@ -262,15 +297,25 @@ function renderGraph(dateStr){
   }
 }
 
-// ========== 最終更新日時 ==========
-function updateLastUpdate(){
-  const el = document.getElementById("last-update"),
-        d  = new Date(),
-        z  = n => String(n).padStart(2,"0");
-  el.textContent = `最終更新日時：${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}`;
+// ========== 最終更新日時（vacancy_price_cache.json から取得） ==========
+
+async function updateLastUpdate(){
+  try {
+    const res = await fetch('./vacancy_price_cache.json');
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    if (data.last_update) {
+      document.getElementById("last-update").textContent = `最終更新日時：${data.last_update}（JST）`;
+    } else {
+      document.getElementById("last-update").textContent = "最終更新日時：取得できません";
+    }
+  } catch {
+    document.getElementById("last-update").textContent = "最終更新日時：取得できません";
+  }
 }
 
 // ========== 起動時初期化 ==========
+
 window.onload = async () => {
   await loadAll();
   initMonth();
