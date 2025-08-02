@@ -356,11 +356,11 @@ body {
   max-width: 98% !important;
   white-space: normal !important;
   word-break: break-word !important;
-  display: block !important; /* flex から block に変更 */
+  display: block !important;
   overflow-wrap: break-word !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  max-height: 3.6em !important; /* 約2行分 */
+  /* overflow: hidden !important; 削除 */
+  /* text-overflow: ellipsis !important; 削除 */
+  max-height: none !important; /* 最大行制限解除 */
 }
 
 .cell-event-icon {
@@ -484,9 +484,11 @@ body {
     margin-top: 2px !important;
     max-width: 92% !important;
   }
+
+/* スマホ最適化の閉じカッコの前に正しく記述 */
 @media screen and (max-width: 700px) {
   .cell-event {
-    font-size: 7.5px !important; /* 必要に応じて調整 */
+    font-size: 7.5px !important; /* 調整可 */
     line-height: 1.2 !important;
     max-width: 100% !important;
     white-space: normal !important;
@@ -495,6 +497,8 @@ body {
     overflow-wrap: break-word !important;
   }
 }
+
+
   .app-banner {
     width: 95vw !important;
     max-width: 99vw !important;
