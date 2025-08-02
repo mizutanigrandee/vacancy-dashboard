@@ -206,8 +206,11 @@ function renderMonth(y,m) {
 
     // イベント
     const evs = (eventData[iso] || [])
-      .map(ev => `<div class="cell-event" style="font-size:11px; color:#222; white-space:normal; line-height:1.1;">${ev.icon} <span style="color:#222;">${ev.name}</span></div>`)
-      .join("");
+      .map(ev => `<a href="https://www.google.com/search?q=${encodeURIComponent(ev.name)}" target="_blank" title="「${ev.name}」について調べる" style="color:#357ebd; text-decoration: underline;">
+                    ${ev.icon} ${ev.name}
+                  </a>`)
+      .join("<br>");
+
 
     cell.innerHTML =
       `<div class="cell-date">${d}</div>` +
