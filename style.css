@@ -541,12 +541,28 @@ body {
   line-height: inherit;
 }
 
-/* イベントリンク文字サイズ調整 */
+/* --- イベント名（リンク）2行まで表示／それ以上は非表示 --- */
 .event-link {
   font-size: 11px !important;
   color: #357ebd;
   text-decoration: underline;
   cursor: pointer;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
+  word-break: break-word;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  line-height: 1.25;
+  max-width: 98%;
 }
-
-
+@media (max-width: 700px) {
+  .event-link {
+    font-size: 8px !important;
+    line-height: 1.2;
+    max-width: 100%;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+}
