@@ -532,7 +532,7 @@ body {
 
 /* イベントリンク文字サイズ調整 */
 .event-link {
-  font-size: 11px !important;
+  font-size: 7px !important;
   color: #357ebd;
   text-decoration: underline;
   cursor: pointer;
