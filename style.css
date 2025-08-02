@@ -530,3 +530,12 @@ body {
   line-height: inherit;
 }
 
+/* イベントリンク文字サイズ調整 */
+.event-link {
+  font-size: 11px !important;
+  color: #357ebd;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+
