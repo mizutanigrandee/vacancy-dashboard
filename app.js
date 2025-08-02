@@ -243,7 +243,7 @@ function renderGraph(dateStr){
 
   gc.innerHTML =
     '<div class="graph-btns">' +
-      '<button onclick="closeGraph()">✗ 当日へ戻る</button>' +
+      '<button onclick="closeGraph()"> 当日へ戻る</button>' +
       '<button onclick="nav(-1)">< 前日</button>' +
       '<button onclick="nav(1)">翌日 ></button>' +
     '</div>' +
