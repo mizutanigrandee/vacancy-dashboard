@@ -3,6 +3,7 @@
 update_cache.py
 – 未来日の在庫・平均料金を取得して
   vacancy_price_cache.json / historical_data.json / demand_spike_history.json を更新
+  ＋ GitHub Actions 実行完了のJST時刻を last_updated.json に書き出す
 """
 
 import os
@@ -18,10 +19,11 @@ APP_ID = os.environ.get("RAKUTEN_APP_ID", "")
 if not APP_ID:
     raise ValueError("❌ RAKUTEN_APP_ID が設定されていません。GitHub Secrets に登録してください。")
 
-CACHE_FILE      = "vacancy_price_cache.json"
-PREV_CACHE_FILE = "vacancy_price_cache_previous.json"
-HISTORICAL_FILE = "historical_data.json"
-SPIKE_HISTORY_FILE = "demand_spike_history.json"
+CACHE_FILE          = "vacancy_price_cache.json"
+PREV_CACHE_FILE     = "vacancy_price_cache_previous.json"
+HISTORICAL_FILE     = "historical_data.json"
+SPIKE_HISTORY_FILE  = "demand_spike_history.json"
+LAST_UPDATED_FILE   = "last_updated.json"   # ← 追加: フロントが読む最終更新メタ
 
 def fetch_vacancy_and_price(date: dt.date) -> dict:
     print(f"🔍 fetching {date}", file=sys.stderr)
@@ -78,17 +80,20 @@ def update_cache(start_date: dt.date, months: int = 9) -> dict:
     if Path(PREV_CACHE_FILE).exists():
         old_cache = json.loads(Path(PREV_CACHE_FILE).read_text(encoding="utf-8"))
 
+    # 過去3か月より前は削除
     cache = {k: v for k, v in cache.items() if dt.date.fromisoformat(k) >= three_months_ago}
 
     for m in range(months):
         month_start = (start_date + relativedelta(months=m)).replace(day=1)
         for week in cal.monthdatescalendar(month_start.year, month_start.month):
             for day in week:
+                # 現在以降の未来日だけ取得
                 if day.month != month_start.month or day <= today:
                     continue
 
                 iso      = day.isoformat()
                 new_data = fetch_vacancy_and_price(day)
+                # API失敗日はスキップし既存値保持（0/0は更新しない）
                 if new_data["vacancy"] == 0 and new_data["avg_price"] == 0.0:
                     print(f"⏩ skip {iso} (empty)", file=sys.stderr)
                     continue
@@ -132,6 +137,7 @@ def update_history(cache: dict):
         except Exception as e:
             print(f"⚠️ error loading historical_data.json: {e}", file=sys.stderr)
 
+    # 未来日の今日時点スナップショットを追記
     for iso, v in cache.items():
         if dt.date.fromisoformat(iso) >= today:
             hist_data.setdefault(iso, {})
@@ -140,6 +146,7 @@ def update_history(cache: dict):
                 "avg_price":  v["avg_price"],
             }
 
+    # 各対象日の履歴を3か月に圧縮
     for date_key in list(hist_data.keys()):
         if not _is_date_string(date_key):
             print(f"⚠️ skip legacy key {date_key}", file=sys.stderr)
@@ -167,7 +174,7 @@ def update_history(cache: dict):
 def detect_demand_spikes(cache_data, n_recent=3, pct=0.05):
     sorted_dates = sorted(cache_data.keys())
     today = dt.date.today()
-    exclude_dates = { (today - dt.timedelta(days=i)).isoformat() for i in range(n_recent) }
+    exclude_dates = {(today - dt.timedelta(days=i)).isoformat() for i in range(n_recent)}
     results = []
     for d in sorted_dates:
         if d in exclude_dates:
@@ -207,14 +214,32 @@ def save_demand_spike_history(demand_spikes, history_file=SPIKE_HISTORY_FILE):
         history = {}
     history[today] = demand_spikes
 
-    # --- ここから追加（90日より前の履歴を削除） ---
+    # 90日より前の履歴を削除
     limit = (dt.date.today() - dt.timedelta(days=90)).isoformat()
     history = {d: v for d, v in history.items() if d >= limit}
-    # --- ここまで追加 ---
 
     with open(history_file, "w", encoding="utf-8") as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
     print(f"📁 {history_file} updated", file=sys.stderr)
+
+# ===== 追加: 最終更新メタの書き出し =====
+def write_last_updated():
+    """Actions 実行完了時点のJST時刻などを last_updated.json に保存"""
+    JST = dt.timezone(dt.timedelta(hours=9))
+    now = dt.datetime.now(JST)
+    payload = {
+        "last_updated_iso": now.isoformat(timespec="seconds"),
+        "last_updated_jst": now.strftime("%Y-%m-%d %H:%M:%S JST"),
+        "source": "github-actions",
+        "git_sha": os.environ.get("GITHUB_SHA", "")[:7],
+        "note": "vacancy/price crawl finished",
+    }
+    try:
+        with open(LAST_UPDATED_FILE, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2)
+        print(f"🕒 {LAST_UPDATED_FILE} written: {payload['last_updated_jst']}", file=sys.stderr)
+    except Exception as e:
+        print(f"⚠️ failed to write {LAST_UPDATED_FILE}: {e}", file=sys.stderr)
 
 if __name__ == "__main__":
     print("📡 update_cache.py start", file=sys.stderr)
@@ -223,4 +248,6 @@ if __name__ == "__main__":
     demand_spikes = detect_demand_spikes(cache_now, n_recent=3, pct=0.05)
     print(f"Demand spikes for today: {demand_spikes}", file=sys.stderr)
     save_demand_spike_history(demand_spikes)
+    # 追加: すべての更新が完了した“最後”に書き出し
+    write_last_updated()
     print("✨ all done", file=sys.stderr)
