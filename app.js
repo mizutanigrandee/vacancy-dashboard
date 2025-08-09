@@ -6,6 +6,7 @@ const PREV_PATH  = "./vacancy_price_cache_previous.json";
 const EVENT_PATH = "./event_data.json";
 const HIST_PATH  = "./historical_data.json";
 const SPIKE_PATH = "./demand_spike_history.json";   // ←追加
+const LASTUPDATED_PATH = "./last_updated.json";      // ←追加
 
 // グローバル状態
 let calendarData   = {},
@@ -44,6 +45,7 @@ async function loadAll() {
 // サマリー：直近3日分×最大10件
 function renderSpikeBanner() {
   const bannerDiv = document.getElementById("spike-banner");
+  if (!bannerDiv) return;
   if (!spikeData || Object.keys(spikeData).length === 0) {
     bannerDiv.innerHTML = "";
     return;
@@ -86,9 +88,12 @@ function renderSpikeBanner() {
 
 // ========== 月送りボタン設定 ==========
 function setupMonthButtons() {
-  document.getElementById("prevMonthBtn").onclick    = () => { shiftMonth(-1); renderPage(); };
-  document.getElementById("currentMonthBtn").onclick = () => { initMonth();   renderPage(); };
-  document.getElementById("nextMonthBtn").onclick    = () => { shiftMonth(1);  renderPage(); };
+  const prevBtn = document.getElementById("prevMonthBtn");
+  const curBtn  = document.getElementById("currentMonthBtn");
+  const nextBtn = document.getElementById("nextMonthBtn");
+  if (prevBtn) prevBtn.onclick = () => { shiftMonth(-1); renderPage(); };
+  if (curBtn)  curBtn.onclick  = () => { initMonth();   renderPage(); };
+  if (nextBtn) nextBtn.onclick = () => { shiftMonth(1);  renderPage(); };
 }
 function initMonth() {
   const t = new Date(),
@@ -211,7 +216,6 @@ function renderMonth(y,m) {
                   </a>`)
       .join("<br>");
 
-
     cell.innerHTML =
       `<div class="cell-date">${d}</div>` +
       `<div class="cell-main">
@@ -236,6 +240,7 @@ function renderMonth(y,m) {
 // ========== グラフ描画 ==========
 function renderGraph(dateStr){
   const gc = document.getElementById("graph-container");
+  if (!gc) return;
   if (!dateStr) { gc.innerHTML=""; return; }
 
   const allDates = Object.keys(historicalData).sort(),
@@ -312,12 +317,26 @@ function renderGraph(dateStr){
   }
 }
 
-// ========== 最終更新日時 ==========
+// ========== 最終更新日時（Actions完了時刻を表示） ==========
 function updateLastUpdate(){
-  const el = document.getElementById("last-update"),
-        d  = new Date(),
-        z  = n => String(n).padStart(2,"0");
-  el.textContent = `最終更新日時：${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}`;
+  const el = document.getElementById("last-update");
+  if (!el) return;
+
+  fetch(LASTUPDATED_PATH + "?cb=" + Date.now())
+    .then(r => r.ok ? r.json() : Promise.reject("fetch failed"))
+    .then(meta => {
+      const jst = meta.last_updated_jst || meta.last_updated_iso || "—";
+      el.textContent = `最終更新日時：${jst}`;
+      const tips = [];
+      if (meta.last_updated_iso) tips.push(`ISO: ${meta.last_updated_iso}`);
+      if (meta.git_sha)          tips.push(`SHA: ${meta.git_sha}`);
+      if (meta.source)           tips.push(`src: ${meta.source}`);
+      el.title = tips.join("\n");
+    })
+    .catch(() => {
+      el.textContent = "最終更新日時：—";
+      el.title = "last_updated.json の取得に失敗しました";
+    });
 }
 
 // ========== 起動時初期化 ==========
@@ -326,7 +345,7 @@ window.onload = async () => {
   initMonth();
   if (!selectedDate) selectedDate = todayIso();
   renderPage();
-  updateLastUpdate();
+  updateLastUpdate();        // ← 閲覧時刻ではなく Actions 完了時刻を表示
   setupMonthButtons();
   window.addEventListener('resize', () => { renderPage(); });
 };
