@@ -2,8 +2,11 @@ name: Daily Update
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # JST9時 = UTC0時
-  workflow_dispatch:     # 手動実行も可能にする
+    - cron: '0 0 * * *'   # JST9時 = UTC0時
+  workflow_dispatch:       # 手動実行も可能
+
+permissions:
+  contents: write          # ← push するために付与
 
 jobs:
   update-data:
@@ -11,12 +14,14 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
@@ -24,16 +29,21 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run update script
-        run: python update_cache.py
         env:
           RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
+        run: python update_cache.py
 
-
+      # ここで生成/更新された全ファイルをコミット＆プッシュ
+      # （last_updated.json と demand_spike_history.json を確実に含める）
       - name: Commit updated cache files
         run: |
-          git config user.name github-actions
-          git config user.email actions@github.com
-          git pull origin main
-          git add historical_data.json vacancy_price_cache.json vacancy_price_cache_previous.json
-          git commit -m "Update cache files [auto]" || echo "No changes to commit"
-          git push
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update cache files [auto]"
+            git push
+          fi
