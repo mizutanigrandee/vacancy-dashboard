@@ -172,20 +172,39 @@ def update_history(cache: dict):
     print("📁 historical_data.json updated", file=sys.stderr)
 
 def detect_demand_spikes(cache_data, n_recent=3, pct=0.05):
+    """
+    cache_data: vacancy_price_cache.json の dict
+    - 直近 n_recent 日の“実行日”は除外（安定化のため）
+    - 判定対象は “今日以降の宿泊日” のみ（過去日は除外）
+    - last_* が無い初回取得や 0 の分母は自動スキップ相当
+    """
     sorted_dates = sorted(cache_data.keys())
     today = dt.date.today()
-    exclude_dates = {(today - dt.timedelta(days=i)).isoformat() for i in range(n_recent)}
+
+    # 直近n日分の“宿泊日”は除外（必要に応じて変更）
+    exclude_exec_dates = {(today - dt.timedelta(days=i)).isoformat() for i in range(n_recent)}
+
     results = []
     for d in sorted_dates:
-        if d in exclude_dates:
+        # ★ 過去日の宿泊は判定から除外
+        try:
+            stay_dt = dt.date.fromisoformat(d)
+        except Exception:
             continue
+        if stay_dt < today:
+            continue
+        if d in exclude_exec_dates:
+            continue
+
         rec = cache_data[d]
         last_price = rec.get("last_avg_price", 0)
-        last_vac = rec.get("last_vacancy", 0)
+        last_vac   = rec.get("last_vacancy", 0)
         price_diff = rec.get("avg_price_diff", 0)
-        vac_diff = rec.get("vacancy_diff", 0)
+        vac_diff   = rec.get("vacancy_diff", 0)
+
         price_ratio = abs(price_diff / last_price) if last_price else 0
-        vac_ratio = abs(vac_diff / last_vac) if last_vac else 0
+        vac_ratio   = abs(vac_diff   / last_vac)   if last_vac   else 0
+
         if price_ratio >= pct or vac_ratio >= pct:
             results.append({
                 "spike_date": d,
@@ -198,8 +217,10 @@ def detect_demand_spikes(cache_data, n_recent=3, pct=0.05):
                 "vacancy_diff": vac_diff,
                 "vacancy_ratio": vac_ratio,
             })
-    print(f"📊 Demand Spikes Detected: {len(results)} 件", file=sys.stderr)
+
+    print(f"📊 Demand Spikes Detected (future only): {len(results)} 件", file=sys.stderr)
     return results
+
 
 def save_demand_spike_history(demand_spikes, history_file=SPIKE_HISTORY_FILE):
     today = dt.date.today().isoformat()
