@@ -223,7 +223,11 @@ def detect_demand_spikes(cache_data, n_recent=3, pct=0.05):
 
 
 def save_demand_spike_history(demand_spikes, history_file=SPIKE_HISTORY_FILE):
-    today = dt.date.today().isoformat()
+    """履歴を更新しつつ、全日分から『過去日のspike項目』を自動除去する"""
+    today_dt = dt.date.today()
+    today_iso = today_dt.isoformat()
+
+    # 既存履歴ロード
     if os.path.exists(history_file):
         try:
             with open(history_file, "r", encoding="utf-8") as f:
@@ -233,15 +237,31 @@ def save_demand_spike_history(demand_spikes, history_file=SPIKE_HISTORY_FILE):
             history = {}
     else:
         history = {}
-    history[today] = demand_spikes
 
-    # 90日より前の履歴を削除
-    limit = (dt.date.today() - dt.timedelta(days=90)).isoformat()
+    # 今日分を差し替え
+    history[today_iso] = demand_spikes
+
+    # 90日より前のキーを削除
+    limit = (today_dt - dt.timedelta(days=90)).isoformat()
     history = {d: v for d, v in history.items() if d >= limit}
 
+    # ★ 全キーに対して『過去日のspike』を除去（今日実行分で一括クリーン）
+    cleaned = {}
+    for up_date, items in history.items():
+        new_items = []
+        for it in items or []:
+            sd = it.get("spike_date")
+            try:
+                if sd and dt.date.fromisoformat(sd) < today_dt:
+                    continue  # 過去日のspikeは表示対象外として捨てる
+            except Exception:
+                pass  # spike_dateが壊れてても無視して通す
+            new_items.append(it)
+        cleaned[up_date] = new_items
+
     with open(history_file, "w", encoding="utf-8") as f:
-        json.dump(history, f, ensure_ascii=False, indent=2)
-    print(f"📁 {history_file} updated", file=sys.stderr)
+        json.dump(cleaned, f, ensure_ascii=False, indent=2)
+    print(f"📁 {history_file} cleaned & updated", file=sys.stderr)
 
 # ===== 追加: 最終更新メタの書き出し =====
 def write_last_updated():
