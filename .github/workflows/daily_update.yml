@@ -6,7 +6,7 @@ on:
   workflow_dispatch:       # 手動実行も可能
 
 permissions:
-  contents: write          # ← push するために付与
+  contents: write
 
 jobs:
   update-data:
@@ -33,17 +33,23 @@ jobs:
           RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
         run: python update_cache.py
 
-      # ここで生成/更新された全ファイルをコミット＆プッシュ
-      # （last_updated.json と demand_spike_history.json を確実に含める）
+      # 生成/更新ファイルを先にコミット → その後 pull --rebase → push
       - name: Commit updated cache files
         run: |
+          set -e
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main
+
+          # まず全部ステージ & 必要ならコミット
           git add -A
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
             git commit -m "Update cache files [auto]"
-            git push
           fi
+
+          # ここで最新を取り込み（未コミット変更はないのでrebaseOK）
+          git pull --rebase origin main || true
+
+          # そのまま main にプッシュ
+          git push origin HEAD:main
