@@ -173,33 +173,24 @@ def update_history(cache: dict):
 
 def detect_demand_spikes(cache_data, n_recent=3, price_up_pct=0.05, vac_down_pct=0.05):
     """
-    cache_data: vacancy_price_cache.json の dict
     仕様：
-      - 判定対象は “今日以降の宿泊日” のみ（過去宿泊日は除外）
-      - 方向性を固定：『客室が -vac_down_pct 以下（= 減少）』かつ
-                      『平均単価が +price_up_pct 以上（= 上昇）』のときのみ検知
-      - last_* が無い初回取得や 0 の分母は自動スキップ
-      - 直近 n_recent 日の「宿泊日」を除外したい場合は、下の exclude_near_stay を True に
+      - 対象は“今日以降の宿泊日”のみ
+      - 方向固定：『客室が -vac_down_pct 以下（= 減少）』かつ
+                  『平均単価が +price_up_pct 以上（= 上昇）』の時だけ検知
+      - 前回値(last_*)が無い/0 の項目は自動スキップ
+      - 近い宿泊日の除外はフロント(app.js)側で実施済みのためここでは行わない
     """
     sorted_dates = sorted(cache_data.keys())
     today = dt.date.today()
 
-    # 実装を簡潔に：デフォルトでは「近い宿泊日」は除外しない（フロント側でも除外しているため）
-    exclude_near_stay = False
-    NEAR_STAY_DAYS = n_recent  # 必要なら使う
-
     results = []
     for d in sorted_dates:
-        # --- 1) 宿泊日が過去は除外 ---
+        # --- 宿泊日が過去なら除外 ---
         try:
             stay_dt = dt.date.fromisoformat(d)
         except Exception:
             continue
         if stay_dt < today:
-            continue
-
-        # 近い宿泊日を除外したい場合（任意）
-        if exclude_near_stay and (stay_dt - today).days <= NEAR_STAY_DAYS:
             continue
 
         rec = cache_data[d]
@@ -208,32 +199,33 @@ def detect_demand_spikes(cache_data, n_recent=3, price_up_pct=0.05, vac_down_pct
         cur_price  = rec.get("avg_price", 0)
         cur_vac    = rec.get("vacancy", 0)
 
-        # 前回値が無い／0 のときはスキップ
+        # 前回値が欠損 or 0 は判定不可
         if not (last_price and last_vac):
             continue
 
-        # --- 2) 差分（符号付き）と比率（符号付き） ---
-        price_diff = cur_price - last_price    # + なら上昇
-        vac_diff   = cur_vac   - last_vac      # - なら減少
-        price_ratio = (price_diff / last_price) if last_price else 0.0   # 例: +0.052
-        vac_ratio   = (vac_diff   / last_vac)   if last_vac   else 0.0   # 例: -0.065
+        # 差分（符号付き）と比率（符号付き）
+        price_diff = cur_price - last_price      # + なら単価↑
+        vac_diff   = cur_vac   - last_vac        # - なら客室↓
+        price_ratio = (price_diff / last_price) if last_price else 0.0
+        vac_ratio   = (vac_diff   / last_vac)   if last_vac   else 0.0
 
-        # --- 3) 方向性を固定して判定（AND 条件） ---
+        # 方向＆閾値：客室↓ AND 単価↑
         if (vac_ratio <= -vac_down_pct) and (price_ratio >= price_up_pct):
             results.append({
                 "spike_date": d,
                 "price": cur_price,
                 "last_price": last_price,
                 "price_diff": price_diff,
-                "price_ratio": round(float(price_ratio), 4),  # 符号を保持
+                "price_ratio": round(float(price_ratio), 4),
                 "vacancy": cur_vac,
                 "last_vac": last_vac,
                 "vacancy_diff": vac_diff,
-                "vacancy_ratio": round(float(vac_ratio), 4),  # 符号を保持
+                "vacancy_ratio": round(float(vac_ratio), 4),
             })
 
-    print(f"📊 Demand Spikes Detected (future only, dir-fixed): {len(results)} 件", file=sys.stderr)
+    print(f"📊 Demand Spikes Detected (dir-fixed: price↑ & vac↓): {len(results)} 件", file=sys.stderr)
     return results
+
 
 
 def save_demand_spike_history(demand_spikes, history_file=SPIKE_HISTORY_FILE):
