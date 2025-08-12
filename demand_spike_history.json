@@ -2,17 +2,6 @@
   "2025-08-09": [],
   "2025-08-10": [
     {
-      "spike_date": "2025-08-11",
-      "price": 15641.0,
-      "last_price": 15361.0,
-      "price_diff": 280.0,
-      "price_ratio": 0.018227979949222057,
-      "vacancy": 193,
-      "last_vac": 208,
-      "vacancy_diff": -15,
-      "vacancy_ratio": 0.07211538461538461
-    },
-    {
       "spike_date": "2025-08-12",
       "price": 14470.0,
       "last_price": 16046.0,
@@ -101,6 +90,63 @@
       "last_vac": 248,
       "vacancy_diff": -1,
       "vacancy_ratio": 0.004032258064516129
+    }
+  ],
+  "2025-08-12": [
+    {
+      "spike_date": "2025-08-13",
+      "price": 15707.0,
+      "last_price": 14258.0,
+      "price_diff": 1449.0,
+      "price_ratio": 0.1016271566839669,
+      "vacancy": 195,
+      "last_vac": 223,
+      "vacancy_diff": -28,
+      "vacancy_ratio": 0.12556053811659193
+    },
+    {
+      "spike_date": "2025-08-14",
+      "price": 14196.0,
+      "last_price": 14590.0,
+      "price_diff": -394.0,
+      "price_ratio": 0.02700479780671693,
+      "vacancy": 216,
+      "last_vac": 233,
+      "vacancy_diff": -17,
+      "vacancy_ratio": 0.07296137339055794
+    },
+    {
+      "spike_date": "2025-09-06",
+      "price": 22900.0,
+      "last_price": 21525.0,
+      "price_diff": 1375.0,
+      "price_ratio": 0.06387921022067364,
+      "vacancy": 245,
+      "last_vac": 252,
+      "vacancy_diff": -7,
+      "vacancy_ratio": 0.027777777777777776
+    },
+    {
+      "spike_date": "2025-09-13",
+      "price": 37093.0,
+      "last_price": 33604.0,
+      "price_diff": 3489.0,
+      "price_ratio": 0.10382692536602785,
+      "vacancy": 99,
+      "last_vac": 107,
+      "vacancy_diff": -8,
+      "vacancy_ratio": 0.07476635514018691
+    },
+    {
+      "spike_date": "2025-10-12",
+      "price": 24013.0,
+      "last_price": 25328.0,
+      "price_diff": -1315.0,
+      "price_ratio": 0.0519188250157928,
+      "vacancy": 234,
+      "last_vac": 235,
+      "vacancy_diff": -1,
+      "vacancy_ratio": 0.00425531914893617
     }
   ]
 }
