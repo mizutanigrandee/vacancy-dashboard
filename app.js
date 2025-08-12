@@ -42,42 +42,80 @@ async function loadAll() {
 }
 
 // ========== 需要スパイク履歴バナー ==========
-// サマリー：直近3日分×最大10件
+// サマリー：直近3日分×最大10件（※バナー表示は「当日〜3日先」を除外）
 function renderSpikeBanner() {
   const bannerDiv = document.getElementById("spike-banner");
   if (!bannerDiv) return;
+
   if (!spikeData || Object.keys(spikeData).length === 0) {
     bannerDiv.innerHTML = "";
     return;
   }
-  // 直近3日
-  const sortedDates = Object.keys(spikeData).sort((a, b) => b.localeCompare(a)).slice(0, 3);
+
+  // ---- ここが今回のポイント（JSTで「当日0:00」を作る＆近すぎる日を除外） ----
+  const EXCLUDE_NEAR_DAYS = 3; // 当日(0)〜3日先を除外 → 4日先以降を表示
+  const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+  // JSTの「今日 00:00」
+  const now = new Date();
+  const jstNow = new Date(now.getTime() + (9 - now.getTimezoneOffset() / 60) * 60 * 60 * 1000);
+  const jstToday = new Date(Date.UTC(
+    jstNow.getUTCFullYear(),
+    jstNow.getUTCMonth(),
+    jstNow.getUTCDate(), 0, 0, 0
+  ));
+
+  const parseYMD = (ymd) => {
+    // "YYYY-MM-DD" → JST 00:00 の Date
+    const [y, m, d] = String(ymd).split("-").map(Number);
+    return new Date(Date.UTC(y, m - 1, d, 0, 0, 0));
+  };
+  // ---------------------------------------------------------------------
+
+  // 直近3日の「検知日(up_date)」だけ拾う（ここは従来どおり）
+  const sortedDates = Object.keys(spikeData)
+    .sort((a, b) => b.localeCompare(a))  // 新しい検知日が先
+    .slice(0, 3);
+
   let chips = [];
+
   for (const up_date of sortedDates) {
     for (const spike of spikeData[up_date]) {
-      const spikeDate = spike.spike_date || "";
+      const spikeDate = spike.spike_date || "";   // 例: "2025-08-12"
+      if (!spikeDate) continue;
+
+      // 「当日〜3日先」を除外（過去日も除外されます）
+      const target = parseYMD(spikeDate);
+      const daysAhead = Math.floor((target - jstToday) / MS_PER_DAY);
+      if (daysAhead <= EXCLUDE_NEAR_DAYS) continue;  // ← ここで除外！
+
       const priceDiff = spike.price_diff || 0;
       const priceRatio = spike.price_ratio ? (spike.price_ratio * 100).toFixed(1) : "0";
       const price = spike.price ? spike.price.toLocaleString() : "-";
       const vacancyDiff = spike.vacancy_diff || 0;
       const vacancyRatio = spike.vacancy_ratio ? (spike.vacancy_ratio * 100).toFixed(1) : "0";
       const vacancy = spike.vacancy ? spike.vacancy.toLocaleString() : "-";
+
       const priceTxt = `<span class='spike-price ${priceDiff > 0 ? "up" : "down"}'>単価${priceDiff > 0 ? "↑" : "↓"} ${Math.abs(priceDiff).toLocaleString()}円</span>（${priceRatio}%）`;
-      const vacTxt = `<span class='spike-vacancy ${vacancyDiff < 0 ? "dec" : "inc"}'>客室${vacancyDiff < 0 ? "減" : "増"} ${Math.abs(vacancyDiff)}</span>（${vacancyRatio}%）`;
+      const vacTxt   = `<span class='spike-vacancy ${vacancyDiff < 0 ? "dec" : "inc"}'>客室${vacancyDiff < 0 ? "減" : "増"} ${Math.abs(vacancyDiff)}</span>（${vacancyRatio}%）`;
+
       chips.push(
         `<div class="spike-chip">
           <span class="spike-date">[${up_date.replace(/^(\d{4})-(\d{2})-(\d{2})$/, "$2/$3 UP")}]</span>
           <span class="spike-main"><b>該当日 ${spikeDate}</b> ${priceTxt} ${vacTxt} <span class="spike-avg">平均￥${price}／残${vacancy}</span></span>
         </div>`
       );
+
       if (chips.length >= 10) break;
     }
     if (chips.length >= 10) break;
   }
+
   if (chips.length === 0) {
     bannerDiv.innerHTML = "";
     return;
   }
+
   bannerDiv.innerHTML =
     `<div class="spike-banner-box">
       <span class="spike-banner-header">🚀 需要急騰検知日</span>
@@ -85,6 +123,7 @@ function renderSpikeBanner() {
       <div class="spike-chip-row">${chips.join("")}</div>
     </div>`;
 }
+
 
 // ========== 月送りボタン設定 ==========
 function setupMonthButtons() {
