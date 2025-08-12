@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>めちゃいいツール | 空室＆平均価格カレンダー</title>
+  <link rel="icon" type="image/png" href="mechalogo.png">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- 祝日判定ローカルJSを必ず先に読み込み -->
+  <script src="japanese-holidays.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <img src="バナー画像3.png" class="app-banner" alt="バナー">
+  </header>
+
+  <!-- 🚀需要急騰日履歴バナー -->
+  <div id="spike-banner"></div>
+
+  <!-- 月送りボタン -->
+  <div class="nav-button-container">
+    <button id="prevMonthBtn" class="custom-button"><span class="icon">⬅️</span> 前月</button>
+    <button id="currentMonthBtn" class="custom-button"><span class="icon">📅</span> 当月</button>
+    <button id="nextMonthBtn" class="custom-button"><span class="icon">➡️</span> 次月</button>
+  </div>
+
+  <main class="calendar-main">
+    <div class="graph-side" id="graph-container"></div>
+    <div class="calendar-container" id="calendar-container"></div>
+  </main>
+
+<footer class="app-footer">
+  <div id="last-update"></div>
+  <div class="footer-note">
+    <strong>《注釈》</strong><br>
+    ・在庫数、平均価格は「なんば・心斎橋・天王寺・阿倍野・長居」エリアから抽出しています。<br>
+    ・表示される「平均価格」は、楽天トラベル検索上位施設の平均最低価格です。<br>
+    ・空室数の <span style="color:blue;">（+N）</span> / <span style="color:red;">（−N）</span> は、前回巡回時点との在庫数の増減です。<br>
+    ・平均価格の <span style="color:red;">↑</span> / <span style="color:blue;">↓</span> は、前回巡回時点との平均価格の上昇/下降です。<br>
+    ・会場アイコン：<span style="color:#e53939;">🔴</span>京セラドーム / <span style="color:#357ebd;">🔵</span>ヤンマースタジアム / <span style="color:#888;">★</span>その他会場<br>
+    ・炎マーク（需要シンボル）の内訳：<br>
+  　　<span style="color:#ffa600;">🔥1</span>：残室 ≤250 または 価格 ≥25,000円<br>
+  　　<span style="color:#be0c0c;">🔥2</span>：残室 ≤200 または 価格 ≥30,000円<br>
+  　　<span style="color:#e94e77;">🔥3</span>：残室 ≤150 または 価格 ≥35,000円<br>
+  　　<span style="color:#ff6600;">🔥4</span>：残室 ≤100 または 価格 ≥40,000円<br>
+  　　<span style="color:#421c16;">🔥5</span>：残室 ≤70 または 価格 ≥50,000円<br>
+  </div>
+</footer>
+
+
+  <!-- 最後にapp.js -->
+  <script src="app.js"></script>
+</body>
+</html>
