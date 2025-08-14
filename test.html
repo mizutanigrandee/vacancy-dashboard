@@ -1,55 +1,242 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>めちゃいいツール | 空室＆平均価格カレンダー</title>
-  <link rel="icon" type="image/png" href="mechalogo.png">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>test | 自社比較モード プロトタイプ</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- 祝日判定ローカルJSを必ず先に読み込み -->
-  <script src="japanese-holidays.js"></script>
+  <style>
+    /* --- 独立スタイル（本番style.cssは一切触らない） --- */
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", Arial, sans-serif; margin: 0; color: #1a1a1a; }
+    header { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid #eee; position:sticky; top:0; background:#fff; z-index:10; }
+    .title { font-weight:700; }
+    .compare-toggle { display:inline-flex; align-items:center; gap:8px; font-size:14px; border:1px solid #b9b9c9; border-radius:16px; padding:6px 10px; cursor:pointer; user-select:none; }
+    .compare-toggle[aria-pressed="true"] { background:#f7f7fb; }
+    .toggle-dot { width:12px; height:12px; border-radius:999px; background:#bbb; }
+    .compare-toggle[aria-pressed="true"] .toggle-dot { background:#2d9cdb; }
+
+    main { max-width:1100px; margin:14px auto; padding:0 12px; display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+    @media (max-width: 900px){ main { grid-template-columns: 1fr; } }
+
+    .calendar { border:1px solid #e5e7eb; border-radius:12px; padding:10px; }
+    .calendar h3 { margin:8px 4px 12px; font-size:16px; }
+    .grid { display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; }
+    .cell { border:1px solid #e5e7eb; border-radius:10px; padding:8px; min-height:84px; display:flex; flex-direction:column; gap:3px; }
+    .cell .date { font-size:12px; color:#555; }
+    .cell .vacancy { font-size:13px; }
+    .cell .avg { font-size:13px; display:flex; align-items:center; gap:6px; }
+    .cell .diff { font-size:11px; opacity:0.9; }
+    .diff.up   { color:#d9534f; }   /* 在庫増は好影響だけど既存ルールに合わせ色はそのまま */
+    .diff.down { color:#0275d8; }
+    .myline { margin-top:2px; font-size:12px; line-height:1.2; }
+    .myline.off { opacity:0.5; }
+    .myline .up { color:#d9534f; }   /* 平均より高い＝赤 */
+    .myline .down { color:#0275d8; } /* 平均より安い＝青 */
+    .myline .neutral { color:#666; }
+
+    .graph { border:1px solid #e5e7eb; border-radius:12px; padding:10px; }
+    .graph h3 { margin:8px 4px 12px; font-size:16px; }
+    .legend-note { font-size:12px; color:#666; margin:6px 2px 0; }
+
+    .btns { display:flex; gap:8px; margin-top:8px; }
+    .btn { border:1px solid #b9b9c9; border-radius:10px; background:#fff; padding:6px 10px; cursor:pointer; }
+  </style>
 </head>
 <body>
-  <header class="app-header">
-    <img src="バナー画像3.png" class="app-banner" alt="バナー">
+  <header>
+    <div class="title">自社比較モード（プロトタイプ）</div>
+    <button id="compareToggle" class="compare-toggle" aria-pressed="false" aria-label="自社比較モードを切替">
+      <span class="toggle-dot" aria-hidden="true"></span>
+      <span>自社比較モード</span><span id="toggleState">OFF</span>
+    </button>
   </header>
 
-  <!-- 🚀需要急騰日履歴バナー -->
-  <div id="spike-banner"></div>
+  <main>
+    <!-- 左: 簡易グラフ -->
+    <section class="graph">
+      <h3>選択日の推移（市場平均 vs 自社）</h3>
+      <canvas id="chart" height="120"></canvas>
+      <div class="legend-note">※ トグルONで「自社」ラインを表示します（OFF=市場のみ）</div>
+      <div class="btns">
+        <button class="btn" data-shift="-1">前日</button>
+        <button class="btn" data-shift="+1">翌日</button>
+        <button class="btn" data-range="7">直近7日</button>
+        <button class="btn" data-range="14">直近14日</button>
+      </div>
+    </section>
 
-  <!-- 月送りボタン -->
-  <div class="nav-button-container">
-    <button id="prevMonthBtn" class="custom-button"><span class="icon">⬅️</span> 前月</button>
-    <button id="currentMonthBtn" class="custom-button"><span class="icon">📅</span> 当月</button>
-    <button id="nextMonthBtn" class="custom-button"><span class="icon">➡️</span> 次月</button>
-  </div>
-
-  <main class="calendar-main">
-    <div class="graph-side" id="graph-container"></div>
-    <div class="calendar-container" id="calendar-container"></div>
+    <!-- 右: 簡易カレンダー -->
+    <section class="calendar">
+      <h3 id="calTitle">2025/08 サンプル</h3>
+      <div class="grid" id="calGrid" role="grid" aria-label="カレンダー"></div>
+    </section>
   </main>
 
-<footer class="app-footer">
-  <div id="last-update"></div>
-  <div class="footer-note">
-    <strong>《注釈》</strong><br>
-    ・在庫数、平均価格は「なんば・心斎橋・天王寺・阿倍野・長居」エリアから抽出しています。<br>
-    ・表示される「平均価格」は、楽天トラベル検索上位施設の平均最低価格です。<br>
-    ・空室数の <span style="color:blue;">（+N）</span> / <span style="color:red;">（−N）</span> は、前回巡回時点との在庫数の増減です。<br>
-    ・平均価格の <span style="color:red;">↑</span> / <span style="color:blue;">↓</span> は、前回巡回時点との平均価格の上昇/下降です。<br>
-    ・会場アイコン：<span style="color:#e53939;">🔴</span>京セラドーム / <span style="color:#357ebd;">🔵</span>ヤンマースタジアム / <span style="color:#888;">★</span>その他会場<br>
-    ・炎マーク（需要シンボル）の内訳：<br>
-  　　<span style="color:#ffa600;">🔥1</span>：残室 ≤250 または 価格 ≥25,000円<br>
-  　　<span style="color:#be0c0c;">🔥2</span>：残室 ≤200 または 価格 ≥30,000円<br>
-  　　<span style="color:#e94e77;">🔥3</span>：残室 ≤150 または 価格 ≥35,000円<br>
-  　　<span style="color:#ff6600;">🔥4</span>：残室 ≤100 または 価格 ≥40,000円<br>
-  　　<span style="color:#421c16;">🔥5</span>：残室 ≤70 または 価格 ≥50,000円<br>
-  </div>
-</footer>
+  <script>
+    // ==== ダミーデータ（本番のJSONには一切触れません） ====
+    // 形式は現行 cache に合わせて key を揃えています
+    const DUMMY = {
+      "2025-08-20": { "vacancy": 210, "avg_price": 12800, "previous_vacancy": 205, "previous_avg_price": 12400, "my_price": 13600, "my_vs_avg_pct": 6.5 },
+      "2025-08-21": { "vacancy": 198, "avg_price": 14200, "previous_vacancy": 203, "previous_avg_price": 13800, "my_price": 13100, "my_vs_avg_pct": -7.7 },
+      "2025-08-22": { "vacancy": 175, "avg_price": 15100, "previous_vacancy": 180, "previous_avg_price": 14900, "my_price": 0, "my_vs_avg_pct": 0 },
+      "2025-08-23": { "vacancy": 160, "avg_price": 16600, "previous_vacancy": 161, "previous_avg_price": 16500, "my_price": 15800, "my_vs_avg_pct": -4.8 },
+      "2025-08-24": { "vacancy": 240, "avg_price": 11800, "previous_vacancy": 230, "previous_avg_price": 12000, "my_price": 12100, "my_vs_avg_pct": 2.5 }
+    };
 
+    // ==== 比較モードの状態保持（本番でも同様に localStorage を使う想定） ====
+    const COMPARE_KEY = "compareMode";
+    function getCompareMode() {
+      return localStorage.getItem(COMPARE_KEY) === "1";
+    }
+    function setCompareMode(on) {
+      localStorage.setItem(COMPARE_KEY, on ? "1" : "0");
+      updateToggleUI(on);
+      renderCalendar();
+      renderChart();
+    }
+    function updateToggleUI(on) {
+      const btn = document.getElementById("compareToggle");
+      const state = document.getElementById("toggleState");
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+      state.textContent = on ? "ON" : "OFF";
+    }
 
-  <!-- 最後にapp.js -->
-  <script src="app.js"></script>
+    // ==== カレンダー（8/18〜8/31の簡易14セルを表示） ====
+    const CAL_START = new Date("2025-08-18T00:00:00+09:00");
+    const CAL_DAYS = 14;
+    let selectedDate = "2025-08-21";
+
+    function fmtDate(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth()+1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function buildCellHtml(dateStr, obj, compareOn) {
+      const v  = obj?.vacancy ?? 0;
+      const pv = obj?.previous_vacancy ?? 0;
+      const avg = obj?.avg_price ?? 0;
+      const pa  = obj?.previous_avg_price ?? 0;
+      const my  = obj?.my_price ?? 0;
+      const pct = obj?.my_vs_avg_pct ?? 0;
+
+      const dVac = v - (pv||0);
+      const dVacHtml = dVac === 0 ? `<span class="diff">(±0)</span>`
+        : dVac > 0 ? `<span class="diff up">（＋${dVac}）</span>`
+                    : `<span class="diff down">（${dVac}）</span>`;
+      const priceIcon = (avg === (pa||0)) ? "" : (avg > (pa||0) ? "↑" : "↓");
+
+      const myLine = compareOn
+        ? (my > 0
+            ? `<div class="myline">自社：¥${my.toLocaleString()}
+                 <span class="${pct===0?'neutral':(pct>0?'up':'down')}">(${pct>0?'+':''}${pct}%)</span>
+               </div>`
+            : `<div class="myline off">自社：-</div>`)
+        : "";
+
+      return `
+        <div class="date">${dateStr}</div>
+        <div class="vacancy">在庫 ${v} ${dVacHtml}</div>
+        <div class="avg">平均 ¥${avg.toLocaleString()} <span>${priceIcon}</span></div>
+        ${myLine}
+      `;
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById("calGrid");
+      grid.innerHTML = "";
+      const on = getCompareMode();
+
+      for (let i=0; i<CAL_DAYS; i++) {
+        const d = new Date(CAL_START);
+        d.setDate(d.getDate()+i);
+        const key = fmtDate(d);
+        const obj = DUMMY[key] || {};
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.innerHTML = buildCellHtml(key, obj, on);
+        cell.tabIndex = 0;
+        cell.title = "クリックでグラフ更新";
+        cell.addEventListener("click", ()=> { selectedDate = key; renderChart(); });
+        grid.appendChild(cell);
+      }
+    }
+
+    // ==== グラフ ====
+    let chart;
+    function seriesForRange(centerKey, days=7) {
+      // centerKey を中心に days の窓でデータを作る（過去days-1〜当日）
+      const center = new Date(centerKey + "T00:00:00+09:00");
+      const labels = [];
+      const market = [];
+      const mine = [];
+      for (let i=days-1; i>=0; i--) {
+        const d = new Date(center);
+        d.setDate(center.getDate() - i);
+        const k = fmtDate(d);
+        labels.push(k.slice(5)); // MM-DD
+        const obj = DUMMY[k] || {};
+        market.push(obj.avg_price || null);
+        mine.push(obj.my_price || null);
+      }
+      return { labels, market, mine };
+    }
+
+    function renderChart() {
+      const on = getCompareMode();
+      const ctx = document.getElementById("chart").getContext("2d");
+      const range = Number(document.querySelector('.btn[data-range].active')?.dataset.range || 7);
+      const { labels, market, mine } = seriesForRange(selectedDate, range);
+
+      if (chart) { chart.destroy(); }
+      const datasets = [
+        { label: "市場平均", data: market, borderWidth: 2, tension: 0.2 }
+      ];
+      if (on) {
+        datasets.push({ label: "自社", data: mine, borderWidth: 2, tension: 0.2 });
+      }
+      chart = new Chart(ctx, {
+        type: "line",
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: true } },
+          scales: { y: { beginAtZero: false } }
+        }
+      });
+    }
+
+    // ==== トグル・ボタン操作 ====
+    document.getElementById("compareToggle").addEventListener("click", () => {
+      setCompareMode(!getCompareMode());
+    });
+
+    document.querySelectorAll(".btn[data-shift]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const shift = Number(btn.dataset.shift);
+        const d = new Date(selectedDate+"T00:00:00+09:00");
+        d.setDate(d.getDate()+shift);
+        selectedDate = fmtDate(d);
+        renderChart();
+      });
+    });
+
+    document.querySelectorAll(".btn[data-range]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        document.querySelectorAll(".btn[data-range]").forEach(b=>b.classList.remove("active"));
+        btn.classList.add("active");
+        renderChart();
+      });
+    });
+    // 初期レンジは7日
+    document.querySelector('.btn[data-range="7"]').classList.add("active");
+
+    // ==== 初期化 ====
+    updateToggleUI(getCompareMode());   // localStorage 復元
+    renderCalendar();
+    renderChart();
+  </script>
 </body>
 </html>
