@@ -17,7 +17,7 @@
       display:inline-flex; align-items:center; gap:8px;
       font-size:13px; border:1px solid #b9b9c9; border-radius:16px;
       padding:6px 10px; background:#fff; cursor:pointer; user-select:none;
-      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+      box-shadow:0 1px 3px rgba(0,0,0,.06);
     }
     .compare-toggle[aria-pressed="true"]{ background:#f7f7fb; }
     .compare-toggle .dot{ width:10px; height:10px; border-radius:999px; background:#bbb; }
@@ -26,12 +26,9 @@
     /* 右カレンダー内の“右上”に固定。幅を押し広げない */
     .calendar-container{ position: relative; overflow: visible !important; }
     .compare-toggle-fixed{
-      position:absolute; top:6px; right:8px; z-index: 2000;
-      pointer-events:auto;
+      position:absolute; top:6px; right:8px; z-index:2000; pointer-events:auto;
     }
-    @media (max-width:768px){
-      .compare-toggle-fixed{ right:4px; }
-    }
+    @media (max-width:768px){ .compare-toggle-fixed{ right:4px; } }
   </style>
 </head>
 <body>
@@ -52,16 +49,9 @@
   <main class="calendar-main">
     <div class="graph-side" id="graph-container"></div>
 
-    <!-- 右：カレンダー -->
+    <!-- 右：カレンダー（中身は app.js が描画） -->
     <div class="calendar-container" id="calendar-container">
-      <!-- 初回はここに直接置く（後で再描画されてもJSで再挿入） -->
-      <div id="compareToggleHolder" class="compare-toggle-fixed">
-        <button id="compareToggle" class="compare-toggle" aria-pressed="false" aria-label="自社比較モードを切替">
-          <span class="dot" aria-hidden="true"></span>
-          <span>自社比較モード</span>
-          <span id="toggleState">OFF</span>
-        </button>
-      </div>
+      <!-- 初回は空でOK。JSが末尾にトグルを“重ねて”追加します -->
     </div>
   </main>
 
@@ -83,44 +73,52 @@
     </div>
   </footer>
 
-  <!-- test専用JS：トグル状態保存＋“消えたら即復活”ロジック -->
+  <!-- test専用JS：トグル状態保存＋“消えたら再挿入（末尾）” -->
   <script>
     (function(){
       const KEY="compareMode";
-      const get=()=>localStorage.getItem(KEY)==="1";
-      const update=(on)=>{
+      const get = () => localStorage.getItem(KEY) === "1";
+      const set = (on) => { localStorage.setItem(KEY, on ? "1" : "0"); update(on); };
+      function update(on){
         const b=document.getElementById("compareToggle"), s=document.getElementById("toggleState");
         if(b&&s){ b.setAttribute("aria-pressed", on?"true":"false"); s.textContent= on?"ON":"OFF"; }
-      };
-      const set=(on)=>{ localStorage.setItem(KEY,on?"1":"0"); update(on); };
+      }
 
-      // トグルDOMを #calendar-container 内に確実に配置
-      function ensureToggle(){
-        const container=document.getElementById("calendar-container");
+      // 末尾にトグルを“重ねて”追加（最初の子要素を壊さない）
+      function attachToggle(){
+        const container = document.getElementById("calendar-container");
         if(!container) return;
-        let holder=document.getElementById("compareToggleHolder");
+        let holder = document.getElementById("compareToggleHolder");
         if(!holder || !container.contains(holder)){
-          holder=document.createElement("div");
-          holder.id="compareToggleHolder";
-          holder.className="compare-toggle-fixed";
-          holder.innerHTML=`<button id="compareToggle" class="compare-toggle" aria-pressed="false" aria-label="自社比較モードを切替">
-            <span class="dot" aria-hidden="true"></span><span>自社比較モード</span><span id="toggleState">OFF</span></button>`;
-          container.prepend(holder);
-          document.getElementById("compareToggle").addEventListener("click", ()=>set(!get()));
+          holder = document.createElement("div");
+          holder.id = "compareToggleHolder";
+          holder.className = "compare-toggle-fixed";
+          holder.setAttribute("data-ignore","compare-toggle"); // app.jsのロジックに干渉させない意図
+          holder.innerHTML = `
+            <button id="compareToggle" class="compare-toggle" aria-pressed="false" aria-label="自社比較モードを切替">
+              <span class="dot" aria-hidden="true"></span><span>自社比較モード</span><span id="toggleState">OFF</span>
+            </button>`;
+          container.appendChild(holder);              // ★ 末尾に追加（←ここが重要）
+          document.getElementById("compareToggle").addEventListener("click", ()=> set(!get()));
         }
         update(get());
       }
 
-      // 初期化
       document.addEventListener("DOMContentLoaded", ()=>{
-        ensureToggle();
-        // 1) ドキュメント全体を監視（コンテナ丸ごと差し替え対策）
-        const obs = new MutationObserver(() => ensureToggle());
-        obs.observe(document.body, { childList:true, subtree:true });
-        // 2) フォールバック：初期5秒は500msおきに確認
-        let n=0; const t=setInterval(()=>{ ensureToggle(); if(++n>10) clearInterval(t); }, 500);
-        // 3) リサイズ時も一応更新
-        window.addEventListener("resize", ensureToggle);
+        attachToggle();
+
+        // #calendar-container の差し替え/描画変更のみ監視（負荷を抑える）
+        const target = document.getElementById("calendar-container");
+        if (target) {
+          const obs = new MutationObserver(() => attachToggle());
+          obs.observe(target, { childList:true });
+          // 親が差し替えられるケースへのフォールバック
+          const parent = target.parentElement;
+          if (parent) {
+            const obs2 = new MutationObserver(() => attachToggle());
+            obs2.observe(parent, { childList:true });
+          }
+        }
       });
     })();
   </script>
