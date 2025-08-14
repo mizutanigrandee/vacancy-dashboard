@@ -18,10 +18,12 @@
     .compare-toggle .dot{width:10px;height:10px;border-radius:999px;background:#bbb}
     .compare-toggle[aria-pressed="true"] .dot{background:#2d9cdb}
     /* カレンダー直上右上に重ねる（幅を広げない） */
-    .calendar-container{ position: relative; }
+    /* ここだけ差し替え or 追記 */
+    .calendar-container{ position: relative; overflow: visible !important; }  /* クリップ回避 */
     .compare-toggle-fixed{
-      position:absolute; top:0; right:8px; transform: translateY(-100%); z-index:5;
+      position:absolute; top:6px; right:8px; transform:none; z-index:1000;    /* 直上→“内側右上”に固定 */
     }
+
     @media (max-width:768px){
       .compare-toggle-fixed{ right:4px; transform: translateY(-110%) scale(.95); }
     }
