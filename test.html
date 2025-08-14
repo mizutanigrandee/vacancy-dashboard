@@ -40,6 +40,10 @@
 
     .btns { display:flex; gap:8px; margin-top:8px; }
     .btn { border:1px solid #b9b9c9; border-radius:10px; background:#fff; padding:6px 10px; cursor:pointer; }
+    /* ★ 追加：グラフ領域の高さを固定して縦伸びを防止 */
+.graph { border:1px solid #e5e7eb; border-radius:12px; padding:10px; height: 360px; }
+#chart { width: 100% !important; height: 320px !important; display:block; }
+
   </style>
 </head>
 <body>
@@ -55,7 +59,7 @@
     <!-- 左: 簡易グラフ -->
     <section class="graph">
       <h3>選択日の推移（市場平均 vs 自社）</h3>
-      <canvas id="chart" height="120"></canvas>
+      <canvas id="chart"></canvas>
       <div class="legend-note">※ トグルONで「自社」ラインを表示します（OFF=市場のみ）</div>
       <div class="btns">
         <button class="btn" data-shift="-1">前日</button>
@@ -201,7 +205,7 @@
         data: { labels, datasets },
         options: {
           responsive: true,
-          maintainAspectRatio: false,
+          maintainAspectRatio: true,
           plugins: { legend: { display: true } },
           scales: { y: { beginAtZero: false } }
         }
