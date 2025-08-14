@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 """
 update_cache.py
-– 未来日の在庫・平均料金を取得して
+– 未来日の在庫・平均(最低)料金を取得して
   vacancy_price_cache.json / historical_data.json / demand_spike_history.json を更新
   ＋ GitHub Actions 実行完了のJST時刻を last_updated.json に書き出す
+
+※ 重要: 『平均価格』は “各ホテルの当日最安値(最低価格) の平均” に統一
 """
 
 import os
@@ -25,50 +27,52 @@ if not MY_HOTEL_NO or not MY_HOTEL_NO.strip().isdigit():
     raise ValueError("❌ RAKUTEN_MY_HOTEL_NO が未設定 or 不正です。GitHub Secrets に数字のみで登録してください。")
 MY_HOTEL_NO = MY_HOTEL_NO.strip()
 
-
 CACHE_FILE          = "vacancy_price_cache.json"
 PREV_CACHE_FILE     = "vacancy_price_cache_previous.json"
 HISTORICAL_FILE     = "historical_data.json"
 SPIKE_HISTORY_FILE  = "demand_spike_history.json"
 LAST_UPDATED_FILE   = "last_updated.json"   # フロントが読む最終更新メタ
 
-RAKUTEN_VACANT_URL = "https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
+RAKUTEN_API_URL = "https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
+MAX_PAGES = 3  # 市場側のページ走査上限（パフォーマンス配慮）
 
 # ------------------------------------------------------------
-# 共通：最安料金の抽出（レスポンス差異に吸収的に対応）
+# 価格抽出ヘルパー：1ホテル塊の“当日最安値(最低価格)”を返す
 # ------------------------------------------------------------
-def _extract_min_price(resp_json) -> float | None:
-    prices = []
-    hotels = resp_json.get("hotels") or []
-    for h in hotels:
-        arr = h.get("hotel") or []
-        # hotel[0] = hotelBasicInfo, hotel[1] = roomInfo群（ことが多い）
-        # 1) roomInfo配下の dailyCharge.total
-        if len(arr) >= 2 and isinstance(arr[1], dict):
-            for plan in arr[1].get("roomInfo", []) or []:
-                if isinstance(plan, dict):
-                    dc = plan.get("dailyCharge")
-                    if isinstance(dc, dict):
-                        total = dc.get("total")
-                        if isinstance(total, (int, float)):
-                            prices.append(float(total))
-        # 2) basic側に roomCharge がぶら下がるケース
-        if len(arr) >= 1 and isinstance(arr[0], dict):
-            basic = arr[0].get("hotelBasicInfo") or {}
-            rc = basic.get("roomCharge")
-            if isinstance(rc, (int, float)):
-                prices.append(float(rc))
-    return min(prices) if prices else None
+def _extract_hotel_min_price(hotel_obj):
+    """
+    Rakuten API の hotels[i] の塊から、そのホテルの当日最安値(total)を返す。
+    見つからなければ None。
+    """
+    try:
+        blocks = hotel_obj.get("hotel", [])
+        if len(blocks) < 2:
+            return None
+        room_block = blocks[1]  # roomInfo 配列が入っている側
+        min_price = None
+        for ri in room_block.get("roomInfo", []):
+            dc = ri.get("dailyCharge") or {}
+            total = dc.get("total")
+            if isinstance(total, (int, float)) and total > 0:
+                if (min_price is None) or (total < min_price):
+                    min_price = total
+        return min_price
+    except Exception:
+        return None
 
 # ------------------------------------------------------------
-# 楽天API 取得（市場側）
+# 楽天API：市場の在庫数と平均(最低)価格
 # ------------------------------------------------------------
-def fetch_vacancy_and_price(date: dt.date) -> dict:
-    print(f"🔍 fetching market {date}", file=sys.stderr)
-    prices = []
+def fetch_market_avg(date: dt.date) -> dict:
+    """
+    指定日の 市場在庫数 と 『平均(最低)価格』
+    = “各ホテルの当日最安値”を集めて平均した値 を返す
+    """
+    print(f"🔍 market {date}", file=sys.stderr)
+    hotel_mins = []
     vacancy_total = 0
 
-    for page in range(1, 4):
+    for page in range(1, MAX_PAGES + 1):
         params = {
             "applicationId": APP_ID,
             "format": "json",
@@ -82,49 +86,61 @@ def fetch_vacancy_and_price(date: dt.date) -> dict:
             "page": page,
         }
         try:
-            r = requests.get(RAKUTEN_VACANT_URL, params=params, timeout=10)
+            r = requests.get(RAKUTEN_API_URL, params=params, timeout=10)
             r.raise_for_status()
             data = r.json()
         except Exception as e:
-            print(f"  ⚠️ fetch error on {date} page {page}: {e}", file=sys.stderr)
+            print(f"  ⚠️ market fetch error {date} p{page}: {e}", file=sys.stderr)
             continue
 
         if page == 1:
             vacancy_total = data.get("pagingInfo", {}).get("recordCount", 0)
 
-        m = _extract_min_price(data)
-        if isinstance(m, (int, float)):
-            prices.append(float(m))
+        for h in data.get("hotels", []):
+            mp = _extract_hotel_min_price(h)
+            if isinstance(mp, (int, float)):
+                hotel_mins.append(mp)
 
-    avg_price = round(sum(prices) / len(prices), 0) if prices else 0.0
-    print(f"   → avg_price = {avg_price}  (vacancy={vacancy_total})", file=sys.stderr)
+    avg_price = round(sum(hotel_mins) / len(hotel_mins), 0) if hotel_mins else 0.0
+    print(f"   → market avg(min) = {avg_price}  (vacancy={vacancy_total}, hotels={len(hotel_mins)})", file=sys.stderr)
     return {"vacancy": vacancy_total, "avg_price": avg_price}
 
 # ------------------------------------------------------------
-# 楽天API 取得（自社：hotelNo 指定）
+# 楽天API：自社ホテルの当日最安値（最低価格）
 # ------------------------------------------------------------
-def fetch_my_min_price(date: dt.date) -> float:
-    """自社（hotelNo指定）の当日最安料金。取得不可は 0.0 を返す。"""
-    if not MY_HOTEL_NO.isdigit():
+def fetch_my_min_price(date: dt.date, hotel_no: str) -> float:
+    """
+    自社hotelNoの当日最安値。取得できなければ 0.0 を返す。
+    """
+    if not hotel_no:
         return 0.0
+
     params = {
         "applicationId": APP_ID,
         "format": "json",
         "checkinDate":  date.strftime("%Y-%m-%d"),
         "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
         "adultNum": 1,
-        "hotelNo": MY_HOTEL_NO,
+        "hotelNo": hotel_no,
+        "detailClassCode": "D",
         "page": 1,
     }
     try:
-        r = requests.get(RAKUTEN_VACANT_URL, params=params, timeout=10)
+        r = requests.get(RAKUTEN_API_URL, params=params, timeout=10)
         r.raise_for_status()
         data = r.json()
-        mp = _extract_min_price(data)
-        return float(mp) if isinstance(mp, (int, float)) else 0.0
     except Exception as e:
-        print(f"  ⚠️ fetch my_price error on {date}: {e}", file=sys.stderr)
+        print(f"  ⚠️ my fetch error {date}: {e}", file=sys.stderr)
         return 0.0
+
+    mins = []
+    for h in data.get("hotels", []):
+        mp = _extract_hotel_min_price(h)
+        if isinstance(mp, (int, float)):
+            mins.append(mp)
+    my_min = float(min(mins)) if mins else 0.0
+    print(f"   → my min = {my_min}", file=sys.stderr)
+    return my_min
 
 # ------------------------------------------------------------
 # 当日以降の未来日を更新
@@ -153,26 +169,32 @@ def update_cache(start_date: dt.date, months: int = 9) -> dict:
                 if day.month != month_start.month or day <= today:
                     continue
 
-                iso      = day.isoformat()
-                market   = fetch_vacancy_and_price(day)
+                iso = day.isoformat()
+
+                # 市場平均(最低) & 自社最安 を取得
+                market = fetch_market_avg(day)
+                my_p   = 0.0
+                try:
+                    my_p = fetch_my_min_price(day, MY_HOTEL_NO)
+                except Exception as e:
+                    print(f"  ⚠️ my price error {iso}: {e}", file=sys.stderr)
+
                 # API失敗日はスキップし既存値保持（0/0は更新しない）
                 if market["vacancy"] == 0 and market["avg_price"] == 0.0:
                     print(f"⏩ skip {iso} (empty)", file=sys.stderr)
                     continue
 
-                # ★ 自社最安価格の取得（失敗時は0.0）
-                my_price = fetch_my_min_price(day)
-
                 prev          = old_cache.get(iso, {})
-                last_vac      = prev.get("vacancy",        market["vacancy"])
-                last_price    = prev.get("avg_price",      market["avg_price"])
+                last_vac      = prev.get("vacancy",   market["vacancy"])
+                last_price    = prev.get("avg_price", market["avg_price"])
                 vac_diff      = market["vacancy"] - last_vac
                 price_diff    = market["avg_price"] - last_price
 
-                # ★ 乖離率（市場平均比）。両方>0のときのみ計算
-                my_vs_avg_pct = 0.0
-                if market["avg_price"] > 0 and my_price > 0:
-                    my_vs_avg_pct = round((my_price - market["avg_price"]) / market["avg_price"] * 100.0, 1)
+                # 自社 vs 市場（％）：(自社 - 市場) / 市場 * 100
+                my_vs_avg_pct = (
+                    round((my_p - market["avg_price"]) / market["avg_price"] * 100, 1)
+                    if (my_p and market["avg_price"]) else None
+                )
 
                 cache[iso] = {
                     "vacancy":        market["vacancy"],
@@ -181,8 +203,8 @@ def update_cache(start_date: dt.date, months: int = 9) -> dict:
                     "last_avg_price": last_price,
                     "vacancy_diff":   vac_diff,
                     "avg_price_diff": price_diff,
-                    # ★ 追加フィールド（フロントの比較モードで使用）
-                    "my_price":       my_price,
+                    # ★ 自社情報を保存
+                    "my_price":       my_p if my_p else 0.0,
                     "my_vs_avg_pct":  my_vs_avg_pct,
                 }
 
@@ -199,7 +221,7 @@ def _is_date_string(s: str) -> bool:
         return False
 
 # ------------------------------------------------------------
-# 過去3か月のスナップショット履歴（※市場データのみ保持）
+# 過去3か月のスナップショット履歴
 # ------------------------------------------------------------
 def update_history(cache: dict):
     today       = dt.date.today()
@@ -213,7 +235,7 @@ def update_history(cache: dict):
         except Exception as e:
             print(f"⚠️ error loading historical_data.json: {e}", file=sys.stderr)
 
-    # 未来日の今日時点スナップショットを追記（my_priceは履歴対象外）
+    # 未来日の今日時点スナップショットを追記
     for iso, v in cache.items():
         if dt.date.fromisoformat(iso) >= today:
             hist_data.setdefault(iso, {})
@@ -335,9 +357,7 @@ def save_demand_spike_history(demand_spikes, history_file=SPIKE_HISTORY_FILE):
     limit = (today_dt - dt.timedelta(days=90)).isoformat()
     history = {d: v for d, v in history.items() if d >= limit}
 
-    # 全キーに対してクレンジング：
-    #  1) spike_date が過去日のものは除外
-    #  2) 方向チェック： price_diff > 0（単価↑）かつ vacancy_diff < 0（客室↓）のみ残す
+    # 全キーに対してクレンジング
     cleaned = {}
     for up_date, items in history.items():
         new_items = []
