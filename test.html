@@ -2,14 +2,15 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>test | 自社比較モード プロトタイプ</title>
+  <title>test | 自社比較モード（実データ）</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    /* --- 独立スタイル（本番style.cssは一切触らない） --- */
     body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", Arial, sans-serif; margin: 0; color: #1a1a1a; }
     header { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid #eee; position:sticky; top:0; background:#fff; z-index:10; }
     .title { font-weight:700; }
+
+    /* トグル */
     .compare-toggle { display:inline-flex; align-items:center; gap:8px; font-size:14px; border:1px solid #b9b9c9; border-radius:16px; padding:6px 10px; cursor:pointer; user-select:none; }
     .compare-toggle[aria-pressed="true"] { background:#f7f7fb; }
     .toggle-dot { width:12px; height:12px; border-radius:999px; background:#bbb; }
@@ -18,37 +19,42 @@
     main { max-width:1100px; margin:14px auto; padding:0 12px; display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
     @media (max-width: 900px){ main { grid-template-columns: 1fr; } }
 
+    /* カレンダー */
     .calendar { border:1px solid #e5e7eb; border-radius:12px; padding:10px; }
     .calendar h3 { margin:8px 4px 12px; font-size:16px; }
     .grid { display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; }
-    .cell { border:1px solid #e5e7eb; border-radius:10px; padding:8px; min-height:84px; display:flex; flex-direction:column; gap:3px; }
+    .cell { border:1px solid #e5e7eb; border-radius:10px; padding:8px; min-height:92px; display:flex; flex-direction:column; gap:3px; }
     .cell .date { font-size:12px; color:#555; }
     .cell .vacancy { font-size:13px; }
     .cell .avg { font-size:13px; display:flex; align-items:center; gap:6px; }
     .cell .diff { font-size:11px; opacity:0.9; }
-    .diff.up   { color:#d9534f; }   /* 在庫増は好影響だけど既存ルールに合わせ色はそのまま */
+    .diff.up   { color:#d9534f; }
     .diff.down { color:#0275d8; }
-    .myline { margin-top:2px; font-size:12px; line-height:1.2; }
+
+    /* 自社行（ON時のみ表示） */
+    .myline { margin-top:2px; font-size:12px; line-height:1.2; white-space:nowrap; }
     .myline.off { opacity:0.5; }
     .myline .up { color:#d9534f; }   /* 平均より高い＝赤 */
     .myline .down { color:#0275d8; } /* 平均より安い＝青 */
     .myline .neutral { color:#666; }
 
-    .graph { border:1px solid #e5e7eb; border-radius:12px; padding:10px; }
+    /* グラフ */
+    .graph { border:1px solid #e5e7eb; border-radius:12px; padding:10px; height: 360px; }
     .graph h3 { margin:8px 4px 12px; font-size:16px; }
+    #chart { width: 100% !important; height: 320px !important; display:block; }
     .legend-note { font-size:12px; color:#666; margin:6px 2px 0; }
-
-    .btns { display:flex; gap:8px; margin-top:8px; }
+    .btns { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
     .btn { border:1px solid #b9b9c9; border-radius:10px; background:#fff; padding:6px 10px; cursor:pointer; }
-    /* ★ 追加：グラフ領域の高さを固定して縦伸びを防止 */
-.graph { border:1px solid #e5e7eb; border-radius:12px; padding:10px; height: 360px; }
-#chart { width: 100% !important; height: 320px !important; display:block; }
+    .btn.active { background:#f7f7fb; }
 
+    /* 状態表示 */
+    .muted { color:#888; }
+    .error { color:#b00020; font-weight:600; }
   </style>
 </head>
 <body>
   <header>
-    <div class="title">自社比較モード（プロトタイプ）</div>
+    <div class="title">自社比較モード（実データ読み込み）</div>
     <button id="compareToggle" class="compare-toggle" aria-pressed="false" aria-label="自社比較モードを切替">
       <span class="toggle-dot" aria-hidden="true"></span>
       <span>自社比較モード</span><span id="toggleState">OFF</span>
@@ -56,11 +62,11 @@
   </header>
 
   <main>
-    <!-- 左: 簡易グラフ -->
+    <!-- 左：グラフ -->
     <section class="graph">
-      <h3>選択日の推移（市場平均 vs 自社）</h3>
+      <h3 id="graphTitle">選択日の推移（市場平均 vs 自社）</h3>
       <canvas id="chart"></canvas>
-      <div class="legend-note">※ トグルONで「自社」ラインを表示します（OFF=市場のみ）</div>
+      <div class="legend-note">※ トグルONで「自社」ラインを表示（OFF=市場のみ）。欠損はスキップ表示します。</div>
       <div class="btns">
         <button class="btn" data-shift="-1">前日</button>
         <button class="btn" data-shift="+1">翌日</button>
@@ -69,75 +75,113 @@
       </div>
     </section>
 
-    <!-- 右: 簡易カレンダー -->
+    <!-- 右：カレンダー -->
     <section class="calendar">
-      <h3 id="calTitle">2025/08 サンプル</h3>
+      <h3 id="calTitle">サンプル（未来14日）</h3>
       <div class="grid" id="calGrid" role="grid" aria-label="カレンダー"></div>
+      <div id="status" class="muted" style="margin-top:8px;"></div>
     </section>
   </main>
 
   <script>
-    // ==== ダミーデータ（本番のJSONには一切触れません） ====
-    // 形式は現行 cache に合わせて key を揃えています
-    const DUMMY = {
-      "2025-08-20": { "vacancy": 210, "avg_price": 12800, "previous_vacancy": 205, "previous_avg_price": 12400, "my_price": 13600, "my_vs_avg_pct": 6.5 },
-      "2025-08-21": { "vacancy": 198, "avg_price": 14200, "previous_vacancy": 203, "previous_avg_price": 13800, "my_price": 13100, "my_vs_avg_pct": -7.7 },
-      "2025-08-22": { "vacancy": 175, "avg_price": 15100, "previous_vacancy": 180, "previous_avg_price": 14900, "my_price": 0, "my_vs_avg_pct": 0 },
-      "2025-08-23": { "vacancy": 160, "avg_price": 16600, "previous_vacancy": 161, "previous_avg_price": 16500, "my_price": 15800, "my_vs_avg_pct": -4.8 },
-      "2025-08-24": { "vacancy": 240, "avg_price": 11800, "previous_vacancy": 230, "previous_avg_price": 12000, "my_price": 12100, "my_vs_avg_pct": 2.5 }
-    };
+    // ====== 設定 ======
+    // GitHub Pages等でホストする場合は相対パスでOK。
+    // リポジトリ直下にある前提（パスが異なる場合は書き換え）
+    const CACHE_URL = "./vacancy_price_cache.json";
 
-    // ==== 比較モードの状態保持（本番でも同様に localStorage を使う想定） ====
+    // 直近表示範囲（デフォルト）
+    const DEFAULT_CAL_DAYS = 14;
+    const DEFAULT_RANGE_DAYS = 7;
+
+    // ====== 比較モードの状態保持 ======
     const COMPARE_KEY = "compareMode";
-    function getCompareMode() {
-      return localStorage.getItem(COMPARE_KEY) === "1";
-    }
-    function setCompareMode(on) {
+    const getCompareMode = () => localStorage.getItem(COMPARE_KEY) === "1";
+    const setCompareMode = (on) => {
       localStorage.setItem(COMPARE_KEY, on ? "1" : "0");
       updateToggleUI(on);
       renderCalendar();
       renderChart();
-    }
-    function updateToggleUI(on) {
+    };
+    const updateToggleUI = (on) => {
       const btn = document.getElementById("compareToggle");
       const state = document.getElementById("toggleState");
       btn.setAttribute("aria-pressed", on ? "true" : "false");
       state.textContent = on ? "ON" : "OFF";
+    };
+
+    // ====== データロード ======
+    let CACHE = {};            // vacancy_price_cache.json 本体
+    let CAL_START = null;      // カレンダー開始日（JSTの今日）
+    let CAL_DAYS = DEFAULT_CAL_DAYS;
+    let selectedDate = null;   // "YYYY-MM-DD"
+
+    async function loadCache() {
+      const status = document.getElementById("status");
+      status.textContent = "データ読込中…";
+      try {
+        const res = await fetch(CACHE_URL, { cache: "no-cache" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        CACHE = await res.json();
+
+        // 今日（JST）のISOを基準に、未来データがある最初の日を選択
+        const now = new Date();
+        const jst = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+        CAL_START = new Date(jst.getFullYear(), jst.getMonth(), jst.getDate());
+        selectedDate = findFirstFutureWithData() || iso(CAL_START);
+
+        status.textContent = "データ読込完了";
+      } catch (e) {
+        console.error(e);
+        status.innerHTML = `<span class="error">データ読込エラー：${String(e)}</span>`;
+      }
     }
 
-    // ==== カレンダー（8/18〜8/31の簡易14セルを表示） ====
-    const CAL_START = new Date("2025-08-18T00:00:00+09:00");
-    const CAL_DAYS = 14;
-    let selectedDate = "2025-08-21";
-
-    function fmtDate(date) {
-      const y = date.getFullYear();
-      const m = String(date.getMonth()+1).padStart(2, "0");
-      const d = String(date.getDate()).padStart(2, "0");
-      return `${y}-${m}-${d}`;
+    // 未来で最初にデータがある日（なければ今日）
+    function findFirstFutureWithData() {
+      const todayIso = iso(CAL_START);
+      const keys = Object.keys(CACHE).filter(k => k >= todayIso).sort();
+      return keys[0] || todayIso;
     }
 
+    // ====== ユーティリティ ======
+    function iso(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${dd}`;
+    }
+    function fromIso(s) {
+      const [y,m,d] = s.split("-").map(n=>parseInt(n,10));
+      return new Date(y, m-1, d);
+    }
+
+    // ====== カレンダー描画 ======
     function buildCellHtml(dateStr, obj, compareOn) {
       const v  = obj?.vacancy ?? 0;
-      const pv = obj?.previous_vacancy ?? 0;
+      const lv = obj?.last_vacancy ?? obj?.vacancy ?? 0;
       const avg = obj?.avg_price ?? 0;
-      const pa  = obj?.previous_avg_price ?? 0;
-      const my  = obj?.my_price ?? 0;
-      const pct = obj?.my_vs_avg_pct ?? 0;
+      const la  = obj?.last_avg_price ?? obj?.avg_price ?? 0;
 
-      const dVac = v - (pv||0);
+      const dVac = v - (lv || 0);
       const dVacHtml = dVac === 0 ? `<span class="diff">(±0)</span>`
         : dVac > 0 ? `<span class="diff up">（＋${dVac}）</span>`
-                    : `<span class="diff down">（${dVac}）</span>`;
-      const priceIcon = (avg === (pa||0)) ? "" : (avg > (pa||0) ? "↑" : "↓");
+                   : `<span class="diff down">（${dVac}）</span>`;
+      const priceIcon = (avg === (la || 0)) ? "" : (avg > (la || 0) ? "↑" : "↓");
 
-      const myLine = compareOn
-        ? (my > 0
-            ? `<div class="myline">自社：¥${my.toLocaleString()}
-                 <span class="${pct===0?'neutral':(pct>0?'up':'down')}">(${pct>0?'+':''}${pct}%)</span>
-               </div>`
-            : `<div class="myline off">自社：-</div>`)
-        : "";
+      // 自社（ONのときだけ）
+      let myLine = "";
+      if (compareOn) {
+        const my   = obj?.my_price ?? 0;
+        const pct  = obj?.my_vs_avg_pct ?? null; // null扱い：計算不可
+        if (my > 0) {
+          const cls = (pct===null || pct===0) ? "neutral" : (pct>0 ? "up" : "down");
+          const pctText = (pct===null) ? "—" : `${pct>0?'+':''}${pct}%`;
+          myLine = `<div class="myline">自社：¥${my.toLocaleString()} <span class="${cls}">(${pctText})</span></div>`;
+        } else {
+          // 価格未取得/満室など
+          myLine = `<div class="myline off">自社：-</div>`;
+        }
+      }
 
       return `
         <div class="date">${dateStr}</div>
@@ -149,14 +193,20 @@
 
     function renderCalendar() {
       const grid = document.getElementById("calGrid");
+      const title = document.getElementById("calTitle");
       grid.innerHTML = "";
       const on = getCompareMode();
 
+      const start = new Date(CAL_START);
+      const monthLabel = `${start.getFullYear()}/${String(start.getMonth()+1).padStart(2,"0")} 〜`;
+      title.textContent = `${monthLabel} 未来${CAL_DAYS}日`;
+
       for (let i=0; i<CAL_DAYS; i++) {
-        const d = new Date(CAL_START);
+        const d = new Date(start);
         d.setDate(d.getDate()+i);
-        const key = fmtDate(d);
-        const obj = DUMMY[key] || {};
+        const key = iso(d);
+        const obj = CACHE[key] || null;
+
         const cell = document.createElement("div");
         cell.className = "cell";
         cell.innerHTML = buildCellHtml(key, obj, on);
@@ -167,22 +217,22 @@
       }
     }
 
-    // ==== グラフ ====
+    // ====== グラフ描画 ======
     let chart;
-    function seriesForRange(centerKey, days=7) {
-      // centerKey を中心に days の窓でデータを作る（過去days-1〜当日）
-      const center = new Date(centerKey + "T00:00:00+09:00");
+    function seriesForRange(centerKey, days=DEFAULT_RANGE_DAYS) {
+      const center = fromIso(centerKey);
       const labels = [];
       const market = [];
       const mine = [];
       for (let i=days-1; i>=0; i--) {
         const d = new Date(center);
         d.setDate(center.getDate() - i);
-        const k = fmtDate(d);
-        labels.push(k.slice(5)); // MM-DD
-        const obj = DUMMY[k] || {};
-        market.push(obj.avg_price || null);
-        mine.push(obj.my_price || null);
+        const k = iso(d);
+        labels.push(k.slice(5)); // "MM-DD"
+        const obj = CACHE[k] || {};
+        market.push(obj.avg_price ?? null);
+        // 自社ラインは存在しない/未取得なら null（spanGapsでスキップ）
+        mine.push((obj.my_price && obj.my_price>0) ? obj.my_price : null);
       }
       return { labels, market, mine };
     }
@@ -190,12 +240,16 @@
     function renderChart() {
       const on = getCompareMode();
       const ctx = document.getElementById("chart").getContext("2d");
-      const range = Number(document.querySelector('.btn[data-range].active')?.dataset.range || 7);
+      const activeBtn = document.querySelector('.btn[data-range].active');
+      const range = Number(activeBtn?.dataset.range || DEFAULT_RANGE_DAYS);
       const { labels, market, mine } = seriesForRange(selectedDate, range);
 
-      if (chart) { chart.destroy(); }
+      document.getElementById("graphTitle").textContent =
+        `選択日：${selectedDate} の推移（市場平均${on ? " / 自社" : ""}）`;
+
+      if (chart) chart.destroy();
       const datasets = [
-        { label: "市場平均", data: market, borderWidth: 2, tension: 0.2 }
+        { label: "市場平均", data: market, borderWidth: 2, tension: 0.2 },
       ];
       if (on) {
         datasets.push({ label: "自社", data: mine, borderWidth: 2, tension: 0.2 });
@@ -206,13 +260,14 @@
         options: {
           responsive: true,
           maintainAspectRatio: true,
+          spanGaps: true,              // 欠損を自然にスキップ表示
           plugins: { legend: { display: true } },
           scales: { y: { beginAtZero: false } }
         }
       });
     }
 
-    // ==== トグル・ボタン操作 ====
+    // ====== 操作系 ======
     document.getElementById("compareToggle").addEventListener("click", () => {
       setCompareMode(!getCompareMode());
     });
@@ -220,9 +275,9 @@
     document.querySelectorAll(".btn[data-shift]").forEach(btn=>{
       btn.addEventListener("click", ()=>{
         const shift = Number(btn.dataset.shift);
-        const d = new Date(selectedDate+"T00:00:00+09:00");
+        const d = fromIso(selectedDate);
         d.setDate(d.getDate()+shift);
-        selectedDate = fmtDate(d);
+        selectedDate = iso(d);
         renderChart();
       });
     });
@@ -235,12 +290,17 @@
       });
     });
     // 初期レンジは7日
-    document.querySelector('.btn[data-range="7"]').classList.add("active");
+    document.addEventListener("DOMContentLoaded", ()=>{
+      document.querySelector('.btn[data-range="7"]').classList.add("active");
+    });
 
-    // ==== 初期化 ====
-    updateToggleUI(getCompareMode());   // localStorage 復元
-    renderCalendar();
-    renderChart();
+    // ====== 初期化 ======
+    (async function init(){
+      updateToggleUI(getCompareMode());   // localStorage 復元
+      await loadCache();                  // 実データ読込
+      renderCalendar();
+      renderChart();
+    })();
   </script>
 </body>
 </html>
