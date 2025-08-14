@@ -10,13 +10,21 @@
   <!-- 祝日判定ローカルJSを必ず先に読み込み -->
   <script src="japanese-holidays.js"></script>
 
-  <!-- ★ test専用の最小CSS（既存style.cssは変更しない） -->
+  <!-- ▼ test専用 最小CSS（既存style.cssは変更しません） -->
   <style>
-    .compare-toggle-wrap{display:flex;justify-content:flex-end;margin:6px 12px 0}
+    /* トグルの見た目 */
     .compare-toggle{display:inline-flex;align-items:center;gap:8px;font-size:13px;border:1px solid #b9b9c9;border-radius:16px;padding:6px 10px;background:#fff;cursor:pointer;user-select:none}
     .compare-toggle[aria-pressed="true"]{background:#f7f7fb}
     .compare-toggle .dot{width:10px;height:10px;border-radius:999px;background:#bbb}
     .compare-toggle[aria-pressed="true"] .dot{background:#2d9cdb}
+    /* カレンダー直上右上に重ねる（幅を広げない） */
+    .calendar-container{ position: relative; }
+    .compare-toggle-fixed{
+      position:absolute; top:0; right:8px; transform: translateY(-100%); z-index:5;
+    }
+    @media (max-width:768px){
+      .compare-toggle-fixed{ right:4px; transform: translateY(-110%) scale(.95); }
+    }
   </style>
 </head>
 <body>
@@ -34,18 +42,20 @@
     <button id="nextMonthBtn" class="custom-button"><span class="icon">➡️</span> 次月</button>
   </div>
 
-  <!-- ★ トグル（見た目だけ追加。挙動はlocalStorageに保存するだけ） -->
-  <div class="compare-toggle-wrap">
-    <button id="compareToggle" class="compare-toggle" aria-pressed="false" aria-label="自社比較モードを切替">
-      <span class="dot" aria-hidden="true"></span>
-      <span>自社比較モード</span>
-      <span id="toggleState">OFF</span>
-    </button>
-  </div>
-
   <main class="calendar-main">
     <div class="graph-side" id="graph-container"></div>
-    <div class="calendar-container" id="calendar-container"></div>
+
+    <!-- 右側：カレンダー -->
+    <div class="calendar-container" id="calendar-container">
+      <!-- ▼ ここに“直上右上トグル”を重ねる（JSでも再挿入されます） -->
+      <div id="compareToggleHolder" class="compare-toggle-fixed">
+        <button id="compareToggle" class="compare-toggle" aria-pressed="false" aria-label="自社比較モードを切替">
+          <span class="dot" aria-hidden="true"></span>
+          <span>自社比較モード</span>
+          <span id="toggleState">OFF</span>
+        </button>
+      </div>
+    </div>
   </main>
 
   <footer class="app-footer">
@@ -66,18 +76,40 @@
     </div>
   </footer>
 
-  <!-- ★ test専用の最小JS（app.jsはまだ変更しない：状態保存のみ） -->
+  <!-- ▼ test専用 最小JS：トグル状態を保存するだけ（表示ロジックは後でapp.jsに追加） -->
   <script>
     (function(){
       const KEY="compareMode";
       const get=()=>localStorage.getItem(KEY)==="1";
-      const update=(on)=>{const b=document.getElementById("compareToggle"), s=document.getElementById("toggleState");
-        if(b&&s){b.setAttribute("aria-pressed",on?"true":"false"); s.textContent=on?"ON":"OFF";}
-      };
-      const set=(on)=>{localStorage.setItem(KEY,on?"1":"0"); update(on); };
+      const set=(on)=>{ localStorage.setItem(KEY,on?"1":"0"); update(on); };
+      function update(on){
+        const b=document.getElementById("compareToggle"), s=document.getElementById("toggleState");
+        if(b&&s){ b.setAttribute("aria-pressed", on?"true":"false"); s.textContent= on?"ON":"OFF"; }
+      }
+      // カレンダーDOMが再描画されてもトグルが残るよう監視して再挿入
+      function ensureToggle(){
+        const container=document.getElementById("calendar-container");
+        if(!container) return;
+        if(!document.getElementById("compareToggleHolder")){
+          const div=document.createElement("div");
+          div.id="compareToggleHolder";
+          div.className="compare-toggle-fixed";
+          div.innerHTML=`<button id="compareToggle" class="compare-toggle" aria-pressed="false" aria-label="自社比較モードを切替">
+            <span class="dot" aria-hidden="true"></span><span>自社比較モード</span><span id="toggleState">OFF</span></button>`;
+          container.prepend(div);
+          document.getElementById("compareToggle").addEventListener("click", ()=> set(!get()));
+          update(get());
+        }
+      }
       document.addEventListener("DOMContentLoaded", ()=>{
+        ensureToggle();
         update(get());
-        document.getElementById("compareToggle")?.addEventListener("click", ()=>set(!get()));
+        document.getElementById("compareToggle")?.addEventListener("click", ()=> set(!get()));
+        const cont=document.getElementById("calendar-container");
+        if(cont){
+          const obs=new MutationObserver(()=>ensureToggle());
+          obs.observe(cont,{childList:true});
+        }
       });
     })();
   </script>
