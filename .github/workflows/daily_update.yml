@@ -31,7 +31,9 @@ jobs:
       - name: Run update script
         env:
           RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
+          RAKUTEN_MY_HOTEL_NO: ${{ secrets.RAKUTEN_MY_HOTEL_NO }}   # ★ 自社施設番号をSecretsから渡す
         run: python update_cache.py
+
 
       # 生成/更新ファイルを先にコミット → その後 pull --rebase → push
       - name: Commit updated cache files
