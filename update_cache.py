@@ -23,12 +23,15 @@ CACHE_FILE          = "vacancy_price_cache.json"
 PREV_CACHE_FILE     = "vacancy_price_cache_previous.json"
 HISTORICAL_FILE     = "historical_data.json"
 SPIKE_HISTORY_FILE  = "demand_spike_history.json"
-LAST_UPDATED_FILE   = "last_updated.json"   # ← 追加: フロントが読む最終更新メタ
+LAST_UPDATED_FILE   = "last_updated.json"   # フロントが読む最終更新メタ
 
+# ------------------------------------------------------------
+# 楽天API 取得
+# ------------------------------------------------------------
 def fetch_vacancy_and_price(date: dt.date) -> dict:
     print(f"🔍 fetching {date}", file=sys.stderr)
-    prices: list[int] = []
-    vacancy_total     = 0
+    prices = []
+    vacancy_total = 0
 
     url = "https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
     for page in range(1, 4):
@@ -67,16 +70,19 @@ def fetch_vacancy_and_price(date: dt.date) -> dict:
     print(f"   → avg_price = {avg_price}  (vacancy={vacancy_total})", file=sys.stderr)
     return {"vacancy": vacancy_total, "avg_price": avg_price}
 
+# ------------------------------------------------------------
+# 当日以降の未来日を更新
+# ------------------------------------------------------------
 def update_cache(start_date: dt.date, months: int = 9) -> dict:
     today             = dt.date.today()
     three_months_ago  = today - relativedelta(months=3)
     cal               = calendar.Calendar(firstweekday=calendar.SUNDAY)
 
-    cache: dict[str, dict] = {}
+    cache = {}
     if Path(CACHE_FILE).exists():
         cache = json.loads(Path(CACHE_FILE).read_text(encoding="utf-8"))
 
-    old_cache: dict[str, dict] = {}
+    old_cache = {}
     if Path(PREV_CACHE_FILE).exists():
         old_cache = json.loads(Path(PREV_CACHE_FILE).read_text(encoding="utf-8"))
 
@@ -125,10 +131,13 @@ def _is_date_string(s: str) -> bool:
     except ValueError:
         return False
 
+# ------------------------------------------------------------
+# 過去3か月のスナップショット履歴
+# ------------------------------------------------------------
 def update_history(cache: dict):
     today       = dt.date.today()
     today_str   = today.isoformat()
-    hist_data: dict[str, dict] = {}
+    hist_data = {}
 
     if Path(HISTORICAL_FILE).exists():
         try:
@@ -171,6 +180,9 @@ def update_history(cache: dict):
     Path(HISTORICAL_FILE).write_text(json.dumps(hist_data, ensure_ascii=False, indent=2), encoding="utf-8")
     print("📁 historical_data.json updated", file=sys.stderr)
 
+# ------------------------------------------------------------
+# 急騰検知（方向固定：客室↓ × 単価↑）
+# ------------------------------------------------------------
 def detect_demand_spikes(cache_data, n_recent=3, price_up_pct=0.05, vac_down_pct=0.05):
     """
     仕様：
@@ -178,14 +190,14 @@ def detect_demand_spikes(cache_data, n_recent=3, price_up_pct=0.05, vac_down_pct
       - 方向固定：『客室が -vac_down_pct 以下（= 減少）』かつ
                   『平均単価が +price_up_pct 以上（= 上昇）』の時だけ検知
       - 前回値(last_*)が無い/0 の項目は自動スキップ
-      - 近い宿泊日の除外はフロント(app.js)側で実施済みのためここでは行わない
+      - 近い宿泊日の除外はフロント(app.js)側で実施済み
     """
     sorted_dates = sorted(cache_data.keys())
     today = dt.date.today()
 
     results = []
     for d in sorted_dates:
-        # --- 宿泊日が過去なら除外 ---
+        # 宿泊日が過去なら除外
         try:
             stay_dt = dt.date.fromisoformat(d)
         except Exception:
@@ -226,10 +238,15 @@ def detect_demand_spikes(cache_data, n_recent=3, price_up_pct=0.05, vac_down_pct
     print(f"📊 Demand Spikes Detected (dir-fixed: price↑ & vac↓): {len(results)} 件", file=sys.stderr)
     return results
 
-
-
+# ------------------------------------------------------------
+# 履歴の保存（過去宿泊日・方向逆を一括クレンジング）
+# ------------------------------------------------------------
 def save_demand_spike_history(demand_spikes, history_file=SPIKE_HISTORY_FILE):
-    """履歴を更新しつつ、全日分から『過去日のspike項目』を自動除去する"""
+    """履歴を更新しつつ、
+       1) 90日より前のキーを削除
+       2) 全キー横断で『過去日のspike』を削除
+       3) 方向が逆（単価↓ or 客室↑）のspikeを削除
+    """
     today_dt = dt.date.today()
     today_iso = today_dt.isoformat()
 
@@ -245,13 +262,15 @@ def save_demand_spike_history(demand_spikes, history_file=SPIKE_HISTORY_FILE):
         history = {}
 
     # 今日分を差し替え
-    history[today_iso] = demand_spikes
+    history[today_iso] = demand_spikes or []
 
     # 90日より前のキーを削除
     limit = (today_dt - dt.timedelta(days=90)).isoformat()
     history = {d: v for d, v in history.items() if d >= limit}
 
-    # ★ 全キーに対して『過去日のspike』を除去（今日実行分で一括クリーン）
+    # 全キーに対してクレンジング：
+    #  1) spike_date が過去日のものは除外
+    #  2) 方向チェック： price_diff > 0（単価↑）かつ vacancy_diff < 0（客室↓）のみ残す
     cleaned = {}
     for up_date, items in history.items():
         new_items = []
@@ -259,9 +278,17 @@ def save_demand_spike_history(demand_spikes, history_file=SPIKE_HISTORY_FILE):
             sd = it.get("spike_date")
             try:
                 if sd and dt.date.fromisoformat(sd) < today_dt:
-                    continue  # 過去日のspikeは表示対象外として捨てる
+                    continue  # 過去宿泊日のスパイクは捨てる
             except Exception:
-                pass  # spike_dateが壊れてても無視して通す
+                pass  # spike_date が壊れていても無視して続行
+
+            p_diff = it.get("price_diff", 0)
+            v_diff = it.get("vacancy_diff", 0)
+            if not (isinstance(p_diff, (int, float)) and isinstance(v_diff, (int, float))):
+                continue
+            if not (p_diff > 0 and v_diff < 0):
+                continue  # 方向が逆は捨てる
+
             new_items.append(it)
         cleaned[up_date] = new_items
 
@@ -269,7 +296,9 @@ def save_demand_spike_history(demand_spikes, history_file=SPIKE_HISTORY_FILE):
         json.dump(cleaned, f, ensure_ascii=False, indent=2)
     print(f"📁 {history_file} cleaned & updated", file=sys.stderr)
 
-# ===== 追加: 最終更新メタの書き出し =====
+# ------------------------------------------------------------
+# 最終更新メタの書き出し（JST）
+# ------------------------------------------------------------
 def write_last_updated():
     """Actions 実行完了時点のJST時刻などを last_updated.json に保存"""
     JST = dt.timezone(dt.timedelta(hours=9))
@@ -288,13 +317,24 @@ def write_last_updated():
     except Exception as e:
         print(f"⚠️ failed to write {LAST_UPDATED_FILE}: {e}", file=sys.stderr)
 
+# ------------------------------------------------------------
+# エントリポイント
+# ------------------------------------------------------------
 if __name__ == "__main__":
     print("📡 update_cache.py start", file=sys.stderr)
+
     cache_now = update_cache(start_date=dt.date.today(), months=9)
     update_history(cache_now)
-    demand_spikes = detect_demand_spikes(cache_now, n_recent=3, pct=0.05)
+
+    demand_spikes = detect_demand_spikes(
+        cache_data=cache_now,
+        n_recent=3,
+        price_up_pct=0.05,   # 単価↑5%以上
+        vac_down_pct=0.05    # 客室↓5%以上
+    )
     print(f"Demand spikes for today: {demand_spikes}", file=sys.stderr)
     save_demand_spike_history(demand_spikes)
-    # 追加: すべての更新が完了した“最後”に書き出し
+
+    # すべての更新が完了した“最後”に書き出し
     write_last_updated()
     print("✨ all done", file=sys.stderr)
