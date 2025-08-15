@@ -9,13 +9,49 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- 祝日判定ローカルJSを必ず先に読み込み -->
   <script src="japanese-holidays.js"></script>
+
+  <!-- 本番追加CSS（既存style.cssは触らない） -->
+  <style>
+    /* トグルの見た目 */
+    .compare-toggle{
+      display:inline-flex; align-items:center; gap:8px;
+      font-size:13px; border:1px solid #b9b9c9; border-radius:16px;
+      padding:6px 10px; background:#fff; cursor:pointer; user-select:none;
+      box-shadow:0 1px 3px rgba(0,0,0,.06);
+    }
+    .compare-toggle[aria-pressed="true"]{ background:#f7f7fb; }
+    .compare-toggle .dot{ width:10px; height:10px; border-radius:999px; background:#bbb; }
+    .compare-toggle[aria-pressed="true"] .dot{ background:#2d9cdb; }
+
+    /* 比較モードON時はイベント行を隠す（自社行のスペース確保） */
+    body.cm-on .cell-event-list { display: none !important; }
+
+    /* 右カレンダー内の“右上”に重ねる（幅を押し広げない） */
+    .calendar-container{ position: relative; overflow: visible !important; }
+    .compare-toggle-fixed{ position:absolute; top:6px; right:8px; z-index:2000; pointer-events:auto; }
+    @media (max-width:768px){ .compare-toggle-fixed{ right:4px; } }
+
+    /* 自社行の見た目（ON時だけ差し込む） */
+    .myline{ margin-top:2px; font-size:12px; line-height:1.2; white-space:nowrap; }
+    .myline.off{ opacity:.5; }
+    .myline .up{ color:#d9534f; }     /* 平均より高い＝赤 */
+    .myline .down{ color:#0275d8; }   /* 平均より安い＝青 */
+    .myline .neutral{ color:#666; }
+
+    /* 自社比較モードON時は、%差の小さな赤/青表示を隠す */
+    body.cm-on .myline .up,
+    body.cm-on .myline .down,
+    body.cm-on .myline .neutral {
+      display: none !important;
+    }
+  </style>
 </head>
 <body>
   <header class="app-header">
     <img src="バナー画像3.png" class="app-banner" alt="バナー">
   </header>
 
-  <!-- 🚀需要急騰日履歴バナー -->
+  <!-- 需要急騰日履歴バナー -->
   <div id="spike-banner"></div>
 
   <!-- 月送りボタン -->
@@ -27,29 +63,180 @@
 
   <main class="calendar-main">
     <div class="graph-side" id="graph-container"></div>
-    <div class="calendar-container" id="calendar-container"></div>
+
+    <!-- 右：カレンダー（中身は app.js が描画） -->
+    <div class="calendar-container" id="calendar-container">
+      <!-- JS が末尾にトグルを重ねて追加します -->
+    </div>
   </main>
 
-<footer class="app-footer">
-  <div id="last-update"></div>
-  <div class="footer-note">
-    <strong>《注釈》</strong><br>
-    ・在庫数、平均価格は「なんば・心斎橋・天王寺・阿倍野・長居」エリアから抽出しています。<br>
-    ・表示される「平均価格」は、楽天トラベル検索上位施設の平均最低価格です。<br>
-    ・空室数の <span style="color:blue;">（+N）</span> / <span style="color:red;">（−N）</span> は、前回巡回時点との在庫数の増減です。<br>
-    ・平均価格の <span style="color:red;">↑</span> / <span style="color:blue;">↓</span> は、前回巡回時点との平均価格の上昇/下降です。<br>
-    ・会場アイコン：<span style="color:#e53939;">🔴</span>京セラドーム / <span style="color:#357ebd;">🔵</span>ヤンマースタジアム / <span style="color:#888;">★</span>その他会場<br>
-    ・炎マーク（需要シンボル）の内訳：<br>
-  　　<span style="color:#ffa600;">🔥1</span>：残室 ≤250 または 価格 ≥25,000円<br>
-  　　<span style="color:#be0c0c;">🔥2</span>：残室 ≤200 または 価格 ≥30,000円<br>
-  　　<span style="color:#e94e77;">🔥3</span>：残室 ≤150 または 価格 ≥35,000円<br>
-  　　<span style="color:#ff6600;">🔥4</span>：残室 ≤100 または 価格 ≥40,000円<br>
-  　　<span style="color:#421c16;">🔥5</span>：残室 ≤70 または 価格 ≥50,000円<br>
-  </div>
-</footer>
+  <footer class="app-footer">
+    <div id="last-update"></div>
+    <div class="footer-note">
+      <strong>《注釈》</strong><br>
+      ・在庫数、平均価格は「なんば・心斎橋・天王寺・阿倍野・長居」エリアから抽出しています。<br>
+      ・表示される「平均価格」は、楽天トラベル検索上位施設の<strong>1名1室の最安価格</strong>を施設ごとに取り出し、その平均です。<br>
+      ・自社価格は<strong>1名1室の最安</strong>の最新値を表示（履歴は保持しない可視化です）。<br>
+      ・空室数の <span style="color:blue;">（+N）</span> / <span style="color:red;">（−N）</span> は、前回巡回時点との在庫数の増減です。<br>
+      ・平均価格の <span style="color:red;">↑</span> / <span style="color:blue;">↓</span> は、前回巡回時点との平均価格の上昇/下降です。<br>
+      ・会場アイコン：<span style="color:#e53939;">🔴</span>京セラドーム / <span style="color:#357ebd;">🔵</span>ヤンマースタジアム / <span style="color:#888;">★</span>その他会場<br>
+      ・炎マーク（需要シンボル）の内訳：<br>
+      　　<span style="color:#ffa600;">🔥1</span>：残室 ≤250 または 価格 ≥25,000円<br>
+      　　<span style="color:#be0c0c;">🔥2</span>：残室 ≤200 または 価格 ≥30,000円<br>
+      　　<span style="color:#e94e77;">🔥3</span>：残室 ≤150 または 価格 ≥35,000円<br>
+      　　<span style="color:#ff6600;">🔥4</span>：残室 ≤100 または 価格 ≥40,000円<br>
+      　　<span style="color:#421c16;">🔥5</span>：残室 ≤70 または 価格 ≥50,000円<br>
+    </div>
+  </footer>
 
+  <!-- 本番：比較トグル & 自社行差し込み（testで安定した実装を踏襲） -->
+  <script>
+    (function(){
+      const KEY = "compareMode";
 
-  <!-- 最後にapp.js -->
+      // 初回ロード時だけ OFF に初期化（このタブのセッション中1回だけ）
+      if (!sessionStorage.getItem("cmpInitDone")) {
+        if (localStorage.getItem(KEY) !== "0" && localStorage.getItem(KEY) !== "1") {
+          localStorage.setItem(KEY, "0");
+        }
+        sessionStorage.setItem("cmpInitDone", "1");
+      }
+
+      // 既存チャート破棄＆再描画
+      function applyToggleAndRedraw(){
+        if (window.sc) { try { window.sc.destroy(); } catch(e){} window.sc = null; }
+        if (window.pc) { try { window.pc.destroy(); } catch(e){} window.pc = null; }
+        if (typeof renderPage === "function") renderPage();
+      }
+
+      // 見た目更新（bodyにcm-onクラス付与）
+      function updateToggleUI(on){
+        const btn = document.getElementById("compareToggle");
+        const st  = document.getElementById("toggleState");
+        if (btn) btn.setAttribute("aria-pressed", on ? "true" : "false");
+        if (st)  st.textContent = on ? "ON" : "OFF";
+        document.body.classList.toggle("cm-on", !!on);
+      }
+
+      // グローバル公開：app.js からも呼べる
+      window.ensureCompareToggle = function ensureCompareToggle(){
+        const container = document.getElementById("calendar-container");
+        if (!container) return;
+
+        let holder = document.getElementById("compareToggleHolder");
+        if (!holder) {
+          holder = document.createElement("div");
+          holder.id = "compareToggleHolder";
+          holder.className = "compare-toggle-fixed";
+          holder.setAttribute("data-ignore", "compare-toggle");
+          holder.innerHTML = `
+            <button id="compareToggle" class="compare-toggle" aria-pressed="false" aria-label="自社比較モードを切替">
+              <span class="dot" aria-hidden="true"></span>
+              <span>自社比較モード</span>
+              <span id="toggleState">OFF</span>
+            </button>`;
+          container.appendChild(holder);
+
+          document.getElementById("compareToggle").addEventListener("click", () => {
+            const nowOn  = localStorage.getItem(KEY) === "1";
+            const nextOn = !nowOn;
+            localStorage.setItem(KEY, nextOn ? "1" : "0");
+            updateToggleUI(nextOn);
+            applyToggleAndRedraw();
+          });
+        }
+
+        // 状態反映
+        updateToggleUI(localStorage.getItem(KEY) === "1");
+      };
+
+      // 初期起動時：一度だけ設置（その後は app.js 側が毎回呼ぶ）
+      document.addEventListener("DOMContentLoaded", () => {
+        if (typeof window.ensureCompareToggle === "function") window.ensureCompareToggle();
+      });
+
+      // カレンダーが描き替わったら毎回トグルを差し直す
+      document.addEventListener("DOMContentLoaded", () => {
+        const c = document.getElementById("calendar-container");
+        if (c) {
+          new MutationObserver(() => {
+            if (window.ensureCompareToggle) window.ensureCompareToggle();
+          }).observe(c, { childList: true, subtree: true });
+        }
+      });
+    })();
+  </script>
+
+  <!-- 自社：¥… をセルに差し込む（グローバル関数化） -->
+  <script>
+    (function(){
+      const KEY = "compareMode";
+      let CACHE = null, loading = null;
+
+      async function ensureCache(){
+        if (CACHE) return CACHE;
+        if (!loading) loading = fetch("./vacancy_price_cache.json", {cache:"no-store"}).then(r=>r.json());
+        CACHE = await loading;
+        return CACHE;
+      }
+      function pctClass(p){ if(p===null||p===undefined) return "neutral"; return p>0?"up":(p<0?"down":"neutral"); }
+      function pctText(p){ if(p===null||p===undefined) return "—"; return `${p>0?"+":""}${p}%`; }
+      const isOn = () => localStorage.getItem(KEY) === "1";
+
+      // グローバル公開：app.js から毎回呼べる
+      window.renderMyLines = async function renderMyLines(){
+        // 既存「自社」行を一掃
+        document.querySelectorAll("#calendar-container .myline").forEach(el => el.remove());
+        // OFFなら終了
+        if (!isOn()) return;
+
+        const cache = await ensureCache();
+        // 各日セルに「自社」行を追加
+        document.querySelectorAll('#calendar-container [data-date]').forEach(cell => {
+          const iso = cell.getAttribute('data-date'); if (!iso) return;
+          const rec = cache[iso]; if (!rec) return;
+
+          const my  = Number(rec.my_price || 0);
+          const pct = (typeof rec.my_vs_avg_pct === "number") ? rec.my_vs_avg_pct : null;
+
+          const div = document.createElement("div");
+          div.className = "myline" + (my>0 ? "" : " off");
+          div.innerHTML = (my>0)
+            ? `自社：¥${my.toLocaleString()} <span class="${pctClass(pct)}">(${pctText(pct)})</span>`
+            : `自社：-`;
+
+          const after = cell.querySelector(".avg") || cell.lastElementChild || cell;
+          after.insertAdjacentElement("afterend", div);
+        });
+      };
+
+      // 初回ロード時
+      document.addEventListener("DOMContentLoaded", () => {
+        window.renderMyLines && window.renderMyLines();
+      });
+
+      // カレンダーの描き替えを監視して都度差し直す
+      document.addEventListener("DOMContentLoaded", () => {
+        const cont = document.getElementById("calendar-container");
+        if (cont) {
+          new MutationObserver(() => {
+            if (window.renderMyLines) window.renderMyLines();
+          }).observe(cont, { childList: true, subtree: true });
+        }
+      });
+
+      // トグルクリック時（compareToggle）→ 即反映
+      document.addEventListener("click", (e) => {
+        if (e.target && (e.target.id === "compareToggle" || e.target.closest("#compareToggle"))) {
+          // renderPage() が走る前後で二度呼んで取りこぼし防止
+          setTimeout(() => window.renderMyLines && window.renderMyLines(), 0);
+          setTimeout(() => window.renderMyLines && window.renderMyLines(), 150);
+        }
+      });
+    })();
+  </script>
+
+  <!-- 最後にapp.js（本番と同じ） -->
   <script src="app.js"></script>
 </body>
 </html>
