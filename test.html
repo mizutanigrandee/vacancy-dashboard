@@ -36,6 +36,13 @@
     .myline .up{ color:#d9534f; }     /* 平均より高い＝赤 */
     .myline .down{ color:#0275d8; }   /* 平均より安い＝青 */
     .myline .neutral{ color:#666; }
+    /* 自社比較モードON時は、%差の小さな赤/青表示を隠す */
+     body.cm-on .myline .up,
+     body.cm-on .myline .down,
+     body.cm-on .myline .neutral {
+       display: none !important;
+     }
+
   </style>
 </head>
 <body>
