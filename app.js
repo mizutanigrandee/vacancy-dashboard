@@ -170,9 +170,20 @@ function renderPage() {
   }
 
   renderSpikeBanner();
+      if (typeof window.ensureCompareToggle === "function") {
+    window.ensureCompareToggle();
+  }
   renderCalendars();
   renderGraph(selectedDate);
 }
+  // ▼ ここを追加：OFF時は念のため「自社」系列を除去（保険）
+  if (!isCompareModeOn() && window.pc && window.pc.data && window.pc.data.datasets) {
+    try {
+      window.pc.data.datasets = window.pc.data.datasets.filter(d => String(d.label) !== "自社");
+      window.pc.update();
+    } catch(e){}
+  }
+
 
 // ========== カレンダー描画 ==========
 function renderCalendars() {
