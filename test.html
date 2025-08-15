@@ -78,47 +78,126 @@
     </div>
   </footer>
 
-  <!-- ▼ test専用JS①：トグルの設置＆状態保存（app.jsは触らない） -->
+  <!-- ▼ test専用JS 共通ユーティリティ（OFF時の残像を消す“保険”つき） -->
   <script>
     (function(){
       const KEY="compareMode";
-      const get=()=>localStorage.getItem(KEY)==="1";
-      const set=(on)=>{ localStorage.setItem(KEY,on?"1":"0"); update(on); };
-      function update(on){
-        const b=document.getElementById("compareToggle"), s=document.getElementById("toggleState");
-        if(b&&s){ b.setAttribute("aria-pressed", on?"true":"false"); s.textContent= on?"ON":"OFF"; }
+
+      // ① compareMode の初期化（未設定なら "0"：OFF）
+      if(localStorage.getItem(KEY)!=="1" && localStorage.getItem(KEY)!=="0"){
+        localStorage.setItem(KEY,"0");
       }
-      function attachToggle(){
-        const container=document.getElementById("calendar-container");
-        if(!container) return;
-        let holder=document.getElementById("compareToggleHolder");
-        if(!holder || !container.contains(holder)){
-          holder=document.createElement("div");
-          holder.id="compareToggleHolder";
-          holder.className="compare-toggle-fixed";
-          holder.setAttribute("data-ignore","compare-toggle");
-          holder.innerHTML=`
-            <button id="compareToggle" class="compare-toggle" aria-pressed="false" aria-label="自社比較モードを切替">
-              <span class="dot" aria-hidden="true"></span><span>自社比較モード</span><span id="toggleState">OFF</span>
-            </button>`;
-          container.appendChild(holder);   // ★ 末尾に追加（カレンダー本体と衝突しない）
-          document.getElementById("compareToggle").addEventListener("click", ()=>set(!get()));
+
+      // ② 安全に renderPage を呼ぶ（app.js がまだ読まれていない場合に備えて再試行）
+      function safeRenderPage(retryMs=0){
+        const call = () => {
+          if(typeof renderPage === "function"){ renderPage(); }
+        };
+        if(retryMs>0){ setTimeout(call, retryMs); } else { call(); }
+      }
+
+      // ③ 既存チャートを破棄
+      function destroyCharts(){
+        if(window.pc){ try{ window.pc.destroy(); }catch(e){} window.pc=null; }
+        if(window.sc){ try{ window.sc.destroy(); }catch(e){} window.sc=null; }
+      }
+
+      // ④ OFF時は価格チャートから「自社」系列を強制的に取り除く（保険）
+      function stripMineDatasetIfOff(){
+        const isOn = localStorage.getItem(KEY) === "1";
+        if(!window.pc || isOn) return;
+        const ds = window.pc.data && window.pc.data.datasets ? window.pc.data.datasets : null;
+        if(!ds) return;
+        const before = ds.length;
+        window.pc.data.datasets = ds.filter(d => String(d.label) !== "自社");
+        if(window.pc.data.datasets.length !== before){
+          try{ window.pc.update(); }catch(e){}
         }
-        update(get());
       }
-      document.addEventListener("DOMContentLoaded", ()=>{
-        attachToggle();
-        const target=document.getElementById("calendar-container");
-        if(target){
-          new MutationObserver(()=>attachToggle()).observe(target,{childList:true});
-          const parent=target.parentElement;
-          if(parent){ new MutationObserver(()=>attachToggle()).observe(parent,{childList:true}); }
+
+      // ⑤ 「切替 → 破棄 → 再描画 →（OFFなら）自社ライン除去」 の順で処理
+      function applyToggleAndRedraw(){
+        destroyCharts();
+        // すぐに再描画を試み、遅延でもう一度保険をかける
+        safeRenderPage(0);
+        // app.js 側の再描画が終わるのを待って保険適用
+        setTimeout(stripMineDatasetIfOff, 0);
+        setTimeout(stripMineDatasetIfOff, 60);
+        setTimeout(stripMineDatasetIfOff, 200);
+      }
+
+      // ⑥ 右上にトグルを重ねて設置
+      function ensureToggle(){
+        const container = document.getElementById("calendar-container");
+        if(!container) return;
+        let holder = document.getElementById("compareToggleHolder");
+        if(!holder){
+          holder = document.createElement("div");
+          holder.id = "compareToggleHolder";
+          holder.className = "compare-toggle-fixed";
+          holder.setAttribute("data-ignore","compare-toggle");
+          holder.innerHTML = `
+            <button id="compareToggle" class="compare-toggle" aria-pressed="false" aria-label="自社比較モードを切替">
+              <span class="dot" aria-hidden="true"></span>
+              <span>自社比較モード</span>
+              <span id="toggleState">OFF</span>
+            </button>`;
+          container.appendChild(holder);
+          // クリックでON/OFF切替
+          document.getElementById("compareToggle").addEventListener("click", () => {
+            const nowOn = localStorage.getItem(KEY)==="1";
+            const nextOn = !nowOn;
+            localStorage.setItem(KEY, nextOn ? "1" : "0");
+            updateToggleUI(nextOn);
+            applyToggleAndRedraw();
+          });
+        }
+        updateToggleUI(localStorage.getItem(KEY)==="1");
+      }
+
+      // ⑦ トグルの見た目更新
+      function updateToggleUI(on){
+        const btn = document.getElementById("compareToggle");
+        const st  = document.getElementById("toggleState");
+        if(btn) btn.setAttribute("aria-pressed", on ? "true":"false");
+        if(st)  st.textContent = on ? "ON":"OFF";
+      }
+
+      // ⑧ カレンダー再描画に追従（トグルの再設置＆保険適用）
+      function attachObservers(){
+        const cont = document.getElementById("calendar-container");
+        if(!cont) return;
+        const obs = new MutationObserver(() => {
+          // カレンダー更新のたびにトグルが存在するよう保証
+          ensureToggle();
+          // OFFなら自社ライン除去（保険）
+          stripMineDatasetIfOff();
+        });
+        obs.observe(cont, {childList:true, subtree:true});
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        ensureToggle();
+        attachObservers();
+        // 初回ロード時、OFFなら念のため除去
+        setTimeout(stripMineDatasetIfOff, 0);
+        setTimeout(stripMineDatasetIfOff, 120);
+      });
+
+      // （任意）キーボードでも切替できるようにしておく
+      document.addEventListener("keydown", (e)=>{
+        if(e.key === "c" && (e.ctrlKey || e.metaKey)){ // Ctrl/⌘ + C で切替
+          const nowOn = localStorage.getItem(KEY)==="1";
+          const nextOn = !nowOn;
+          localStorage.setItem(KEY, nextOn ? "1" : "0");
+          updateToggleUI(nextOn);
+          applyToggleAndRedraw();
         }
       });
     })();
   </script>
 
-  <!-- ▼ test専用JS②：ON時だけセルに「自社：¥…（±%）」を差し込み -->
+  <!-- ▼ test専用JS：ON時だけセルに「自社：¥…（±%）」を差し込み（見やすさ用） -->
   <script>
     (function(){
       const KEY="compareMode";
@@ -139,7 +218,7 @@
         if(!isOn()) return;  // OFFなら何もしない
 
         const cache=await ensureCache();
-        // data-date を持つ日セルに挿入（無ければ何もしない＝安全）
+        // data-date を持つ日セルに挿入（無ければスキップ）
         document.querySelectorAll('#calendar-container [data-date]').forEach(cell=>{
           const iso=cell.getAttribute('data-date'); if(!iso) return;
           const rec=cache[iso]; if(!rec) return;
@@ -165,8 +244,8 @@
       // トグル変更ですぐ反映
       document.addEventListener("click", (e)=>{
         if(e.target && (e.target.id==="compareToggle" || e.target.closest("#compareToggle"))){
-          // app.jsの再描画が走る可能性があるため少し遅らせる
           setTimeout(renderMyLines, 0);
+          setTimeout(renderMyLines, 150);
         }
       });
 
