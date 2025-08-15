@@ -50,6 +50,45 @@ async function loadAll() {
   spikeData      = await loadJson(SPIKE_PATH);   // ←追加
 }
 
+// ▼ 追加：自社ラインの有無を保証（取りこぼし対策）
+function ensureCompareLineFor(dateStr){
+  if (!window.pc || !window.pc.data) return;
+
+  const isOn = isCompareModeOn();
+  const labels = window.pc.data.labels || [];
+  const hasMine = (window.pc.data.datasets || []).some(d => String(d.label) === "自社");
+
+  const myPrice = Number((calendarData[dateStr] || {}).my_price || 0);
+  const shouldShow = isOn && myPrice > 0;
+
+  // 追加が必要
+  if (shouldShow && !hasMine){
+    window.pc.data.datasets.push({
+      label: "自社",
+      data: Array(labels.length).fill(myPrice),
+      fill: false,
+      borderColor: "#ff9800",
+      borderDash: [6,4],
+      pointRadius: 0
+    });
+    if (window.pc.options?.plugins?.legend) {
+      window.pc.options.plugins.legend.display = true;
+    }
+    try { window.pc.update(); } catch(e){}
+    return;
+  }
+
+  // 削除が必要（ONでもmyPriceが0/未定義なら消す、OFFなら消す）
+  if ((!shouldShow && hasMine) || (!isOn && hasMine)){
+    window.pc.data.datasets = window.pc.data.datasets.filter(d => String(d.label) !== "自社");
+    if (window.pc.options?.plugins?.legend) {
+      window.pc.options.plugins.legend.display = window.pc.data.datasets.length > 1;
+    }
+    try { window.pc.update(); } catch(e){}
+  }
+}
+
+
 // ========== 需要スパイク履歴バナー ==========
 // サマリー：直近3日分×最大10件（※当日〜3日先は除外）
 function renderSpikeBanner() {
@@ -181,7 +220,12 @@ function renderPage() {
 
   // ④ グラフ（中でdestroy→再生成）
   renderGraph(selectedDate);
+
+  // ▼ 追加：グラフ作成直後に自社ラインを保証（非同期ズレ対策で二度呼ぶ）
+  ensureCompareLineFor(selectedDate);
+  setTimeout(() => ensureCompareLineFor(selectedDate), 0);
 }
+
 
 
 
