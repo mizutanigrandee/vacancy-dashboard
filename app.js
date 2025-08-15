@@ -149,7 +149,6 @@ function shiftMonth(diff) {
 }
 
 // ========== ページ全体再描画 ==========
-// 順序：スパイク → カレンダー → グラフ（※グラフ破棄→再生成はrenderGraph内で実施）
 function renderPage() {
   const main = document.querySelector(".calendar-main");
   if (!main) return;
@@ -169,20 +168,21 @@ function renderPage() {
       '</div>';
   }
 
+  // ① バナー
   renderSpikeBanner();
-      if (typeof window.ensureCompareToggle === "function") {
+
+  // ② カレンダー（ここで #calendar-container を作り直す＝中身が空になる）
+  renderCalendars();
+
+  // ③ ★ここで毎回トグルを差し直す（これより前に呼ぶと消されます）
+  if (typeof window.ensureCompareToggle === "function") {
     window.ensureCompareToggle();
   }
-  renderCalendars();
+
+  // ④ グラフ（中でdestroy→再生成）
   renderGraph(selectedDate);
 }
-  // ▼ ここを追加：OFF時は念のため「自社」系列を除去（保険）
-  if (!isCompareModeOn() && window.pc && window.pc.data && window.pc.data.datasets) {
-    try {
-      window.pc.data.datasets = window.pc.data.datasets.filter(d => String(d.label) !== "自社");
-      window.pc.update();
-    } catch(e){}
-  }
+
 
 
 // ========== カレンダー描画 ==========
