@@ -213,12 +213,17 @@ function renderPage() {
   // ② カレンダー（ここで #calendar-container を作り直す＝中身が空になる）
   renderCalendars();
 
-  // ③ ★ここで毎回トグルを差し直す（これより前に呼ぶと消されます）
+  // ③ ★ここで毎回トグルを差し直す
   if (typeof window.ensureCompareToggle === "function") {
     window.ensureCompareToggle();
   }
 
-  // ④ グラフ（中でdestroy→再生成）
+  // ③.5 ★カレンダーへ「自社：¥…」行を差し込む（月送り後に必ず実行）
+  if (typeof window.renderMyLines === "function") {
+    window.renderMyLines();
+  }
+
+  // ④ グラフ
   renderGraph(selectedDate);
 
   // ▼ 追加：グラフ作成直後に自社ラインを保証（非同期ズレ対策で二度呼ぶ）
