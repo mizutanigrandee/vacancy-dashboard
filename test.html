@@ -22,6 +22,8 @@
     .compare-toggle[aria-pressed="true"]{ background:#f7f7fb; }
     .compare-toggle .dot{ width:10px; height:10px; border-radius:999px; background:#bbb; }
     .compare-toggle[aria-pressed="true"] .dot{ background:#2d9cdb; }
+    body.cm-on .cell-event-list { display: none !important; }
+
 
     /* 右カレンダー内の“右上”に重ねる（幅を押し広げない） */
     .calendar-container{ position: relative; overflow: visible !important; }
@@ -99,13 +101,16 @@
       if (typeof renderPage === "function") renderPage();
     }
 
-    // 見た目更新
-    function updateToggleUI(on){
-      const btn = document.getElementById("compareToggle");
-      const st  = document.getElementById("toggleState");
-      if (btn) btn.setAttribute("aria-pressed", on ? "true" : "false");
-      if (st)  st.textContent = on ? "ON" : "OFF";
-    }
+
+// 見た目更新  ← これに置き換え
+function updateToggleUI(on){
+  const btn = document.getElementById("compareToggle");
+  const st  = document.getElementById("toggleState");
+  if (btn) btn.setAttribute("aria-pressed", on ? "true" : "false");
+  if (st)  st.textContent = on ? "ON" : "OFF";
+  // ★ 追加：トグルONのときだけ <body class="cm-on"> を付ける
+  document.body.classList.toggle("cm-on", !!on);
+}
 
     // ★ グローバル公開：app.js からも呼べる
     window.ensureCompareToggle = function ensureCompareToggle(){
