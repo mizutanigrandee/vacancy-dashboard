@@ -158,61 +158,75 @@
 
 
 
-  <!-- ▼ test専用JS：ON時だけセルに「自社：¥…（±%）」を差し込み（見やすさ用） -->
-  <script>
-    (function(){
-      const KEY="compareMode";
-      const isOn=()=>localStorage.getItem(KEY)==="1";
-      let CACHE=null, loading=null;
+<!-- ▼ test専用JS②：ON時だけセルに「自社：¥…（±%）」を差し込み（グローバル関数化） -->
+<script>
+  (function(){
+    const KEY = "compareMode";
+    let CACHE = null, loading = null;
 
-      async function ensureCache(){
-        if(CACHE) return CACHE;
-        if(!loading) loading=fetch("./vacancy_price_cache.json",{cache:"no-store"}).then(r=>r.json());
-        CACHE=await loading; return CACHE;
-      }
-      function pctClass(p){ if(p===null||p===undefined) return "neutral"; return p>0?"up":(p<0?"down":"neutral"); }
-      function pctText(p){ if(p===null||p===undefined) return "—"; return `${p>0?"+":""}${p}%`; }
+    async function ensureCache(){
+      if (CACHE) return CACHE;
+      if (!loading) loading = fetch("./vacancy_price_cache.json", {cache:"no-store"}).then(r=>r.json());
+      CACHE = await loading;
+      return CACHE;
+    }
+    function pctClass(p){ if(p===null||p===undefined) return "neutral"; return p>0?"up":(p<0?"down":"neutral"); }
+    function pctText(p){ if(p===null||p===undefined) return "—"; return `${p>0?"+":""}${p}%`; }
+    const isOn = () => localStorage.getItem(KEY) === "1";
 
-      async function renderMyLines(){
-        // 既存を掃除
-        document.querySelectorAll("#calendar-container .myline").forEach(el=>el.remove());
-        if(!isOn()) return;  // OFFなら何もしない
+    // ★ グローバル公開：app.js から毎回呼べる
+    window.renderMyLines = async function renderMyLines(){
+      // 既存「自社」行を一掃
+      document.querySelectorAll("#calendar-container .myline").forEach(el => el.remove());
+      // OFFなら終了
+      if (!isOn()) return;
 
-        const cache=await ensureCache();
-        // data-date を持つ日セルに挿入（無ければスキップ）
-        document.querySelectorAll('#calendar-container [data-date]').forEach(cell=>{
-          const iso=cell.getAttribute('data-date'); if(!iso) return;
-          const rec=cache[iso]; if(!rec) return;
+      const cache = await ensureCache();
+      // 各日セルに「自社」行を追加
+      document.querySelectorAll('#calendar-container [data-date]').forEach(cell => {
+        const iso = cell.getAttribute('data-date'); if (!iso) return;
+        const rec = cache[iso]; if (!rec) return;
 
-          const my=Number(rec.my_price||0);
-          const pct=(typeof rec.my_vs_avg_pct==="number")?rec.my_vs_avg_pct:null;
+        const my  = Number(rec.my_price || 0);
+        const pct = (typeof rec.my_vs_avg_pct === "number") ? rec.my_vs_avg_pct : null;
 
-          const div=document.createElement("div");
-          div.className="myline"+(my>0?"":" off");
-          div.innerHTML=(my>0)
-            ? `自社：¥${my.toLocaleString()} <span class="${pctClass(pct)}">(${pctText(pct)})</span>`
-            : `自社：-`;
+        const div = document.createElement("div");
+        div.className = "myline" + (my>0 ? "" : " off");
+        div.innerHTML = (my>0)
+          ? `自社：¥${my.toLocaleString()} <span class="${pctClass(pct)}">(${pctText(pct)})</span>`
+          : `自社：-`;
 
-          const after=cell.querySelector(".avg") || cell.lastElementChild || cell;
-          after.insertAdjacentElement("afterend", div);
-        });
-      }
-
-      // カレンダーの再描画に追従
-      const cont=document.getElementById("calendar-container");
-      if(cont){ new MutationObserver(()=>renderMyLines()).observe(cont,{childList:true,subtree:true}); }
-
-      // トグル変更ですぐ反映
-      document.addEventListener("click", (e)=>{
-        if(e.target && (e.target.id==="compareToggle" || e.target.closest("#compareToggle"))){
-          setTimeout(renderMyLines, 0);
-          setTimeout(renderMyLines, 150);
-        }
+        const after = cell.querySelector(".avg") || cell.lastElementChild || cell;
+        after.insertAdjacentElement("afterend", div);
       });
+    };
 
-      document.addEventListener("DOMContentLoaded", renderMyLines);
-    })();
-  </script>
+    // ❶ 初回ロード時
+    document.addEventListener("DOMContentLoaded", () => {
+      window.renderMyLines && window.renderMyLines();
+    });
+
+    // ❷ カレンダーの描き替えを監視して都度差し直す
+    document.addEventListener("DOMContentLoaded", () => {
+      const cont = document.getElementById("calendar-container");
+      if (cont) {
+        new MutationObserver(() => {
+          if (window.renderMyLines) window.renderMyLines();
+        }).observe(cont, { childList: true, subtree: true });
+      }
+    });
+
+    // ❸ トグルクリック時（compareToggle）→ 即反映
+    document.addEventListener("click", (e) => {
+      if (e.target && (e.target.id === "compareToggle" || e.target.closest("#compareToggle"))) {
+        // renderPage() が走る前後で二度呼んで取りこぼし防止
+        setTimeout(() => window.renderMyLines && window.renderMyLines(), 0);
+        setTimeout(() => window.renderMyLines && window.renderMyLines(), 150);
+      }
+    });
+  })();
+</script>
+
 
   <!-- 最後にapp.js（本番と同じ） -->
   <script src="app.js"></script>
