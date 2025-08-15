@@ -24,6 +24,10 @@ function isHoliday(date) {
 
 // ========== ヘルパー ==========
 const todayIso = () => new Date().toISOString().slice(0,10);
+
+// 自社比較モード（test.htmlがlocalStorageに保存）
+const isCompareModeOn = () => localStorage.getItem("compareMode") === "1";
+
 async function loadJson(path) {
   try {
     const res = await fetch(path);
@@ -307,7 +311,7 @@ function renderGraph(dateStr){
     renderPage();
   };
 
-  // Chart.js描画
+  // 市場の履歴データ
   const hist = historicalData[dateStr] || {}, labels = [], sv = [], pv = [];
   Object.keys(hist).sort().forEach(d => {
     labels.push(d);
@@ -317,44 +321,73 @@ function renderGraph(dateStr){
 
   if (window.sc) window.sc.destroy();
   if (window.pc) window.pc.destroy();
+  if (!labels.length) return;
 
-  if (labels.length) {
-    // 在庫数グラフ
-    window.sc = new Chart(
-      document.getElementById("stockChart").getContext("2d"),
-      {
-        type: "line",
-        data: { labels, datasets: [{ data: sv, fill: false, borderColor: "#2196f3", pointRadius: 2 }] },
-        options: {
-          plugins: { legend: { display: false } },
-          responsive: false,
-          animation: false,  
-          scales: {
-            y: { beginAtZero: true, min: 50, max: 350, title: { display: true, text: "在庫数" } },
-            x: { title: { display: true, text: "日付" } }
-          }
+  // 在庫グラフ（従来どおり）
+  window.sc = new Chart(
+    document.getElementById("stockChart").getContext("2d"),
+    {
+      type: "line",
+      data: { labels, datasets: [{ data: sv, fill: false, borderColor: "#2196f3", pointRadius: 2 }] },
+      options: {
+        plugins: { legend: { display: false } },
+        responsive: false,
+        animation: false,
+        scales: {
+          y: { beginAtZero: true, min: 50, max: 350, title: { display: true, text: "在庫数" } },
+          x: { title: { display: true, text: "日付" } }
         }
       }
-    );
-    // 価格グラフ
-    window.pc = new Chart(
-      document.getElementById("priceChart").getContext("2d"),
-      {
-        type: "line",
-        data: { labels, datasets: [{ data: pv, fill: false, borderColor: "#e91e63", pointRadius: 2 }] },
-        options: {
-          plugins: { legend: { display: false } },
-          responsive: false,
-          animation: false,  
-          scales: {
-            y: { beginAtZero: true, min: 10000, max: 40000, title: { display: true, text: "平均価格（円）" } },
-            x: { title: { display: true, text: "日付" } }
-          }
-        }
-      }
-    );
+    }
+  );
+
+  // 価格グラフ：自社ライン（水平）を条件追加
+  const myPrice = Number((calendarData[dateStr] || {}).my_price || 0);
+  const showMine = isCompareModeOn() && myPrice > 0;
+  const mySeries = showMine ? Array(labels.length).fill(myPrice) : [];
+
+  // Y軸レンジ：市場＋自社を含めて自動調整（最低レンジ5,000円）
+  const yVals = pv.concat(showMine ? [myPrice] : []);
+  let ymin = 10000, ymax = 40000;
+  if (yVals.length) {
+    const nums = yVals.filter(v => typeof v === "number" && isFinite(v));
+    if (nums.length) {
+      const minv = Math.min(...nums), maxv = Math.max(...nums);
+      ymin = Math.min(10000, Math.floor(minv / 1000) * 1000);
+      ymax = Math.max(40000, Math.ceil(maxv / 1000) * 1000);
+      if (ymax - ymin < 5000) ymax = ymin + 5000;
+    }
   }
+
+  const priceDatasets = [
+    { label: "市場平均", data: pv, fill: false, borderColor: "#e91e63", pointRadius: 2 }
+  ];
+  if (showMine) {
+    priceDatasets.push({
+      label: "自社", data: mySeries, fill: false,
+      borderColor: "#ff9800", borderDash: [6,4], pointRadius: 0
+    });
+  }
+
+  window.pc = new Chart(
+    document.getElementById("priceChart").getContext("2d"),
+    {
+      type: "line",
+      data: { labels, datasets: priceDatasets },
+      options: {
+        plugins: { legend: { display: showMine } }, // 自社表示時だけ凡例ON
+        responsive: false,
+        animation: false,
+        spanGaps: true,
+        scales: {
+          y: { beginAtZero: false, min: ymin, max: ymax, title: { display: true, text: "平均価格（円）" } },
+          x: { title: { display: true, text: "日付" } }
+        }
+      }
+    }
+  );
 }
+
 
 // ========== 最終更新日時（Actions完了時刻を表示） ==========
 function updateLastUpdate(){
