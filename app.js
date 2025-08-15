@@ -25,12 +25,17 @@ function isHoliday(date) {
 // ========== ヘルパー ==========
 const todayIso = () => new Date().toISOString().slice(0,10);
 
-// 自社比較モード（test.htmlがlocalStorageに保存）
+// --- 自社比較モード（localStorage初期化＆厳密判定） ---
+(() => {
+  const v = localStorage.getItem("compareMode");
+  if (v !== "1" && v !== "0") localStorage.setItem("compareMode", "0"); // 既定OFF
+})();
 const isCompareModeOn = () => localStorage.getItem("compareMode") === "1";
 
+// 汎用ロード
 async function loadJson(path) {
   try {
-    const res = await fetch(path);
+    const res = await fetch(path + "?cb=" + Date.now()); // no-cache
     if (!res.ok) return {};
     return await res.json();
   } catch {
@@ -46,7 +51,7 @@ async function loadAll() {
 }
 
 // ========== 需要スパイク履歴バナー ==========
-// サマリー：直近3日分×最大10件（※バナー表示は「当日〜3日先」を除外）
+// サマリー：直近3日分×最大10件（※当日〜3日先は除外）
 function renderSpikeBanner() {
   const bannerDiv = document.getElementById("spike-banner");
   if (!bannerDiv) return;
@@ -56,8 +61,7 @@ function renderSpikeBanner() {
     return;
   }
 
-  // ---- ここが今回のポイント（JSTで「当日0:00」を作る＆近すぎる日を除外） ----
-  const EXCLUDE_NEAR_DAYS = 3; // 当日(0)〜3日先を除外 → 4日先以降を表示
+  const EXCLUDE_NEAR_DAYS = 3; // 当日(0)〜3日先を除外
   const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
   // JSTの「今日 00:00」
@@ -70,28 +74,24 @@ function renderSpikeBanner() {
   ));
 
   const parseYMD = (ymd) => {
-    // "YYYY-MM-DD" → JST 00:00 の Date
     const [y, m, d] = String(ymd).split("-").map(Number);
     return new Date(Date.UTC(y, m - 1, d, 0, 0, 0));
   };
-  // ---------------------------------------------------------------------
 
-  // 直近3日の「検知日(up_date)」だけ拾う（ここは従来どおり）
   const sortedDates = Object.keys(spikeData)
-    .sort((a, b) => b.localeCompare(a))  // 新しい検知日が先
+    .sort((a, b) => b.localeCompare(a))
     .slice(0, 3);
 
   let chips = [];
 
   for (const up_date of sortedDates) {
     for (const spike of spikeData[up_date]) {
-      const spikeDate = spike.spike_date || "";   // 例: "2025-08-12"
+      const spikeDate = spike.spike_date || "";
       if (!spikeDate) continue;
 
-      // 「当日〜3日先」を除外（過去日も除外されます）
       const target = parseYMD(spikeDate);
       const daysAhead = Math.floor((target - jstToday) / MS_PER_DAY);
-      if (daysAhead <= EXCLUDE_NEAR_DAYS) continue;  // ← ここで除外！
+      if (daysAhead <= EXCLUDE_NEAR_DAYS) continue;
 
       const priceDiff = spike.price_diff || 0;
       const priceRatio = spike.price_ratio ? (spike.price_ratio * 100).toFixed(1) : "0";
@@ -115,17 +115,13 @@ function renderSpikeBanner() {
     if (chips.length >= 10) break;
   }
 
-  if (chips.length === 0) {
-    bannerDiv.innerHTML = "";
-    return;
-  }
-
-  bannerDiv.innerHTML =
-    `<div class="spike-banner-box">
-      <span class="spike-banner-header">🚀 需要急騰検知日</span>
-      <span class="spike-banner-meta">（直近3日・最大10件）</span>
-      <div class="spike-chip-row">${chips.join("")}</div>
-    </div>`;
+  bannerDiv.innerHTML = chips.length
+    ? `<div class="spike-banner-box">
+         <span class="spike-banner-header">🚀 需要急騰検知日</span>
+         <span class="spike-banner-meta">（直近3日・最大10件）</span>
+         <div class="spike-chip-row">${chips.join("")}</div>
+       </div>`
+    : "";
 }
 
 
@@ -153,29 +149,35 @@ function shiftMonth(diff) {
 }
 
 // ========== ページ全体再描画 ==========
+// 順序：スパイク → カレンダー → グラフ（※グラフ破棄→再生成はrenderGraph内で実施）
 function renderPage() {
-  let isMobile = window.innerWidth <= 700;
+  const main = document.querySelector(".calendar-main");
+  if (!main) return;
+
+  const isMobile = window.innerWidth <= 700;
   if (isMobile) {
-    document.querySelector(".calendar-main").innerHTML =
+    main.innerHTML =
       '<div class="main-flexbox">' +
         '<div class="calendar-container" id="calendar-container"></div>' +
         '<div class="graph-side" id="graph-container"></div>' +
       '</div>';
   } else {
-    document.querySelector(".calendar-main").innerHTML =
+    main.innerHTML =
       '<div class="main-flexbox">' +
         '<div class="graph-side" id="graph-container"></div>' +
         '<div class="calendar-container" id="calendar-container"></div>' +
       '</div>';
   }
-  renderSpikeBanner(); // ←需要急騰バナー描画
-  renderGraph(selectedDate);
+
+  renderSpikeBanner();
   renderCalendars();
+  renderGraph(selectedDate);
 }
 
 // ========== カレンダー描画 ==========
 function renderCalendars() {
   const container = document.getElementById("calendar-container");
+  if (!container) return;
   container.innerHTML = "";
   for (const [y,m] of currentYM) {
     container.appendChild(renderMonth(y,m));
@@ -284,6 +286,11 @@ function renderMonth(y,m) {
 function renderGraph(dateStr){
   const gc = document.getElementById("graph-container");
   if (!gc) return;
+
+  // まず既存チャートを必ず破棄（残像防止）
+  if (window.sc) { try { window.sc.destroy(); } catch(e){} window.sc = null; }
+  if (window.pc) { try { window.pc.destroy(); } catch(e){} window.pc = null; }
+
   if (!dateStr) { gc.innerHTML=""; return; }
 
   const allDates = Object.keys(historicalData).sort(),
@@ -319,11 +326,9 @@ function renderGraph(dateStr){
     pv.push(hist[d].avg_price);
   });
 
-  if (window.sc) window.sc.destroy();
-  if (window.pc) window.pc.destroy();
   if (!labels.length) return;
 
-  // 在庫グラフ（従来どおり）
+  // 在庫グラフ
   window.sc = new Chart(
     document.getElementById("stockChart").getContext("2d"),
     {
@@ -364,8 +369,12 @@ function renderGraph(dateStr){
   ];
   if (showMine) {
     priceDatasets.push({
-      label: "自社", data: mySeries, fill: false,
-      borderColor: "#ff9800", borderDash: [6,4], pointRadius: 0
+      label: "自社",
+      data: mySeries,
+      fill: false,
+      borderColor: "#ff9800",
+      borderDash: [6,4],
+      pointRadius: 0
     });
   }
 
@@ -375,7 +384,7 @@ function renderGraph(dateStr){
       type: "line",
       data: { labels, datasets: priceDatasets },
       options: {
-        plugins: { legend: { display: showMine } }, // 自社表示時だけ凡例ON
+        plugins: { legend: { display: priceDatasets.length > 1 } }, // 自社表示時だけ凡例ON
         responsive: false,
         animation: false,
         spanGaps: true,
@@ -387,7 +396,6 @@ function renderGraph(dateStr){
     }
   );
 }
-
 
 // ========== 最終更新日時（Actions完了時刻を表示） ==========
 function updateLastUpdate(){
