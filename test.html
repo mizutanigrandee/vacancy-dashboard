@@ -82,20 +82,20 @@
 <!-- ▼ test専用JS①：トグルの設置＆状態保存（グローバル関数化） -->
 <script>
   (function(){
-    const KEY="compareMode";
+    const KEY = "compareMode";
 
     // 初回ロード時だけ OFF に初期化（このタブのセッション中1回だけ）
     if (!sessionStorage.getItem("cmpInitDone")) {
-      if (localStorage.getItem(KEY)!=="0" && localStorage.getItem(KEY)!=="1") {
-        localStorage.setItem(KEY,"0");
+      if (localStorage.getItem(KEY) !== "0" && localStorage.getItem(KEY) !== "1") {
+        localStorage.setItem(KEY, "0");
       }
-      sessionStorage.setItem("cmpInitDone","1");
+      sessionStorage.setItem("cmpInitDone", "1");
     }
 
     // 既存チャート破棄＆再描画
     function applyToggleAndRedraw(){
-      if(window.sc){ try{ window.sc.destroy(); }catch(e){} window.sc=null; }
-      if(window.pc){ try{ window.pc.destroy(); }catch(e){} window.pc=null; }
+      if (window.sc) { try { window.sc.destroy(); } catch(e){} window.sc = null; }
+      if (window.pc) { try { window.pc.destroy(); } catch(e){} window.pc = null; }
       if (typeof renderPage === "function") renderPage();
     }
 
@@ -103,20 +103,21 @@
     function updateToggleUI(on){
       const btn = document.getElementById("compareToggle");
       const st  = document.getElementById("toggleState");
-      if(btn) btn.setAttribute("aria-pressed", on ? "true":"false");
-      if(st)  st.textContent = on ? "ON":"OFF";
+      if (btn) btn.setAttribute("aria-pressed", on ? "true" : "false");
+      if (st)  st.textContent = on ? "ON" : "OFF";
     }
 
     // ★ グローバル公開：app.js からも呼べる
     window.ensureCompareToggle = function ensureCompareToggle(){
       const container = document.getElementById("calendar-container");
-      if(!container) return;
+      if (!container) return;
+
       let holder = document.getElementById("compareToggleHolder");
-      if(!holder){
+      if (!holder) {
         holder = document.createElement("div");
         holder.id = "compareToggleHolder";
         holder.className = "compare-toggle-fixed";
-        holder.setAttribute("data-ignore","compare-toggle");
+        holder.setAttribute("data-ignore", "compare-toggle");
         holder.innerHTML = `
           <button id="compareToggle" class="compare-toggle" aria-pressed="false" aria-label="自社比較モードを切替">
             <span class="dot" aria-hidden="true"></span>
@@ -124,24 +125,37 @@
             <span id="toggleState">OFF</span>
           </button>`;
         container.appendChild(holder);
+
         document.getElementById("compareToggle").addEventListener("click", () => {
-          const nowOn = localStorage.getItem(KEY)==="1";
+          const nowOn  = localStorage.getItem(KEY) === "1";
           const nextOn = !nowOn;
           localStorage.setItem(KEY, nextOn ? "1" : "0");
           updateToggleUI(nextOn);
           applyToggleAndRedraw();
         });
       }
+
       // 状態反映
-      updateToggleUI(localStorage.getItem(KEY)==="1");
+      updateToggleUI(localStorage.getItem(KEY) === "1");
     };
 
     // 初期起動時：一度だけ設置（その後は app.js 側が毎回呼ぶ）
     document.addEventListener("DOMContentLoaded", () => {
       if (typeof window.ensureCompareToggle === "function") window.ensureCompareToggle();
     });
+
+    // カレンダーが描き替わったら毎回トグルを差し直す（subtree: true を追加）
+    document.addEventListener("DOMContentLoaded", () => {
+      const c = document.getElementById("calendar-container");
+      if (c) {
+        new MutationObserver(() => {
+          if (window.ensureCompareToggle) window.ensureCompareToggle();
+        }).observe(c, { childList: true, subtree: true });
+      }
+    });
   })();
 </script>
+
 
 
   <!-- ▼ test専用JS：ON時だけセルに「自社：¥…（±%）」を差し込み（見やすさ用） -->
