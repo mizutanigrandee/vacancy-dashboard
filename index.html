@@ -32,24 +32,29 @@
   overflow: visible !important; 
 }
 
-/* トグルを “枠の外・右上” に出す */
+/* PC用：カレンダー枠外右上に浮かせる */
+.calendar-container{ position: relative; overflow: visible !important; }
 .compare-toggle-fixed{
   position: absolute;
-  top: -36px;     /* 上に持ち上げる（枠の外へ） */
-  right: -8px;    /* 右に少しはみ出させる */
+  top: -36px;
+  right: -8px;
   z-index: 3000;
   pointer-events: auto;
 }
 
-/* スマホ時は少しだけ内側＆縮小 */
+/* スマホ用：ナビゲーションボタンの下に右寄せ */
 @media (max-width:768px){
   .compare-toggle-fixed{
-    top: -34px;
-    right: -4px;
-    transform: scale(.92);
-    transform-origin: top right;
+    position: relative;
+    top: 8px;
+    right: 0;
+    margin-left: auto;
+    width: fit-content;
+    transform: scale(.9);
+    transform-origin: right center;
   }
 }
+
 
 
     /* 自社行の見た目（ON時だけ差し込む） */
