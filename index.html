@@ -26,10 +26,31 @@
     /* 比較モードON時はイベント行を隠す（自社行のスペース確保） */
     body.cm-on .cell-event-list { display: none !important; }
 
-    /* 右カレンダー内の“右上”に重ねる（幅を押し広げない） */
-    .calendar-container{ position: relative; overflow: visible !important; }
-    .compare-toggle-fixed{ position:absolute; top:6px; right:8px; z-index:2000; pointer-events:auto; }
-    @media (max-width:768px){ .compare-toggle-fixed{ right:4px; } }
+/* 右カレンダーを基準にする */
+.calendar-container{ 
+  position: relative; 
+  overflow: visible !important; 
+}
+
+/* トグルを “枠の外・右上” に出す */
+.compare-toggle-fixed{
+  position: absolute;
+  top: -30px;     /* 上に持ち上げる（枠の外へ） */
+  right: -8px;    /* 右に少しはみ出させる */
+  z-index: 3000;
+  pointer-events: auto;
+}
+
+/* スマホ時は少しだけ内側＆縮小 */
+@media (max-width:768px){
+  .compare-toggle-fixed{
+    top: -28px;
+    right: -4px;
+    transform: scale(.92);
+    transform-origin: top right;
+  }
+}
+
 
     /* 自社行の見た目（ON時だけ差し込む） */
     .myline{ margin-top:2px; font-size:12px; line-height:1.2; white-space:nowrap; }
