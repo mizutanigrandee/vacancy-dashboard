@@ -102,5 +102,18 @@
       "vacancy_ratio": -0.1429
     }
   ],
-  "2025-08-20": []
+  "2025-08-20": [],
+  "2025-08-21": [
+    {
+      "spike_date": "2025-09-27",
+      "price": 28420.0,
+      "last_price": 26694.0,
+      "price_diff": 1726.0,
+      "price_ratio": 0.0647,
+      "vacancy": 185,
+      "last_vac": 195,
+      "vacancy_diff": -10,
+      "vacancy_ratio": -0.0513
+    }
+  ]
 }
