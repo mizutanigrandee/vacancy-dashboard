@@ -182,5 +182,18 @@
       "vacancy_diff": -5,
       "vacancy_ratio": -0.0538
     }
+  ],
+  "2025-08-30": [
+    {
+      "spike_date": "2025-09-05",
+      "price": 17887.0,
+      "last_price": 16960.0,
+      "price_diff": 927.0,
+      "price_ratio": 0.0547,
+      "vacancy": 236,
+      "last_vac": 249,
+      "vacancy_diff": -13,
+      "vacancy_ratio": -0.0522
+    }
   ]
 }
