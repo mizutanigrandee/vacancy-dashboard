@@ -9,7 +9,7 @@
     title: "めちゃいいツール",
     // ▼ メニューのリンク先（本家＝料金カレンダー、他2つは ota-bridge のページ）
     menu: [
-      { id: "calendar",  label: "料金カレンダー", path: "index.html" },
+      { id: "calendar",  label: "料金カレンダー", path: "https://mizutanigrandee.github.io/vacancy-dashboard/" },
       { id: "reviews",   label: "クチコミ比較",   path: "https://mizutanigrandee.github.io/ota-bridge/reviews.html" },
       { id: "compete",   label: "競合比較",       path: "https://mizutanigrandee.github.io/ota-bridge/daily_preview.html" }
     ]
