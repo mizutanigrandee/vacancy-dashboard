@@ -4,12 +4,14 @@
   const active = script?.dataset?.active || "";
 
   const CFG = {
-    logo: "assets/バナー画像3.png",  // ロゴファイル名は後で差し替え可
+    // ▼ ロゴ画像のファイル名に合わせてここを変更
+    logo: "assets/バナー画像3.png",
     title: "めちゃいいツール",
+    // ▼ メニューのリンク先（本家＝料金カレンダー、他2つは ota-bridge のページ）
     menu: [
       { id: "calendar",  label: "料金カレンダー", path: "index.html" },
-      { id: "reviews",   label: "クチコミ比較",   path: "reviews.html" },
-      { id: "compete",   label: "競合比較",       path: "daily_preview.html" }
+      { id: "reviews",   label: "クチコミ比較",   path: "https://mizutanigrandee.github.io/ota-bridge/reviews.html" },
+      { id: "compete",   label: "競合比較",       path: "https://mizutanigrandee.github.io/ota-bridge/daily_preview.html" }
     ]
   };
 
