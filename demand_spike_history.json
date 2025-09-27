@@ -144,17 +144,6 @@
   ],
   "2025-09-06": [
     {
-      "spike_date": "2025-09-26",
-      "price": 23333.0,
-      "last_price": 21275.0,
-      "price_diff": 2058.0,
-      "price_ratio": 0.0967,
-      "vacancy": 177,
-      "last_vac": 187,
-      "vacancy_diff": -10,
-      "vacancy_ratio": -0.0535
-    },
-    {
       "spike_date": "2025-09-27",
       "price": 42999.0,
       "last_price": 40555.0,
@@ -216,17 +205,6 @@
   ],
   "2025-09-09": [
     {
-      "spike_date": "2025-09-26",
-      "price": 26079.0,
-      "last_price": 23906.0,
-      "price_diff": 2173.0,
-      "price_ratio": 0.0909,
-      "vacancy": 150,
-      "last_vac": 164,
-      "vacancy_diff": -14,
-      "vacancy_ratio": -0.0854
-    },
-    {
       "spike_date": "2025-10-03",
       "price": 29822.0,
       "last_price": 26659.0,
@@ -284,17 +262,6 @@
   ],
   "2025-09-10": [
     {
-      "spike_date": "2025-09-26",
-      "price": 29500.0,
-      "last_price": 26079.0,
-      "price_diff": 3421.0,
-      "price_ratio": 0.1312,
-      "vacancy": 133,
-      "last_vac": 150,
-      "vacancy_diff": -17,
-      "vacancy_ratio": -0.1133
-    },
-    {
       "spike_date": "2025-10-02",
       "price": 28306.0,
       "last_price": 26727.0,
@@ -341,17 +308,6 @@
   ],
   "2025-09-11": [],
   "2025-09-12": [
-    {
-      "spike_date": "2025-09-26",
-      "price": 29985.0,
-      "last_price": 28545.0,
-      "price_diff": 1440.0,
-      "price_ratio": 0.0504,
-      "vacancy": 123,
-      "last_vac": 135,
-      "vacancy_diff": -12,
-      "vacancy_ratio": -0.0889
-    },
     {
       "spike_date": "2025-10-03",
       "price": 37079.0,
@@ -716,31 +672,8 @@
       "vacancy_ratio": -0.0842
     }
   ],
-  "2025-09-25": [
-    {
-      "spike_date": "2025-09-26",
-      "price": 35013.0,
-      "last_price": 33216.0,
-      "price_diff": 1797.0,
-      "price_ratio": 0.0541,
-      "vacancy": 99,
-      "last_vac": 116,
-      "vacancy_diff": -17,
-      "vacancy_ratio": -0.1466
-    }
-  ],
+  "2025-09-25": [],
   "2025-09-26": [
-    {
-      "spike_date": "2025-09-26",
-      "price": 35013.0,
-      "last_price": 33216.0,
-      "price_diff": 1797.0,
-      "price_ratio": 0.0541,
-      "vacancy": 99,
-      "last_vac": 116,
-      "vacancy_diff": -17,
-      "vacancy_ratio": -0.1466
-    },
     {
       "spike_date": "2025-09-28",
       "price": 18763.0,
@@ -795,6 +728,19 @@
       "last_vac": 191,
       "vacancy_diff": -10,
       "vacancy_ratio": -0.0524
+    }
+  ],
+  "2025-09-27": [
+    {
+      "spike_date": "2025-10-02",
+      "price": 53478.0,
+      "last_price": 49966.0,
+      "price_diff": 3512.0,
+      "price_ratio": 0.0703,
+      "vacancy": 54,
+      "last_vac": 58,
+      "vacancy_diff": -4,
+      "vacancy_ratio": -0.069
     }
   ]
 }
