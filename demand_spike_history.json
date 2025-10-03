@@ -217,17 +217,6 @@
   ],
   "2025-09-10": [
     {
-      "spike_date": "2025-10-02",
-      "price": 28306.0,
-      "last_price": 26727.0,
-      "price_diff": 1579.0,
-      "price_ratio": 0.0591,
-      "vacancy": 165,
-      "last_vac": 178,
-      "vacancy_diff": -13,
-      "vacancy_ratio": -0.073
-    },
-    {
       "spike_date": "2025-10-03",
       "price": 32836.0,
       "last_price": 29822.0,
@@ -442,17 +431,6 @@
   ],
   "2025-09-19": [
     {
-      "spike_date": "2025-10-02",
-      "price": 38084.0,
-      "last_price": 33229.0,
-      "price_diff": 4855.0,
-      "price_ratio": 0.1461,
-      "vacancy": 91,
-      "last_vac": 97,
-      "vacancy_diff": -6,
-      "vacancy_ratio": -0.0619
-    },
-    {
       "spike_date": "2025-10-03",
       "price": 51855.0,
       "last_price": 46056.0,
@@ -619,17 +597,6 @@
   "2025-09-25": [],
   "2025-09-26": [
     {
-      "spike_date": "2025-10-02",
-      "price": 49966.0,
-      "last_price": 46302.0,
-      "price_diff": 3664.0,
-      "price_ratio": 0.0791,
-      "vacancy": 58,
-      "last_vac": 66,
-      "vacancy_diff": -8,
-      "vacancy_ratio": -0.1212
-    },
-    {
       "spike_date": "2025-10-10",
       "price": 48527.0,
       "last_price": 45787.0,
@@ -663,19 +630,7 @@
       "vacancy_ratio": -0.0524
     }
   ],
-  "2025-09-27": [
-    {
-      "spike_date": "2025-10-02",
-      "price": 53478.0,
-      "last_price": 49966.0,
-      "price_diff": 3512.0,
-      "price_ratio": 0.0703,
-      "vacancy": 54,
-      "last_vac": 58,
-      "vacancy_diff": -4,
-      "vacancy_ratio": -0.069
-    }
-  ],
+  "2025-09-27": [],
   "2025-09-28": [
     {
       "spike_date": "2025-10-04",
@@ -689,19 +644,7 @@
       "vacancy_ratio": -0.05
     }
   ],
-  "2025-09-29": [
-    {
-      "spike_date": "2025-10-02",
-      "price": 49067.0,
-      "last_price": 41679.0,
-      "price_diff": 7388.0,
-      "price_ratio": 0.1773,
-      "vacancy": 56,
-      "last_vac": 66,
-      "vacancy_diff": -10,
-      "vacancy_ratio": -0.1515
-    }
-  ],
+  "2025-09-29": [],
   "2025-09-30": [
     {
       "spike_date": "2025-10-04",
@@ -751,5 +694,6 @@
       "vacancy_diff": -7,
       "vacancy_ratio": -0.0565
     }
-  ]
+  ],
+  "2025-10-03": []
 }
