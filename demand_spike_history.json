@@ -134,5 +134,29 @@
   ],
   "2025-10-12": [],
   "2025-10-13": [],
-  "2025-10-14": []
+  "2025-10-14": [],
+  "2025-10-15": [
+    {
+      "spike_date": "2025-12-31",
+      "price": 30496.0,
+      "last_price": 24059.0,
+      "price_diff": 6437.0,
+      "price_ratio": 0.2676,
+      "vacancy": 192,
+      "last_vac": 258,
+      "vacancy_diff": -66,
+      "vacancy_ratio": -0.2558
+    },
+    {
+      "spike_date": "2026-01-01",
+      "price": 21484.0,
+      "last_price": 19987.0,
+      "price_diff": 1497.0,
+      "price_ratio": 0.0749,
+      "vacancy": 239,
+      "last_vac": 254,
+      "vacancy_diff": -15,
+      "vacancy_ratio": -0.0591
+    }
+  ]
 }
