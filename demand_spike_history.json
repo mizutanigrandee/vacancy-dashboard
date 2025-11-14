@@ -1,5 +1,4 @@
 {
-  "2025-08-15": [],
   "2025-08-16": [],
   "2025-08-17": [],
   "2025-08-18": [],
@@ -215,30 +214,30 @@
   "2025-11-09": [],
   "2025-11-10": [],
   "2025-11-11": [],
-  "2025-11-12": [
+  "2025-11-12": [],
+  "2025-11-13": [],
+  "2025-11-14": [
     {
-      "spike_date": "2025-11-13",
-      "price": 16917.0,
-      "last_price": 14952.0,
-      "price_diff": 1965.0,
-      "price_ratio": 0.1314,
-      "vacancy": 229,
-      "last_vac": 253,
-      "vacancy_diff": -24,
-      "vacancy_ratio": -0.0949
-    }
-  ],
-  "2025-11-13": [
+      "spike_date": "2025-11-22",
+      "price": 62911.0,
+      "last_price": 56297.0,
+      "price_diff": 6614.0,
+      "price_ratio": 0.1175,
+      "vacancy": 47,
+      "last_vac": 51,
+      "vacancy_diff": -4,
+      "vacancy_ratio": -0.0784
+    },
     {
-      "spike_date": "2025-11-13",
-      "price": 16917.0,
-      "last_price": 14952.0,
-      "price_diff": 1965.0,
-      "price_ratio": 0.1314,
-      "vacancy": 229,
-      "last_vac": 253,
-      "vacancy_diff": -24,
-      "vacancy_ratio": -0.0949
+      "spike_date": "2025-12-31",
+      "price": 35413.0,
+      "last_price": 32862.0,
+      "price_diff": 2551.0,
+      "price_ratio": 0.0776,
+      "vacancy": 166,
+      "last_vac": 175,
+      "vacancy_diff": -9,
+      "vacancy_ratio": -0.0514
     }
   ]
 }
