@@ -568,42 +568,41 @@ body {
 }
 
 
-/* 自社価格行 */
+/* 自社価格行（PC基準） */
 .cell-myprice {
-  font-size: 11px;
+  font-size: 10px;
   margin-top: 2px;
 }
 
-/* 自社 vs エリア差分％行 */
+/* 自社 vs エリア差分％行（PC基準） */
 .cell-myprice-diff {
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.2;
 }
 
 .cell-myprice-diff.higher {
-  color: #e53935;  /* 高すぎ → 赤系 */
+  color: #e53935;  /* 高め → 赤系 */
 }
 
 .cell-myprice-diff.lower {
-  color: #1e88e5;  /* 安すぎ → 青系 */
+  color: #1e88e5;  /* 安め → 青系 */
 }
 
 /* スマホ表示向けの縮小調整 */
 @media (max-width: 700px) {
+  /* ここはお好みで残してOK
   .calendar-cell {
-    /* 余白も少し詰めると全体が収まりやすくなります（任意） */
     padding: 3px 4px;
   }
+  */
 
   .cell-myprice {
-    font-size: 9px;
+    font-size: 7px;      /* エリア価格と同じサイズに */
     margin-top: 1px;
   }
 
   .cell-myprice-diff {
-    font-size: 9px;
-    line-height: 1.1;
+    font-size: 7px;      /* 同じく 7px に合わせる */
+    line-height: 1.05;
   }
 }
-
-
