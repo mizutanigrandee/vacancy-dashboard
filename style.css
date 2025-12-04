@@ -498,15 +498,23 @@ body {
   }
 }
 
+    /* ヘッダーを少し薄くする */
+  .app-header {
+    padding: 8px 0;          /* 元は 16px なので半分程度に */
+  }
+  
 
+  /* スマホ用ロゴバナー：横幅を絞り、高さも制限 */
   .app-banner {
-    width: 95vw !important;
-    max-width: 99vw !important;
+    width: 70vw !important;   /* 画面幅の 70％ 程度に */
+    max-width: 260px !important;
     height: auto !important;
-    min-width: 70vw !important;
+    max-height: 52px;         /* ここで縦の上限を決める */
+    object-fit: contain;      /* 比率を維持したまま収める */
     display: block;
     margin: 0 auto;
   }
+  
   .footer-note {
     font-size: 10px;
     padding: 6px 2vw 6px 2vw;
