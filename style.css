@@ -587,3 +587,23 @@ body {
 .cell-myprice-diff.lower {
   color: #1e88e5;  /* 安すぎ → 青系 */
 }
+
+/* スマホ表示向けの縮小調整 */
+@media (max-width: 700px) {
+  .calendar-cell {
+    /* 余白も少し詰めると全体が収まりやすくなります（任意） */
+    padding: 3px 4px;
+  }
+
+  .cell-myprice {
+    font-size: 9px;
+    margin-top: 1px;
+  }
+
+  .cell-myprice-diff {
+    font-size: 9px;
+    line-height: 1.1;
+  }
+}
+
+
