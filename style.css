@@ -6,10 +6,14 @@
   padding: 16px 0;
   background: linear-gradient(90deg, #2D9CDB 0%, #E743B2 100%);
 }
+/* ── ロゴバナー（PC共通） ── */
 .app-banner {
-  width: 40%;
-  height: auto;
+  display: block;
+  height: 44px;      /* PC時の高さ（お好みで 40〜48px 程度） */
+  width: auto;
+  max-width: 100%;
 }
+
 
 /* ── メインレイアウト ── */
 .main-flexbox {
@@ -504,17 +508,6 @@ body {
   }
   
 
-  /* スマホ用ロゴバナー：横幅を絞り、高さも制限 */
-  .app-banner {
-    width: 70vw !important;   /* 画面幅の 70％ 程度に */
-    max-width: 260px !important;
-    height: auto !important;
-    max-height: 52px;         /* ここで縦の上限を決める */
-    object-fit: contain;      /* 比率を維持したまま収める */
-    display: block;
-    margin: 0 auto;
-  }
-  
   .footer-note {
     font-size: 10px;
     padding: 6px 2vw 6px 2vw;
@@ -614,3 +607,17 @@ body {
     line-height: 1.05;
   }
 }
+
+@media screen and (max-width: 700px) {
+
+  /* ヘッダー帯を少し薄く */
+  .app-header {
+    padding: 6px 0;
+  }
+
+  /* スマホ時ロゴ高さだけ小さくする */
+  .app-banner {
+    height: 32px;    /* PCより少し低めにして見やすく */
+  }
+}
+
