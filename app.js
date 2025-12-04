@@ -232,6 +232,63 @@ function renderPage() {
 }
 
 
+// ▼ 追加：カレンダーに「自社価格」と「自社 vs エリア差分％」を描画
+window.renderMyLines = function () {
+  // まず既存の表示を全クリア（再描画のたびにリセット）
+  const cells = document.querySelectorAll(".calendar-cell[data-date]");
+  cells.forEach(cell => {
+    cell.querySelectorAll(".cell-myprice, .cell-myprice-diff").forEach(el => el.remove());
+  });
+
+  // 自社比較モードがOFFなら、ここで終了（クリアのみ）
+  if (!isCompareModeOn()) return;
+
+  cells.forEach(cell => {
+    const dateStr = cell.dataset.date;
+    if (!dateStr) return;
+
+    const cur = calendarData[dateStr] || {};
+    const myPrice   = Number(cur.my_price   || 0);  // 自社価格
+    const areaPrice = Number(cur.avg_price || 0);   // エリア平均
+
+    // 自社価格がなければ何も出さない
+    if (!myPrice || !isFinite(myPrice)) return;
+
+    // ---------- 1行目：自社価格 ----------
+    const myLine = document.createElement("div");
+    myLine.className = "cell-myprice";
+    myLine.textContent = "自社: ￥" + myPrice.toLocaleString();
+    // 基本価格行(.cell-price)の直後あたりに入れるイメージ
+    const priceRow = cell.querySelector(".cell-price");
+    if (priceRow && priceRow.nextSibling) {
+      cell.insertBefore(myLine, priceRow.nextSibling);
+    } else {
+      cell.appendChild(myLine);
+    }
+
+    // エリア平均がなければ、差分％は出さずに終了
+    if (!areaPrice || !isFinite(areaPrice)) return;
+
+    // ---------- 2行目：差分％サイン ----------
+    const diffPct   = ((myPrice - areaPrice) / areaPrice) * 100;
+    const absDiff   = Math.abs(diffPct);
+
+    // しきい値：±20％未満ならサインなし
+    if (absDiff < 20) return;
+
+    const arrow     = diffPct > 0 ? "⬆" : "⬇";
+    const sign      = diffPct > 0 ? "+" : "-";
+    const pctRounded = Math.round(absDiff);   // 18.3 → 18
+
+    const diffDiv = document.createElement("div");
+    diffDiv.className = "cell-myprice-diff " + (diffPct > 0 ? "higher" : "lower");
+    diffDiv.textContent = `${arrow} ${sign}${pctRounded}%`;
+
+    cell.appendChild(diffDiv);
+  });
+};
+
+
 
 
 // ========== カレンダー描画 ==========
