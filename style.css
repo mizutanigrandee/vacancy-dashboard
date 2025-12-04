@@ -502,6 +502,17 @@ body {
   }
 }
 
+    /* スマホ時ロゴバナー：高さだけ小さめに調整 */
+  .app-banner {
+    height: 32px;        /* スマホでは少し低めに。小さければ 30px でもOK */
+    width: auto;
+    max-width: 80vw;     /* 画面幅の 8割くらいに収める目安 */
+    display: block;
+    margin: 0 auto;
+    object-fit: contain; /* 縦横比を保ったままフィットさせる */
+  }
+
+
     /* ヘッダーを少し薄くする */
   .app-header {
     padding: 8px 0;          /* 元は 16px なので半分程度に */
@@ -608,16 +619,4 @@ body {
   }
 }
 
-@media screen and (max-width: 700px) {
-
-  /* ヘッダー帯を少し薄く */
-  .app-header {
-    padding: 6px 0;
-  }
-
-  /* スマホ時ロゴ高さだけ小さくする */
-  .app-banner {
-    height: 32px;    /* PCより少し低めにして見やすく */
-  }
-}
 
