@@ -566,3 +566,24 @@ body {
     line-clamp: 2;
   }
 }
+
+
+/* 自社価格行 */
+.cell-myprice {
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+/* 自社 vs エリア差分％行 */
+.cell-myprice-diff {
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.cell-myprice-diff.higher {
+  color: #e53935;  /* 高すぎ → 赤系 */
+}
+
+.cell-myprice-diff.lower {
+  color: #1e88e5;  /* 安すぎ → 青系 */
+}
