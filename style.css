@@ -1,19 +1,21 @@
-/* ── ヘッダー＆ロゴ調整 ── */
+/* ── ヘッダー＆ロゴ調整（PC/スマホ共通） ── */
 .app-header {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 8px 0;  /* ← 16px → 8px にして全デバイスで少し薄く */
+  height: 52px;  /* ヘッダー全体の高さを固定 */
+  padding: 0;
   background: linear-gradient(90deg, #2D9CDB 0%, #E743B2 100%);
 }
 
-/* ── ロゴバナー（全デバイス共通） ── */
+/* ロゴ画像本体 */
 .app-banner {
   display: block;
-  height: 32px;      /* ← 高さを32pxに固定（PCもスマホも同じ） */
+  height: 32px;      /* ロゴの高さを固定 */
   width: auto;
-  max-width: 260px;  /* 幅は最大260pxまで。足りなければ少し増やしてOK */
+  max-width: 260px;  /* 横は最大260pxまで（足りなければ増やしてOK） */
 }
+
 
 
 
