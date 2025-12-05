@@ -3,16 +3,18 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 16px 0;
+  padding: 8px 0;  /* ← 16px → 8px にして全デバイスで少し薄く */
   background: linear-gradient(90deg, #2D9CDB 0%, #E743B2 100%);
 }
-/* ── ロゴバナー（PC共通） ── */
+
+/* ── ロゴバナー（全デバイス共通） ── */
 .app-banner {
   display: block;
-  height: 44px;      /* PC時の高さ（お好みで 40〜48px 程度） */
+  height: 32px;      /* ← 高さを32pxに固定（PCもスマホも同じ） */
   width: auto;
-  max-width: 100%;
+  max-width: 260px;  /* 幅は最大260pxまで。足りなければ少し増やしてOK */
 }
+
 
 
 /* ── メインレイアウト ── */
@@ -502,15 +504,7 @@ body {
   }
 }
 
-    /* スマホ時ロゴバナー：高さだけ小さめに調整 */
-  .app-banner {
-    height: 32px;        /* スマホでは少し低めに。小さければ 30px でもOK */
-    width: auto;
-    max-width: 80vw;     /* 画面幅の 8割くらいに収める目安 */
-    display: block;
-    margin: 0 auto;
-    object-fit: contain; /* 縦横比を保ったままフィットさせる */
-  }
+
 
 
     /* ヘッダーを少し薄くする */
