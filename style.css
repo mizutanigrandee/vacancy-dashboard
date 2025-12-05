@@ -408,6 +408,15 @@ body {
   body, html {
     overflow-x: hidden !important;
   }
+
+    /* ▼ スマホだけヘッダー帯を少し細くする */
+  .app-header {
+    height: 44px;   /* 全体52px → スマホ44px に */
+  }
+  .app-banner {
+    height: 28px;   /* ロゴも少しだけ小さく */
+  }
+  
   .calendar-main,
   .main-flexbox,
   .calendar-container {
