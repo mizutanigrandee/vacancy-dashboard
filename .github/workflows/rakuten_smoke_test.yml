@@ -58,7 +58,6 @@ jobs:
           # 念のため「パス違い」も吸収（新→旧パスの順に試す）
           candidates = [
               "https://openapi.rakuten.co.jp/engine/api/Travel/VacantHotelSearch/20170426",
-              "https://openapi.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426",
           ]
 
           headers = {"Authorization": f"Bearer {access_key}"}
