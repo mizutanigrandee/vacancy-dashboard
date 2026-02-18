@@ -1,0 +1,96 @@
+name: Rakuten API Smoke Test (V2)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install requests
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Smoke test call (no secrets in logs)
+        env:
+          RAKUTEN_APP_ID_V2: ${{ secrets.RAKUTEN_APP_ID_V2 }}
+          RAKUTEN_ACCESS_KEY_V2: ${{ secrets.RAKUTEN_ACCESS_KEY_V2 }}
+        run: |
+          python - <<'PY'
+          import os, sys, datetime as dt, requests
+
+          app_id = os.environ.get("RAKUTEN_APP_ID_V2", "").strip()
+          access_key = os.environ.get("RAKUTEN_ACCESS_KEY_V2", "").strip()
+
+          if not app_id:
+              print("ERROR: RAKUTEN_APP_ID_V2 is empty", file=sys.stderr)
+              sys.exit(2)
+          if not access_key:
+              print("ERROR: RAKUTEN_ACCESS_KEY_V2 is empty", file=sys.stderr)
+              sys.exit(2)
+
+          # 実運用(update_cache.py)と同等のパラメータで1回だけ叩く
+          checkin = (dt.date.today() + dt.timedelta(days=1)).strftime("%Y-%m-%d")
+          checkout = (dt.date.today() + dt.timedelta(days=2)).strftime("%Y-%m-%d")
+
+          params = {
+              "applicationId": app_id,
+              "format": "json",
+              "checkinDate": checkin,
+              "checkoutDate": checkout,
+              "adultNum": 1,
+              "largeClassCode": "japan",
+              "middleClassCode": "osaka",
+              "smallClassCode": "shi",
+              "detailClassCode": "D",
+              "page": 1,
+          }
+
+          # 念のため「パス違い」も吸収（新→旧パスの順に試す）
+          candidates = [
+              "https://openapi.rakuten.co.jp/engine/api/Travel/VacantHotelSearch/20170426",
+              "https://openapi.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426",
+          ]
+
+          headers = {"Authorization": f"Bearer {access_key}"}
+
+          last_err = None
+          for url in candidates:
+              try:
+                  r = requests.get(url, params=params, headers=headers, timeout=20)
+                  # 401/403 の時だけ、念のため accessKey パラメータでも再トライ（ログに出ないようprintしない）
+                  if r.status_code in (401, 403):
+                      params2 = dict(params)
+                      params2["accessKey"] = access_key
+                      r = requests.get(url, params=params2, timeout=20)
+
+                  if r.status_code != 200:
+                      last_err = f"{url} -> HTTP {r.status_code}: {r.text[:200]}"
+                      continue
+
+                  data = r.json()
+                  record = (data.get("pagingInfo") or {}).get("recordCount")
+                  hotels = data.get("hotels") or []
+                  print("SUCCESS")
+                  print(f"endpoint_used: {url}")
+                  print(f"checkin: {checkin}")
+                  print(f"recordCount: {record}")
+                  print(f"hotels_in_response: {len(hotels)}")
+                  sys.exit(0)
+
+              except Exception as e:
+                  last_err = f"{url} -> exception: {e}"
+
+          print("FAILED")
+          print(last_err or "unknown error", file=sys.stderr)
+          sys.exit(1)
+          PY
