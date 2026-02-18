@@ -17,9 +17,53 @@ import datetime as dt
 from pathlib import Path
 from dateutil.relativedelta import relativedelta
 
-APP_ID = os.environ.get("RAKUTEN_APP_ID", "")
-if not APP_ID:
-    raise ValueError("❌ RAKUTEN_APP_ID が設定されていません。GitHub Secrets に登録してください。")
+
+# ============================================================
+# Rakuten API credentials (V1 / V2)
+#  - 無事故方針：V2の環境変数が揃っている時だけV2を使い、
+#               無ければ従来どおりV1で動かす
+# ============================================================
+APP_ID_V1 = os.environ.get("RAKUTEN_APP_ID", "").strip()
+
+APP_ID_V2 = os.environ.get("RAKUTEN_APP_ID_V2", "").strip()
+ACCESS_KEY_V2 = os.environ.get("RAKUTEN_ACCESS_KEY_V2", "").strip()
+
+# 任意：強制モード（auto / v1 / v2） ※未設定なら auto
+API_MODE = os.environ.get("RAKUTEN_API_MODE", "auto").strip().lower()
+
+USE_V2 = (API_MODE == "v2") or (API_MODE == "auto" and APP_ID_V2 and ACCESS_KEY_V2)
+
+if USE_V2:
+    if not APP_ID_V2 or not ACCESS_KEY_V2:
+        raise ValueError("❌ V2モードなのに RAKUTEN_APP_ID_V2 / RAKUTEN_ACCESS_KEY_V2 が未設定です。")
+else:
+    if not APP_ID_V1:
+        raise ValueError("❌ RAKUTEN_APP_ID が設定されていません。GitHub Secrets に登録してください。")
+
+# 既存コード互換用：APP_ID は「今使う方」を入れておく
+APP_ID = APP_ID_V2 if USE_V2 else APP_ID_V1
+
+# エンドポイント（V1 / V2）
+RAKUTEN_API_URL_V1 = "https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
+RAKUTEN_API_URL_V2 = "https://openapi.rakuten.co.jp/engine/api/Travel/VacantHotelSearch/20170426"
+RAKUTEN_API_URL = RAKUTEN_API_URL_V2 if USE_V2 else RAKUTEN_API_URL_V1
+
+# V2は Referer/Origin が必要になるケースがあるため、明示して付ける（SmokeTestで成功済み）
+HTTP_REFERER = os.environ.get("RAKUTEN_HTTP_REFERER", "https://mizutanigrandee.github.io/").strip()
+HTTP_ORIGIN  = os.environ.get("RAKUTEN_HTTP_ORIGIN",  "https://mizutanigrandee.github.io").strip()
+
+RAKUTEN_HEADERS = {}
+if USE_V2:
+    # accessKey は query にも入れる（V2の要求に確実に合う） + Bearer も併用
+    RAKUTEN_HEADERS = {
+        "Authorization": f"Bearer {ACCESS_KEY_V2}",
+        "Referer": HTTP_REFERER,
+        "Origin": HTTP_ORIGIN,
+        "User-Agent": "vacancy-dashboard/update_cache",
+    }
+
+print(f"🧩 Rakuten API mode: {'V2' if USE_V2 else 'V1'}", file=sys.stderr)
+
 
 # ★ 自社の楽天施設番号は Secrets 必須（直書きしない）
 MY_HOTEL_NO = os.environ.get("RAKUTEN_MY_HOTEL_NO", "")
@@ -33,8 +77,8 @@ HISTORICAL_FILE     = "historical_data.json"
 SPIKE_HISTORY_FILE  = "demand_spike_history.json"
 LAST_UPDATED_FILE   = "last_updated.json"   # フロントが読む最終更新メタ
 
-RAKUTEN_API_URL = "https://app.rakuten.co.jp/services/api/Travel/VacantHotelSearch/20170426"
 MAX_PAGES = 3  # 市場側のページ走査上限（パフォーマンス配慮）
+
 
 # ------------------------------------------------------------
 # 価格抽出ヘルパー：1ホテル塊の“当日最安値(最低価格)”を返す
@@ -59,6 +103,7 @@ def _extract_hotel_min_price(hotel_obj):
         return min_price
     except Exception:
         return None
+
 
 # ------------------------------------------------------------
 # 楽天API：市場の在庫数と平均(最低)価格
@@ -85,8 +130,16 @@ def fetch_market_avg(date: dt.date) -> dict:
             "detailClassCode": "D",
             "page": page,
         }
+
+        # V2の場合は accessKey を必ず付与（SmokeTestと同じ）
+        if USE_V2:
+            params["applicationId"] = APP_ID_V2
+            params["accessKey"] = ACCESS_KEY_V2
+        else:
+            params["applicationId"] = APP_ID_V1
+
         try:
-            r = requests.get(RAKUTEN_API_URL, params=params, timeout=10)
+            r = requests.get(RAKUTEN_API_URL, params=params, headers=RAKUTEN_HEADERS, timeout=10)
             r.raise_for_status()
             data = r.json()
         except Exception as e:
@@ -104,6 +157,7 @@ def fetch_market_avg(date: dt.date) -> dict:
     avg_price = round(sum(hotel_mins) / len(hotel_mins), 0) if hotel_mins else 0.0
     print(f"   → market avg(min) = {avg_price}  (vacancy={vacancy_total}, hotels={len(hotel_mins)})", file=sys.stderr)
     return {"vacancy": vacancy_total, "avg_price": avg_price}
+
 
 # ------------------------------------------------------------
 # 楽天API：自社ホテルの当日最安値（最低価格）
@@ -125,8 +179,16 @@ def fetch_my_min_price(date: dt.date, hotel_no: str) -> float:
         "detailClassCode": "D",
         "page": 1,
     }
+
+    # V2の場合は accessKey を必ず付与（SmokeTestと同じ）
+    if USE_V2:
+        params["applicationId"] = APP_ID_V2
+        params["accessKey"] = ACCESS_KEY_V2
+    else:
+        params["applicationId"] = APP_ID_V1
+
     try:
-        r = requests.get(RAKUTEN_API_URL, params=params, timeout=10)
+        r = requests.get(RAKUTEN_API_URL, params=params, headers=RAKUTEN_HEADERS, timeout=10)
         r.raise_for_status()
         data = r.json()
     except Exception as e:
@@ -138,9 +200,11 @@ def fetch_my_min_price(date: dt.date, hotel_no: str) -> float:
         mp = _extract_hotel_min_price(h)
         if isinstance(mp, (int, float)):
             mins.append(mp)
+
     my_min = float(min(mins)) if mins else 0.0
     print(f"   → my min = {my_min}", file=sys.stderr)
     return my_min
+
 
 # ------------------------------------------------------------
 # 当日以降の未来日を更新
@@ -213,12 +277,14 @@ def update_cache(start_date: dt.date, months: int = 9) -> dict:
     print("✅ cache updated", file=sys.stderr)
     return cache
 
+
 def _is_date_string(s: str) -> bool:
     try:
         dt.date.fromisoformat(s)
         return True
     except ValueError:
         return False
+
 
 # ------------------------------------------------------------
 # 過去3か月のスナップショット履歴
@@ -268,6 +334,7 @@ def update_history(cache: dict):
 
     Path(HISTORICAL_FILE).write_text(json.dumps(hist_data, ensure_ascii=False, indent=2), encoding="utf-8")
     print("📁 historical_data.json updated", file=sys.stderr)
+
 
 # ------------------------------------------------------------
 # 急騰検知（方向固定：客室↓ × 単価↑）
@@ -327,6 +394,7 @@ def detect_demand_spikes(cache_data, n_recent=3, price_up_pct=0.05, vac_down_pct
     print(f"📊 Demand Spikes Detected (dir-fixed: price↑ & vac↓): {len(results)} 件", file=sys.stderr)
     return results
 
+
 # ------------------------------------------------------------
 # 履歴の保存（過去宿泊日・方向逆を一括クレンジング）
 # ------------------------------------------------------------
@@ -383,6 +451,7 @@ def save_demand_spike_history(demand_spikes, history_file=SPIKE_HISTORY_FILE):
         json.dump(cleaned, f, ensure_ascii=False, indent=2)
     print(f"📁 {history_file} cleaned & updated", file=sys.stderr)
 
+
 # ------------------------------------------------------------
 # 最終更新メタの書き出し（JST）
 # ------------------------------------------------------------
@@ -403,6 +472,7 @@ def write_last_updated():
         print(f"🕒 {LAST_UPDATED_FILE} written: {payload['last_updated_jst']}", file=sys.stderr)
     except Exception as e:
         print(f"⚠️ failed to write {LAST_UPDATED_FILE}: {e}", file=sys.stderr)
+
 
 # ------------------------------------------------------------
 # エントリポイント
