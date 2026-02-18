@@ -38,7 +38,6 @@ jobs:
               print("ERROR: RAKUTEN_ACCESS_KEY_V2 is empty", file=sys.stderr)
               sys.exit(2)
 
-          # 実運用(update_cache.py)と同等のパラメータで1回だけ叩く
           checkin = (dt.date.today() + dt.timedelta(days=1)).strftime("%Y-%m-%d")
           checkout = (dt.date.today() + dt.timedelta(days=2)).strftime("%Y-%m-%d")
 
@@ -56,22 +55,28 @@ jobs:
               "page": 1,
           }
 
-          # 念のため「パス違い」も吸収（新→旧パスの順に試す）
           candidates = [
               "https://openapi.rakuten.co.jp/engine/api/Travel/VacantHotelSearch/20170426",
           ]
 
-          headers = {"Authorization": f"Bearer {access_key}"}
+          # ★ここが今回の肝：Referer/Originが無いと 403(REFERER_MISSING) になりやすい
+          headers = {
+              "Authorization": f"Bearer {access_key}",
+              "Referer": "https://mizutanigrandee.github.io/",
+              "Origin": "https://mizutanigrandee.github.io",
+              "User-Agent": "GitHubActions/vacancy-dashboard-smoketest",
+          }
 
           last_err = None
           for url in candidates:
               try:
                   r = requests.get(url, params=params, headers=headers, timeout=20)
-                  # 401/403 の時だけ、念のため accessKey パラメータでも再トライ（ログに出ないようprintしない）
+
+                  # 401/403 の時だけ再トライ（headersを必ず付ける）
                   if r.status_code in (401, 403):
                       params2 = dict(params)
                       params2["accessKey"] = access_key
-                      r = requests.get(url, params=params2, timeout=20)
+                      r = requests.get(url, params=params2, headers=headers, timeout=20)
 
                   if r.status_code != 200:
                       last_err = f"{url} -> HTTP {r.status_code}: {r.text[:200]}"
