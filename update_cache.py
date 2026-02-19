@@ -2,9 +2,9 @@
 """
 update_cache.py
 – 未来日の在庫・平均(最低)料金を取得して
-  【1名】vacancy_price_cache.json / historical_data.json / demand_spike_history.json を更新
-  【2名】vacancy_price_cache_2p.json / historical_data_2p.json を更新
-  ＋ GitHub Actions 実行完了のJST時刻を last_updated.json に書き出す
+  1名: vacancy_price_cache.json / historical_data.json
+  2名: vacancy_price_cache_2p.json / historical_data_2p.json
+  demand_spike_history.json / last_updated.json を更新
 
 ※ 重要: 『平均価格』は “各ホテルの当日最安値(最低価格) の平均” に統一
 """
@@ -73,51 +73,31 @@ if not MY_HOTEL_NO or not MY_HOTEL_NO.strip().isdigit():
     raise ValueError("❌ RAKUTEN_MY_HOTEL_NO が未設定 or 不正です。GitHub Secrets に数字のみで登録してください。")
 MY_HOTEL_NO = MY_HOTEL_NO.strip()
 
-# 1名（既存）
-CACHE_FILE          = "vacancy_price_cache.json"
-PREV_CACHE_FILE     = "vacancy_price_cache_previous.json"
-HISTORICAL_FILE     = "historical_data.json"
+# ---------- 1名 / 2名 出力ファイル ----------
+CACHE_FILE_1P          = "vacancy_price_cache.json"
+PREV_CACHE_FILE_1P     = "vacancy_price_cache_previous.json"
+HISTORICAL_FILE_1P     = "historical_data.json"
 
-# 2名（追加）
-CACHE_FILE_2P       = "vacancy_price_cache_2p.json"
-PREV_CACHE_FILE_2P  = "vacancy_price_cache_2p_previous.json"
-HISTORICAL_FILE_2P  = "historical_data_2p.json"
+CACHE_FILE_2P          = "vacancy_price_cache_2p.json"
+PREV_CACHE_FILE_2P     = "vacancy_price_cache_2p_previous.json"
+HISTORICAL_FILE_2P     = "historical_data_2p.json"
 
-SPIKE_HISTORY_FILE  = "demand_spike_history.json"
-LAST_UPDATED_FILE   = "last_updated.json"   # フロントが読む最終更新メタ
+SPIKE_HISTORY_FILE     = "demand_spike_history.json"
+LAST_UPDATED_FILE      = "last_updated.json"   # フロントが読む最終更新メタ
 
 MAX_PAGES = 3  # 市場側のページ走査上限（パフォーマンス配慮）
 
 
 # ============================================================
 # 429対策（スロットリング＋リトライ）
-#  - 楽天Webserviceの基本制限は「1秒に1回/アプリID」が原則 :contentReference[oaicite:1]{index=1}
-#  - 2名取得でリクエストは増えるので、無事故最優先で最低1.05秒にクランプする
-#
-# 調整（任意）：
-#   RAKUTEN_THROTTLE_SEC=1.2
-#   RAKUTEN_MAX_RETRIES=5
 # ============================================================
-THROTTLE_SEC = float(os.environ.get("RAKUTEN_THROTTLE_SEC", "1.1"))
-if THROTTLE_SEC < 1.05:
-    print(f"⚠️ RAKUTEN_THROTTLE_SEC={THROTTLE_SEC} は速すぎるため 1.05 に補正します（無事故優先）", file=sys.stderr)
-    THROTTLE_SEC = 1.05
-
+THROTTLE_SEC = float(os.environ.get("RAKUTEN_THROTTLE_SEC", "0.35"))  # 約2.8req/sec
 MAX_RETRIES  = int(os.environ.get("RAKUTEN_MAX_RETRIES", "5"))
 
 _session = requests.Session()
 
 def rakuten_get_json(url: str, params: dict, headers: dict = None, timeout: int = 10) -> dict:
-    """
-    楽天API GET 共通処理：
-      - 200: json返却（最後にスロットリング待機）
-      - 429: Retry-After（あれば）→指数バックオフで待って再試行
-      - 5xx/例外: 短いバックオフで再試行
-      - それ以外: 即失敗
-    ※ログにURL(クエリ)を出さない（万一のキー露出回避）
-    """
     last_err = None
-
     for attempt in range(MAX_RETRIES):
         try:
             r = _session.get(url, params=params, headers=headers, timeout=timeout)
@@ -157,10 +137,6 @@ def rakuten_get_json(url: str, params: dict, headers: dict = None, timeout: int 
 # 価格抽出ヘルパー：1ホテル塊の“当日最安値(最低価格)”を返す
 # ------------------------------------------------------------
 def _extract_hotel_min_price(hotel_obj):
-    """
-    Rakuten API の hotels[i] の塊から、そのホテルの当日最安値(total)を返す。
-    見つからなければ None。
-    """
     try:
         blocks = hotel_obj.get("hotel", [])
         if len(blocks) < 2:
@@ -179,14 +155,10 @@ def _extract_hotel_min_price(hotel_obj):
 
 
 # ------------------------------------------------------------
-# 楽天API：市場の在庫数と平均(最低)価格（adult_num対応）
+# 楽天API：市場の在庫数と平均(最低)価格（adultNum可変）
 # ------------------------------------------------------------
-def fetch_market_avg(date: dt.date, adult_num: int = 1) -> dict:
-    """
-    指定日の 市場在庫数 と 『平均(最低)価格』
-    = “各ホテルの当日最安値”を集めて平均した値 を返す
-    """
-    print(f"🔍 market(adult={adult_num}) {date}", file=sys.stderr)
+def fetch_market_avg(date: dt.date, adult_num: int) -> dict:
+    print(f"🔍 market({adult_num}p) {date}", file=sys.stderr)
     hotel_mins = []
     vacancy_total = 0
 
@@ -197,7 +169,6 @@ def fetch_market_avg(date: dt.date, adult_num: int = 1) -> dict:
             "checkinDate":  date.strftime("%Y-%m-%d"),
             "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
             "adultNum": adult_num,
-            "roomNum": 1,
             "largeClassCode":  "japan",
             "middleClassCode": "osaka",
             "smallClassCode":  "shi",
@@ -214,7 +185,7 @@ def fetch_market_avg(date: dt.date, adult_num: int = 1) -> dict:
         try:
             data = rakuten_get_json(RAKUTEN_API_URL, params=params, headers=RAKUTEN_HEADERS, timeout=10)
         except Exception as e:
-            print(f"  ⚠️ market fetch error {date} adult={adult_num} p{page}: {e}", file=sys.stderr)
+            print(f"  ⚠️ market fetch error {date} p{page}: {e}", file=sys.stderr)
             continue
 
         if page == 1:
@@ -226,17 +197,14 @@ def fetch_market_avg(date: dt.date, adult_num: int = 1) -> dict:
                 hotel_mins.append(mp)
 
     avg_price = round(sum(hotel_mins) / len(hotel_mins), 0) if hotel_mins else 0.0
-    print(f"   → market avg(min) = {avg_price}  (vacancy={vacancy_total}, hotels={len(hotel_mins)})", file=sys.stderr)
+    print(f"   → market({adult_num}p) avg(min) = {avg_price}  (vacancy={vacancy_total}, hotels={len(hotel_mins)})", file=sys.stderr)
     return {"vacancy": vacancy_total, "avg_price": avg_price}
 
 
 # ------------------------------------------------------------
-# 楽天API：自社ホテルの当日最安値（adult_num対応）
+# 楽天API：自社ホテルの当日最安値（adultNum可変）
 # ------------------------------------------------------------
-def fetch_my_min_price(date: dt.date, hotel_no: str, adult_num: int = 1) -> float:
-    """
-    自社hotelNoの当日最安値。取得できなければ 0.0 を返す。
-    """
+def fetch_my_min_price(date: dt.date, hotel_no: str, adult_num: int) -> float:
     if not hotel_no:
         return 0.0
 
@@ -246,7 +214,6 @@ def fetch_my_min_price(date: dt.date, hotel_no: str, adult_num: int = 1) -> floa
         "checkinDate":  date.strftime("%Y-%m-%d"),
         "checkoutDate": (date + dt.timedelta(days=1)).strftime("%Y-%m-%d"),
         "adultNum": adult_num,
-        "roomNum": 1,
         "hotelNo": hotel_no,
         "detailClassCode": "D",
         "page": 1,
@@ -261,7 +228,7 @@ def fetch_my_min_price(date: dt.date, hotel_no: str, adult_num: int = 1) -> floa
     try:
         data = rakuten_get_json(RAKUTEN_API_URL, params=params, headers=RAKUTEN_HEADERS, timeout=10)
     except Exception as e:
-        print(f"  ⚠️ my fetch error {date} adult={adult_num}: {e}", file=sys.stderr)
+        print(f"  ⚠️ my fetch error {date} ({adult_num}p): {e}", file=sys.stderr)
         return 0.0
 
     mins = []
@@ -271,60 +238,65 @@ def fetch_my_min_price(date: dt.date, hotel_no: str, adult_num: int = 1) -> floa
             mins.append(mp)
 
     my_min = float(min(mins)) if mins else 0.0
-    print(f"   → my min(adult={adult_num}) = {my_min}", file=sys.stderr)
+    print(f"   → my({adult_num}p) min = {my_min}", file=sys.stderr)
     return my_min
 
 
-# ------------------------------------------------------------
-# 当日以降の未来日を更新（モード共通）
-# ------------------------------------------------------------
-def update_cache_mode(start_date: dt.date, months: int, adult_num: int, cache_file: str, prev_cache_file: str) -> dict:
-    today             = dt.date.today()
-    three_months_ago  = today - relativedelta(months=3)
-    cal               = calendar.Calendar(firstweekday=calendar.SUNDAY)
+def _load_json_file(path: str) -> dict:
+    p = Path(path)
+    if not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
 
-    cache = {}
-    if Path(cache_file).exists():
-        cache = json.loads(Path(cache_file).read_text(encoding="utf-8"))
 
-    old_cache = {}
-    if Path(prev_cache_file).exists():
-        old_cache = json.loads(Path(prev_cache_file).read_text(encoding="utf-8"))
+def _save_json_file(path: str, data: dict):
+    Path(path).write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+# ------------------------------------------------------------
+# 当日以降の未来日を更新（モード別：1名/2名）
+# ------------------------------------------------------------
+def update_cache_mode(start_date: dt.date, months: int, adult_num: int, cache_file: str, prev_file: str) -> dict:
+    today            = dt.date.today()
+    three_months_ago = today - relativedelta(months=3)
+    cal              = calendar.Calendar(firstweekday=calendar.SUNDAY)
+
+    cache = _load_json_file(cache_file)
+    old_cache = _load_json_file(prev_file)
 
     # 過去3か月より前は削除
-    cache = {k: v for k, v in cache.items() if dt.date.fromisoformat(k) >= three_months_ago}
+    cache = {k: v for k, v in cache.items() if _is_date_string(k) and dt.date.fromisoformat(k) >= three_months_ago}
 
     for m in range(months):
         month_start = (start_date + relativedelta(months=m)).replace(day=1)
         for week in cal.monthdatescalendar(month_start.year, month_start.month):
             for day in week:
-                # 現在以降の未来日だけ取得
                 if day.month != month_start.month or day <= today:
                     continue
 
                 iso = day.isoformat()
 
-                # 市場平均(最低) & 自社最安 を取得（adult_num）
                 market = fetch_market_avg(day, adult_num=adult_num)
-
                 my_p = 0.0
                 try:
                     my_p = fetch_my_min_price(day, MY_HOTEL_NO, adult_num=adult_num)
                 except Exception as e:
-                    print(f"  ⚠️ my price error {iso} adult={adult_num}: {e}", file=sys.stderr)
+                    print(f"  ⚠️ my price error {iso} ({adult_num}p): {e}", file=sys.stderr)
 
                 # API失敗日はスキップし既存値保持（0/0は更新しない）
                 if market["vacancy"] == 0 and market["avg_price"] == 0.0:
-                    print(f"⏩ skip {iso} adult={adult_num} (empty)", file=sys.stderr)
+                    print(f"⏩ skip {iso} ({adult_num}p) (empty)", file=sys.stderr)
                     continue
 
-                prev          = old_cache.get(iso, {})
-                last_vac      = prev.get("vacancy",   market["vacancy"])
-                last_price    = prev.get("avg_price", market["avg_price"])
-                vac_diff      = market["vacancy"] - last_vac
-                price_diff    = market["avg_price"] - last_price
+                prev       = old_cache.get(iso, {})
+                last_vac   = prev.get("vacancy",   market["vacancy"])
+                last_price = prev.get("avg_price", market["avg_price"])
+                vac_diff   = market["vacancy"] - last_vac
+                price_diff = market["avg_price"] - last_price
 
-                # 自社 vs 市場（％）：(自社 - 市場) / 市場 * 100
                 my_vs_avg_pct = (
                     round((my_p - market["avg_price"]) / market["avg_price"] * 100, 1)
                     if (my_p and market["avg_price"]) else None
@@ -337,12 +309,13 @@ def update_cache_mode(start_date: dt.date, months: int, adult_num: int, cache_fi
                     "last_avg_price": last_price,
                     "vacancy_diff":   vac_diff,
                     "avg_price_diff": price_diff,
+                    # 自社情報（1名/2名どちらも同じキー名で保存）
                     "my_price":       my_p if my_p else 0.0,
                     "my_vs_avg_pct":  my_vs_avg_pct,
                 }
 
-    Path(cache_file).write_text(json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8")
-    Path(prev_cache_file).write_text(json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8")
+    _save_json_file(cache_file, cache)
+    _save_json_file(prev_file, cache)  # 次回比較用に“今回値”を保存
     print(f"✅ cache updated: {cache_file}", file=sys.stderr)
     return cache
 
@@ -356,33 +329,27 @@ def _is_date_string(s: str) -> bool:
 
 
 # ------------------------------------------------------------
-# 過去3か月のスナップショット履歴（モード共通）
+# 過去3か月のスナップショット履歴（モード別）
 # ------------------------------------------------------------
 def update_history_mode(cache: dict, historical_file: str):
-    today       = dt.date.today()
-    today_str   = today.isoformat()
-    hist_data = {}
+    today     = dt.date.today()
+    today_str = today.isoformat()
 
-    if Path(historical_file).exists():
-        try:
-            with open(historical_file, encoding="utf-8") as f:
-                hist_data = json.load(f)
-        except Exception as e:
-            print(f"⚠️ error loading {historical_file}: {e}", file=sys.stderr)
+    hist_data = _load_json_file(historical_file)
 
     # 未来日の今日時点スナップショットを追記
     for iso, v in cache.items():
-        if dt.date.fromisoformat(iso) >= today:
+        if _is_date_string(iso) and dt.date.fromisoformat(iso) >= today:
             hist_data.setdefault(iso, {})
             hist_data[iso][today_str] = {
-                "vacancy":    v["vacancy"],
-                "avg_price":  v["avg_price"],
+                "vacancy":   v.get("vacancy", 0),
+                "avg_price": v.get("avg_price", 0),
             }
 
     # 各対象日の履歴を3か月に圧縮
     for date_key in list(hist_data.keys()):
         if not _is_date_string(date_key):
-            print(f"⚠️ skip legacy key {date_key}", file=sys.stderr)
+            del hist_data[date_key]
             continue
 
         date_dt = dt.date.fromisoformat(date_key)
@@ -390,10 +357,8 @@ def update_history_mode(cache: dict, historical_file: str):
 
         for hist_key in list(hist_data[date_key].keys()):
             if not _is_date_string(hist_key):
-                print(f"⚠️ skip legacy hist_key {hist_key}", file=sys.stderr)
                 del hist_data[date_key][hist_key]
                 continue
-
             hist_dt = dt.date.fromisoformat(hist_key)
             if hist_dt < limit:
                 del hist_data[date_key][hist_key]
@@ -401,22 +366,14 @@ def update_history_mode(cache: dict, historical_file: str):
         if not hist_data[date_key]:
             del hist_data[date_key]
 
-    Path(historical_file).write_text(json.dumps(hist_data, ensure_ascii=False, indent=2), encoding="utf-8")
+    _save_json_file(historical_file, hist_data)
     print(f"📁 {historical_file} updated", file=sys.stderr)
 
 
 # ------------------------------------------------------------
-# 急騰検知（方向固定：客室↓ × 単価↑） ※今回は1名のみ
+# 急騰検知（方向固定：客室↓ × 単価↑）※当面は1名の市場値で運用
 # ------------------------------------------------------------
-def detect_demand_spikes(cache_data, n_recent=3, price_up_pct=0.05, vac_down_pct=0.05):
-    """
-    仕様：
-      - 対象は“今日以降の宿泊日”のみ
-      - 方向固定：『客室が -vac_down_pct 以下（= 減少）』かつ
-                  『平均単価が +price_up_pct 以上（= 上昇）』の時だけ検知
-      - 前回値(last_*)が無い/0 の項目は自動スキップ
-      - 近い宿泊日の除外はフロント(app.js)側で実施済み
-    """
+def detect_demand_spikes(cache_data, price_up_pct=0.05, vac_down_pct=0.05):
     sorted_dates = sorted(cache_data.keys())
     today = dt.date.today()
 
@@ -438,8 +395,8 @@ def detect_demand_spikes(cache_data, n_recent=3, price_up_pct=0.05, vac_down_pct
         if not (last_price and last_vac):
             continue
 
-        price_diff = cur_price - last_price
-        vac_diff   = cur_vac   - last_vac
+        price_diff  = cur_price - last_price
+        vac_diff    = cur_vac   - last_vac
         price_ratio = (price_diff / last_price) if last_price else 0.0
         vac_ratio   = (vac_diff   / last_vac)   if last_vac   else 0.0
 
@@ -456,13 +413,10 @@ def detect_demand_spikes(cache_data, n_recent=3, price_up_pct=0.05, vac_down_pct
                 "vacancy_ratio": round(float(vac_ratio), 4),
             })
 
-    print(f"📊 Demand Spikes Detected (dir-fixed: price↑ & vac↓): {len(results)} 件", file=sys.stderr)
+    print(f"📊 Demand Spikes Detected (price↑ & vac↓): {len(results)} 件", file=sys.stderr)
     return results
 
 
-# ------------------------------------------------------------
-# 履歴の保存（過去宿泊日・方向逆を一括クレンジング）
-# ------------------------------------------------------------
 def save_demand_spike_history(demand_spikes, history_file=SPIKE_HISTORY_FILE):
     today_dt = dt.date.today()
     today_iso = today_dt.isoformat()
@@ -535,24 +489,34 @@ def write_last_updated():
 if __name__ == "__main__":
     print("📡 update_cache.py start", file=sys.stderr)
 
-    # 1名（既存）
-    cache_1p = update_cache_mode(start_date=dt.date.today(), months=9, adult_num=1,
-                                 cache_file=CACHE_FILE, prev_cache_file=PREV_CACHE_FILE)
-    update_history_mode(cache_1p, HISTORICAL_FILE)
+    # 1名（従来）
+    cache_1p = update_cache_mode(
+        start_date=dt.date.today(),
+        months=9,
+        adult_num=1,
+        cache_file=CACHE_FILE_1P,
+        prev_file=PREV_CACHE_FILE_1P
+    )
+    update_history_mode(cache_1p, HISTORICAL_FILE_1P)
 
+    # 急騰（当面は1名）
     demand_spikes = detect_demand_spikes(
         cache_data=cache_1p,
-        n_recent=3,
         price_up_pct=0.05,
         vac_down_pct=0.05
     )
-    print(f"Demand spikes for today: {demand_spikes}", file=sys.stderr)
     save_demand_spike_history(demand_spikes)
 
-    # 2名（追加）※急騰は後回し。まずは取得・蓄積だけ確実に。
-    cache_2p = update_cache_mode(start_date=dt.date.today(), months=9, adult_num=2,
-                                 cache_file=CACHE_FILE_2P, prev_cache_file=PREV_CACHE_FILE_2P)
+    # 2名（新規）
+    cache_2p = update_cache_mode(
+        start_date=dt.date.today(),
+        months=9,
+        adult_num=2,
+        cache_file=CACHE_FILE_2P,
+        prev_file=PREV_CACHE_FILE_2P
+    )
     update_history_mode(cache_2p, HISTORICAL_FILE_2P)
 
+    # 最後に更新メタ
     write_last_updated()
     print("✨ all done", file=sys.stderr)
