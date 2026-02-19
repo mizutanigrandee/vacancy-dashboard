@@ -1,0 +1,50 @@
+name: Daily Update (V2 Dry Run - No Commit)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  v2-dryrun:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (minimal)
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests python-dateutil
+
+      - name: Run update_cache.py with V2 (DRY RUN)
+        env:
+          # 既存（自社施設番号）
+          RAKUTEN_MY_HOTEL_NO: ${{ secrets.RAKUTEN_MY_HOTEL_NO }}
+
+          # ★V2（今回追加したSecrets）
+          RAKUTEN_APP_ID_V2: ${{ secrets.RAKUTEN_APP_ID_V2 }}
+          RAKUTEN_ACCESS_KEY_V2: ${{ secrets.RAKUTEN_ACCESS_KEY_V2 }}
+
+          # ★強制的にV2で実行（V1へフォールバックしない）
+          RAKUTEN_API_MODE: v2
+
+          # ★Referer/Origin（Smoke Testで効いたやつ）
+          RAKUTEN_HTTP_REFERER: https://mizutanigrandee.github.io/
+          RAKUTEN_HTTP_ORIGIN: https://mizutanigrandee.github.io
+
+        run: |
+          set -e
+          python update_cache.py
+
+      - name: Confirm there is NO commit (dry-run)
+        run: |
+          echo "---- DRY RUN: no git commit/push will be performed ----"
+          git status --porcelain || true
+          echo "If you see file changes above, that's expected (workspace only). Repo will NOT be updated."
