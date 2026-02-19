@@ -41,6 +41,8 @@ let calendarData   = {},
     historicalData = {},
     spikeData      = {};   // ←追加
 let currentYM = [], selectedDate = null;
+let demandBase1pData = {}; // ★追加：🔥判定は常に1名データを使う
+
 
 // ========== 祝日判定（ローカルjs方式） ==========
 function isHoliday(date) {
@@ -76,6 +78,12 @@ async function loadAll() {
   historicalData = await loadJson(conf.HIST_PATH);
   spikeData      = await loadJson(SPIKE_PATH);   // 当面は1名（後回し）
 }
+  // ★追加：🔥需要シンボル判定は「常に1名データ」を参照
+  // 1名モードなら calendarData をそのまま流用、2名モードなら 1名JSONを別途ロード
+  demandBase1pData = (currentMode === "1p")
+    ? calendarData
+    : await loadJson(MODE_CONFIG["1p"].DATA_PATH);
+
 
 
 // ========== 1名/2名 タブ（DOMへ自動挿入） ==========
@@ -441,16 +449,18 @@ function renderMonth(y,m) {
     // 括弧付き差分テキスト
     const dvText = dv > 0 ? `(+${dv})` : dv < 0 ? `(${dv})` : `(±0)`;
 
-    // 需要シンボル
+    // 需要シンボル（★常に1名基準で判定）
+    const base = (demandBase1pData && demandBase1pData[iso]) ? demandBase1pData[iso] : cur; // 1名が無ければ保険でcur
     let lvl = 0;
-    if (cur.vacancy!=null && cur.avg_price!=null){
-      if (cur.vacancy<=70  || cur.avg_price>=50000) lvl=5;
-      else if (cur.vacancy<=100 || cur.avg_price>=40000) lvl=4;
-      else if (cur.vacancy<=150 || cur.avg_price>=35000) lvl=3;
-      else if (cur.vacancy<=200 || cur.avg_price>=30000) lvl=2;
-      else if (cur.vacancy<=250 || cur.avg_price>=25000) lvl=1;
+    if (base.vacancy != null && base.avg_price != null){
+      if (base.vacancy<=70  || base.avg_price>=50000) lvl=5;
+      else if (base.vacancy<=100 || base.avg_price>=40000) lvl=4;
+      else if (base.vacancy<=150 || base.avg_price>=35000) lvl=3;
+      else if (base.vacancy<=200 || base.avg_price>=30000) lvl=2;
+      else if (base.vacancy<=250 || base.avg_price>=25000) lvl=1;
     }
     const badge = lvl ? `<div class="cell-demand-badge lv${lvl}">🔥${lvl}</div>` : "";
+
 
     // イベント
     const evs = (eventData[iso] || [])
