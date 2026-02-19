@@ -648,3 +648,68 @@ body {
   }
 }
 
+/* =========================================================
+   1名平均 / 2名平均 タブ（avg-mode-tabs）
+   ※ app.js が自動挿入する #avg-mode-tabs / .avg-tab 用
+   ========================================================= */
+.avg-mode-tabs {
+  width: 100%;
+  display: flex;
+  justify-content: center;   /* 中央寄せ（スクショのイメージに寄せる） */
+  gap: 8px;
+  margin: 10px 0 6px 0;
+}
+
+.avg-mode-tabs .avg-tab {
+  appearance: none;
+  border: 1px solid #b9b9c9;
+  background: #ffffff;
+  color: #1a1a1a;
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1;
+  box-shadow: 0 1.5px 7px rgba(0,0,0,0.03);
+  transition: background 0.18s, color 0.18s, border 0.18s, transform 0.06s;
+}
+
+.avg-mode-tabs .avg-tab:hover {
+  background: #f3f3fa;
+  border-color: #e53939;
+  color: #e53939;
+}
+
+.avg-mode-tabs .avg-tab:active {
+  transform: translateY(1px);
+}
+
+.avg-mode-tabs .avg-tab.is-active {
+  background: #2D9CDB;
+  border-color: #2D9CDB;
+  color: #fff;
+  box-shadow: 0 3px 12px rgba(45,156,219,0.18);
+}
+
+.avg-mode-tabs .avg-tab:focus-visible {
+  outline: 3px solid rgba(45,156,219,0.25);
+  outline-offset: 2px;
+}
+
+/* スマホ：タブを少し小さく＆余白最適化 */
+@media (max-width: 700px) {
+  .avg-mode-tabs {
+    justify-content: flex-start; /* スマホは左寄せの方が“操作しやすい” */
+    padding: 0 8px;
+    margin: 8px 0 4px 0;
+  }
+
+  .avg-mode-tabs .avg-tab {
+    padding: 6px 10px;
+    font-size: 11px;
+    border-radius: 9px;
+  }
+}
+
+
