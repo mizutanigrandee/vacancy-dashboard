@@ -30,10 +30,23 @@ jobs:
 
       - name: Run update script
         env:
-          RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
+          # 自社施設番号（必須）
           RAKUTEN_MY_HOTEL_NO: ${{ secrets.RAKUTEN_MY_HOTEL_NO }}   # ★ 自社施設番号をSecretsから渡す
-        run: python update_cache.py
 
+          # V1（残しておく：緊急時に v1 へ戻すため）
+          RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
+
+          # V2（今回追加したSecrets）
+          RAKUTEN_APP_ID_V2: ${{ secrets.RAKUTEN_APP_ID_V2 }}
+          RAKUTEN_ACCESS_KEY_V2: ${{ secrets.RAKUTEN_ACCESS_KEY_V2 }}
+
+          # モード：auto（V2キーが揃ってる時はV2、無ければV1）
+          RAKUTEN_API_MODE: auto
+
+          # V2でReferer/Originが必要なケース対策（あなたの環境に合わせて固定）
+          RAKUTEN_HTTP_REFERER: https://mizutanigrandee.github.io/
+          RAKUTEN_HTTP_ORIGIN: https://mizutanigrandee.github.io
+        run: python update_cache.py
 
       # 生成/更新ファイルを先にコミット → その後 pull --rebase → push
       - name: Commit updated cache files
