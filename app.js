@@ -1,12 +1,38 @@
 // ========== データ & 祝日設定 ==========
 
-// ファイルパス定義
-const DATA_PATH  = "./vacancy_price_cache.json";
-const PREV_PATH  = "./vacancy_price_cache_previous.json";
+// ========= モード（1名 / 2名） =========
+const MODE_CONFIG = {
+  "1p": {
+    DATA_PATH: "./vacancy_price_cache.json",
+    PREV_PATH: "./vacancy_price_cache_previous.json",
+    HIST_PATH: "./historical_data.json",
+  },
+  "2p": {
+    DATA_PATH: "./vacancy_price_cache_2p.json",
+    PREV_PATH: "./vacancy_price_cache_2p_previous.json",
+    HIST_PATH: "./historical_data_2p.json",
+  }
+};
+
+// 共通（モード非依存）
 const EVENT_PATH = "./event_data.json";
-const HIST_PATH  = "./historical_data.json";
-const SPIKE_PATH = "./demand_spike_history.json";   // ←追加
-const LASTUPDATED_PATH = "./last_updated.json";      // ←追加
+const SPIKE_PATH = "./demand_spike_history.json";   // ※当面は1名のまま運用（後回し）
+const LASTUPDATED_PATH = "./last_updated.json";
+
+// 現在モード（localStorageに保存）
+(() => {
+  const v = localStorage.getItem("avgMode");
+  if (v !== "1p" && v !== "2p") localStorage.setItem("avgMode", "1p");
+})();
+let currentMode = localStorage.getItem("avgMode") || "1p";
+
+function getModeConf() {
+  return MODE_CONFIG[currentMode] || MODE_CONFIG["1p"];
+}
+function modeLabel() {
+  return currentMode === "2p" ? "2名平均" : "1名平均";
+}
+
 
 // グローバル状態
 let calendarData   = {},
@@ -43,12 +69,62 @@ async function loadJson(path) {
   }
 }
 async function loadAll() {
-  calendarData   = await loadJson(DATA_PATH);
-  prevData       = await loadJson(PREV_PATH);
+  const conf = getModeConf();
+  calendarData   = await loadJson(conf.DATA_PATH);
+  prevData       = await loadJson(conf.PREV_PATH);
   eventData      = await loadJson(EVENT_PATH);
-  historicalData = await loadJson(HIST_PATH);
-  spikeData      = await loadJson(SPIKE_PATH);   // ←追加
+  historicalData = await loadJson(conf.HIST_PATH);
+  spikeData      = await loadJson(SPIKE_PATH);   // 当面は1名（後回し）
 }
+
+
+// ========== 1名/2名 タブ（DOMへ自動挿入） ==========
+function ensureAvgModeTabs() {
+  // すでにあるなら何もしない
+  if (document.getElementById("avg-mode-tabs")) return;
+
+  // 既存の spike-banner の直前に差し込む（ページ上部に出せる）
+  const bannerDiv = document.getElementById("spike-banner");
+  if (!bannerDiv || !bannerDiv.parentNode) return;
+
+  const wrap = document.createElement("div");
+  wrap.id = "avg-mode-tabs";
+  wrap.className = "avg-mode-tabs";
+  wrap.innerHTML = `
+    <button class="avg-tab" data-mode="1p">1名平均</button>
+    <button class="avg-tab" data-mode="2p">2名平均</button>
+  `;
+
+  bannerDiv.parentNode.insertBefore(wrap, bannerDiv);
+
+  // クリックイベント
+  wrap.querySelectorAll(".avg-tab").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const m = btn.dataset.mode;
+      if (m === currentMode) return;
+
+      currentMode = m;
+      localStorage.setItem("avgMode", currentMode);
+
+      // データ再読み込み → 再描画
+      await loadAll();
+      renderPage();
+      updateLastUpdate();
+    });
+  });
+
+  // 初期のアクティブ反映
+  updateAvgModeTabsActive();
+}
+
+function updateAvgModeTabsActive() {
+  const wrap = document.getElementById("avg-mode-tabs");
+  if (!wrap) return;
+  wrap.querySelectorAll(".avg-tab").forEach(b => {
+    b.classList.toggle("is-active", b.dataset.mode === currentMode);
+  });
+}
+
 
 // ▼ 追加：自社ラインの有無を保証（取りこぼし対策）
 function ensureCompareLineFor(dateStr){
@@ -207,6 +283,11 @@ function renderPage() {
       '</div>';
   }
 
+  // ★ 1名/2名タブを常に表示（index.html改修なし）
+  ensureAvgModeTabs();
+  updateAvgModeTabsActive();
+
+    
   // ① バナー
   renderSpikeBanner();
 
