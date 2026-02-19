@@ -77,14 +77,13 @@ async function loadAll() {
   eventData      = await loadJson(EVENT_PATH);
   historicalData = await loadJson(conf.HIST_PATH);
   spikeData      = await loadJson(SPIKE_PATH);   // 当面は1名（後回し）
+
+  // ★追加：🔥需要シンボル判定は「常に1名データ」を参照
+  // 1名モードなら calendarData をそのまま流用、2名モードなら 1名JSONを別途ロード
+  demandBase1pData = (currentMode === "1p")
+    ? calendarData
+    : await loadJson(MODE_CONFIG["1p"].DATA_PATH);
 }
-// ★追加：🔥需要シンボル判定は「常に1名データ」を参照
-// 1名モードなら calendarData をそのまま流用、2名モードなら 1名JSONを別途ロード
-demandBase1pData = (currentMode === "1p")
-  ? calendarData
-  : await loadJson(MODE_CONFIG["1p"].DATA_PATH);
-
-
 
 // ========== 1名/2名 タブ（DOMへ自動挿入） ==========
 function ensureAvgModeTabs() {
