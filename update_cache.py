@@ -11,6 +11,7 @@ update_cache.py
 import os
 import sys
 import json
+import time
 import calendar
 import requests
 import datetime as dt
@@ -80,6 +81,68 @@ LAST_UPDATED_FILE   = "last_updated.json"   # フロントが読む最終更新�
 MAX_PAGES = 3  # 市場側のページ走査上限（パフォーマンス配慮）
 
 
+# ============================================================
+# 429対策（スロットリング＋リトライ）
+#  - V2は特に429が出やすいので、ここで必ず吸収する
+#  - 速度を落としてでも「コケない」ことを最優先
+#
+# 調整（任意）：
+#   RAKUTEN_THROTTLE_SEC=0.35  # 1リクエストごとに待つ秒数
+#   RAKUTEN_MAX_RETRIES=5      # 429/5xx/例外時の最大リトライ回数
+# ============================================================
+THROTTLE_SEC = float(os.environ.get("RAKUTEN_THROTTLE_SEC", "0.35"))  # 約2.8req/sec
+MAX_RETRIES  = int(os.environ.get("RAKUTEN_MAX_RETRIES", "5"))
+
+_session = requests.Session()
+
+def rakuten_get_json(url: str, params: dict, headers: dict = None, timeout: int = 10) -> dict:
+    """
+    楽天API GET 共通処理：
+      - 200: json返却（最後にスロットリング待機）
+      - 429: Retry-After（あれば）→指数バックオフで待って再試行
+      - 5xx/例外: 短いバックオフで再試行
+      - それ以外: 即失敗
+    ※ログにURL(クエリ)を出さない（万一のキー露出回避）
+    """
+    last_err = None
+
+    for attempt in range(MAX_RETRIES):
+        try:
+            r = _session.get(url, params=params, headers=headers, timeout=timeout)
+
+            if r.status_code == 200:
+                # 叩き過ぎ防止
+                if THROTTLE_SEC > 0:
+                    time.sleep(THROTTLE_SEC)
+                return r.json()
+
+            if r.status_code == 429:
+                retry_after = r.headers.get("Retry-After")
+                base = int(retry_after) if (retry_after and retry_after.isdigit()) else 2
+                wait = min(base * (2 ** attempt), 20)  # 最大20秒（長引きすぎ防止）
+                print(f"  ⚠️ 429 Too Many Requests: retry in {wait}s (attempt {attempt+1}/{MAX_RETRIES})", file=sys.stderr)
+                time.sleep(wait)
+                continue
+
+            if r.status_code in (500, 502, 503, 504):
+                wait = min(2 * (2 ** attempt), 20)
+                print(f"  ⚠️ {r.status_code} server error: retry in {wait}s (attempt {attempt+1}/{MAX_RETRIES})", file=sys.stderr)
+                time.sleep(wait)
+                continue
+
+            # それ以外は即エラー
+            last_err = f"HTTP {r.status_code}: {r.text[:200]}"
+            break
+
+        except Exception as e:
+            last_err = f"exception: {e}"
+            wait = min(2 * (2 ** attempt), 20)
+            print(f"  ⚠️ request exception: retry in {wait}s (attempt {attempt+1}/{MAX_RETRIES})", file=sys.stderr)
+            time.sleep(wait)
+
+    raise RuntimeError(f"rakuten_get_json failed: {last_err or 'unknown error'}")
+
+
 # ------------------------------------------------------------
 # 価格抽出ヘルパー：1ホテル塊の“当日最安値(最低価格)”を返す
 # ------------------------------------------------------------
@@ -139,9 +202,7 @@ def fetch_market_avg(date: dt.date) -> dict:
             params["applicationId"] = APP_ID_V1
 
         try:
-            r = requests.get(RAKUTEN_API_URL, params=params, headers=RAKUTEN_HEADERS, timeout=10)
-            r.raise_for_status()
-            data = r.json()
+            data = rakuten_get_json(RAKUTEN_API_URL, params=params, headers=RAKUTEN_HEADERS, timeout=10)
         except Exception as e:
             print(f"  ⚠️ market fetch error {date} p{page}: {e}", file=sys.stderr)
             continue
@@ -188,9 +249,7 @@ def fetch_my_min_price(date: dt.date, hotel_no: str) -> float:
         params["applicationId"] = APP_ID_V1
 
     try:
-        r = requests.get(RAKUTEN_API_URL, params=params, headers=RAKUTEN_HEADERS, timeout=10)
-        r.raise_for_status()
-        data = r.json()
+        data = rakuten_get_json(RAKUTEN_API_URL, params=params, headers=RAKUTEN_HEADERS, timeout=10)
     except Exception as e:
         print(f"  ⚠️ my fetch error {date}: {e}", file=sys.stderr)
         return 0.0
