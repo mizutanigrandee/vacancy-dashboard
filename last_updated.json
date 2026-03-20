@@ -1,7 +1,7 @@
 {
-  "last_updated_iso": "2026-03-19T12:24:51+09:00",
-  "last_updated_jst": "2026-03-19 12:24:51 JST",
+  "last_updated_iso": "2026-03-20T12:16:00+09:00",
+  "last_updated_jst": "2026-03-20 12:16:00 JST",
   "source": "github-actions",
-  "git_sha": "aebf77c",
+  "git_sha": "63a9043",
   "note": "vacancy/price crawl finished"
 }
