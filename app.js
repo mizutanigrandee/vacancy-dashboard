@@ -589,37 +589,42 @@ function renderGraph(dateStr){
   const curDow = dow[new Date(dateStr).getDay()];
   const cmpDow = compDate ? dow[new Date(compDate).getDay()] : null;
   // 比較情報HTML生成
-  let compareHtml = '';
-  if (curVacancy != null || curPrice != null) {
-    compareHtml += `<div class="compare-info">`;
-    compareHtml += `<h4>昨対比較</h4>`;
-    compareHtml += `<div class="compare-row"><span class="label">対象日：</span><span>${dateStr}（${curDow}）</span></div>`;
-    compareHtml += `<div class="compare-row"><span class="label">在庫数：</span><span>${curVacancy != null ? curVacancy.toLocaleString() : "-"}</span></div>`;
-    compareHtml += `<div class="compare-row"><span class="label">平均価格：</span><span>${curPrice != null ? "￥" + curPrice.toLocaleString() : "-"}</span></div>`;
-    compareHtml += `<div class="compare-row"><span class="label">比較対象：</span><span>${compDate ? `${compDate}（${cmpDow}）` : "—"}</span></div>`;
-    // 在庫差
-    let vacText = "—";
-    let vacClass = "";
+let compareHtml = '';
+if (curVacancy != null || curPrice != null) {
+  compareHtml += `<div class="compare-info">`;
+  compareHtml += `<h4>昨対比較</h4>`;
+  compareHtml += `<div class="compare-row"><span class="label">対象日：</span><span>${dateStr}（${curDow}）</span></div>`;
+  compareHtml += `<div class="compare-row"><span class="label">比較対象：</span><span>${compDate ? `${compDate}（${cmpDow}）` : "—"}</span></div>`;
+
+  // 在庫表示
+  let lastVacancyText = "—";
+  if (cmpVacancy != null) {
+    let gapText = "";
     if (diffVacancy != null) {
-      vacText = `${diffVacancy > 0 ? "+" : diffVacancy < 0 ? "" : "±"}${Math.abs(diffVacancy).toLocaleString()}`;
-      vacClass = diffVacancy > 0 ? "diff-pos" : diffVacancy < 0 ? "diff-neg" : "";
+      const gapClass = diffVacancy > 0 ? "diff-pos" : diffVacancy < 0 ? "diff-neg" : "";
+      const gapValue = `${diffVacancy > 0 ? "+" : diffVacancy < 0 ? "" : "±"}${Math.abs(diffVacancy).toLocaleString()}`;
+      gapText = ` <span class="${gapClass}">（${gapValue}）</span>`;
     }
-    compareHtml += `<div class="compare-row"><span class="label">在庫差：</span><span class="${vacClass}">${vacText}</span></div>`;
-    // 価格差
-    let priceText = "—";
-    let priceClass = "";
+    lastVacancyText = `${cmpVacancy.toLocaleString()}${gapText}`;
+  }
+  compareHtml += `<div class="compare-row"><span class="label">昨年最終在庫数：</span><span>${lastVacancyText}</span></div>`;
+
+  // 価格表示
+  let lastPriceText = "—";
+  if (cmpPrice != null) {
+    let gapText = "";
     if (diffPrice != null) {
-      const diffPriceAbs  = Math.abs(diffPrice).toLocaleString();
-      let ratioTxt = "";
-      if (diffPriceRatio != null) {
-        const ratioAbs = Math.abs(diffPriceRatio).toFixed(1);
-        ratioTxt = `（${diffPriceRatio > 0 ? "+" : diffPriceRatio < 0 ? "" : "±"}${ratioAbs}%）`;
-      }
-      priceText = `${diffPrice > 0 ? "+" : diffPrice < 0 ? "" : "±"}￥${diffPriceAbs}${ratioTxt}`;
-      priceClass = diffPrice > 0 ? "price-pos" : diffPrice < 0 ? "price-neg" : "";
+      const gapClass = diffPrice > 0 ? "price-neg" : diffPrice < 0 ? "price-pos" : "";
+      const gapValue = `${diffPrice > 0 ? "-" : diffPrice < 0 ? "+" : "±"}￥${Math.abs(diffPrice).toLocaleString()}`;
+      gapText = ` <span class="${gapClass}">（${gapValue}）</span>`;
     }
-    compareHtml += `<div class="compare-row"><span class="label">価格差：</span><span class="${priceClass}">${priceText}</span></div>`;
-    compareHtml += `</div>`;
+    lastPriceText = `￥${cmpPrice.toLocaleString()}${gapText}`;
+  }
+  compareHtml += `<div class="compare-row"><span class="label">昨年最終価格：</span><span>${lastPriceText}</span></div>`;
+
+  compareHtml += `</div>`;
+}
+  
   }
 
   const allDates = Object.keys(historicalData).sort(),
