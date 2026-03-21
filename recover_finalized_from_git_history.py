@@ -18,7 +18,12 @@ JST = dt.timezone(dt.timedelta(hours=9))
 
 
 def run_git(args):
-    return subprocess.check_output(["git"] + args, text=True, encoding="utf-8", errors="ignore")
+    return subprocess.check_output(
+        ["git"] + args,
+        text=True,
+        encoding="utf-8",
+        errors="ignore"
+    )
 
 
 def load_json(path: str):
@@ -45,6 +50,50 @@ def parse_date(s: str):
         return None
 
 
+def normalize_record(v: dict):
+    """
+    vacancy / avg_price を int 化して返す。
+    不正値なら None。
+    """
+    if not isinstance(v, dict):
+        return None
+
+    vacancy = v.get("vacancy")
+    avg_price = v.get("avg_price")
+
+    if vacancy is None or avg_price is None:
+        return None
+
+    try:
+        vacancy_i = int(vacancy)
+        avg_price_i = int(round(float(avg_price)))
+    except Exception:
+        return None
+
+    return {
+        "vacancy": vacancy_i,
+        "avg_price": avg_price_i
+    }
+
+
+def is_valid_final_value(rec: dict) -> bool:
+    """
+    最終値として採用してよい値か判定。
+    0/0 は採用しない。
+    """
+    if not rec:
+        return False
+
+    vacancy = rec.get("vacancy", 0)
+    avg_price = rec.get("avg_price", 0)
+
+    # 今回の救出では 0/0 は明らかにノイズ扱い
+    if vacancy == 0 and avg_price == 0:
+        return False
+
+    return True
+
+
 def main():
     today_jst = dt.datetime.now(JST).date()
 
@@ -63,7 +112,7 @@ def main():
     lines = [line.strip() for line in log_text.splitlines() if line.strip()]
 
     if not lines:
-        print("No git history found for vacancy_price_cache.json")
+        print(f"No git history found for {SOURCE_JSON}")
         return
 
     print(f"commit count: {len(lines)}")
@@ -71,6 +120,7 @@ def main():
     recovered = {}
     commit_counter = 0
     hit_counter = 0
+    skipped_zero_counter = 0
 
     for line in lines:
         commit_counter += 1
@@ -93,26 +143,17 @@ def main():
             if d >= today_jst:
                 continue
 
-            if not isinstance(v, dict):
+            rec = normalize_record(v)
+            if rec is None:
                 continue
 
-            vacancy = v.get("vacancy")
-            avg_price = v.get("avg_price")
-
-            if vacancy is None or avg_price is None:
+            # 0/0 は採用しない
+            if not is_valid_final_value(rec):
+                skipped_zero_counter += 1
                 continue
 
-            try:
-                vacancy_i = int(vacancy)
-                avg_price_i = int(round(float(avg_price)))
-            except Exception:
-                continue
-
-            # 履歴を古い順に舐めて最後の値で上書き
-            recovered[k] = {
-                "vacancy": vacancy_i,
-                "avg_price": avg_price_i
-            }
+            # 古い順に舐めて、最後に見つかった「有効値」で更新
+            recovered[k] = rec
             changed_in_this_commit += 1
 
         if changed_in_this_commit:
@@ -122,8 +163,13 @@ def main():
             print(f"... processed {commit_counter}/{len(lines)} commits")
 
     # 既存archiveを優先してマージ
+    # すでに本番archiveにある値はそちらを残す
     merged = dict(recovered)
-    merged.update(current_archive)
+    for k, v in current_archive.items():
+        rec = normalize_record(v)
+        if rec and is_valid_final_value(rec):
+            merged[k] = rec
+
     merged = dict(sorted(merged.items()))
 
     save_json(PREVIEW_OUTPUT, merged)
@@ -132,9 +178,18 @@ def main():
     print("=== recovery summary ===")
     print(f"recovered_preview_count: {len(merged)}")
     print(f"commits_with_hits: {hit_counter}")
+    print(f"skipped_zero_counter: {skipped_zero_counter}")
     if keys:
         print(f"earliest_date: {keys[0]}")
         print(f"latest_date: {keys[-1]}")
+        if "2025-04-24" in merged:
+            print(f"sample_2025-04-24: {merged['2025-04-24']}")
+        if "2025-04-25" in merged:
+            print(f"sample_2025-04-25: {merged['2025-04-25']}")
+        if "2025-04-26" in merged:
+            print(f"sample_2025-04-26: {merged['2025-04-26']}")
+        if "2025-04-27" in merged:
+            print(f"sample_2025-04-27: {merged['2025-04-27']}")
     print(f"preview saved: {PREVIEW_OUTPUT}")
     print("=== done ===")
 
