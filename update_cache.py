@@ -1,12 +1,17 @@
 #!/usr/bin/env python
 """
-update_cache.py
+update_cache.py (modified)
 – 未来日の在庫・平均(最低)料金を取得して
-  1名: vacancy_price_cache.json / historical_data.json
-  2名: vacancy_price_cache_2p.json / historical_data_2p.json
+  1名: vacancy_price_cache.json / historical_data.json / finalized_daily_data.json
+  2名: vacancy_price_cache_2p.json / historical_data_2p.json / finalized_daily_data_2p.json
   demand_spike_history.json / last_updated.json を更新
 
 ※ 重要: 『平均価格』は “各ホテルの当日最安値(最低価格) の平均” に統一
+
+このバージョンでは、過去日となった宿泊日の「最終値」を
+半永久的に保存するためのアーカイブ機能を追加しています。
+過去3か月より前に削除される前に、vacancy と avg_price の2つのみを
+finalized_daily_data*.json に書き出します。
 """
 
 import os
@@ -18,7 +23,6 @@ import requests
 import datetime as dt
 from pathlib import Path
 from dateutil.relativedelta import relativedelta
-
 
 # ============================================================
 # Rakuten API credentials (V1 / V2)
@@ -84,6 +88,10 @@ HISTORICAL_FILE_2P     = "historical_data_2p.json"
 
 SPIKE_HISTORY_FILE     = "demand_spike_history.json"
 LAST_UPDATED_FILE      = "last_updated.json"   # フロントが読む最終更新メタ
+
+# 新規：過去日最終値保存用ファイル（1名 / 2名）
+FINAL_ARCHIVE_FILE_1P  = "finalized_daily_data.json"
+FINAL_ARCHIVE_FILE_2P  = "finalized_daily_data_2p.json"
 
 MAX_PAGES = 3  # 市場側のページ走査上限（パフォーマンス配慮）
 
@@ -256,16 +264,62 @@ def _save_json_file(path: str, data: dict):
     Path(path).write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def _is_date_string(s: str) -> bool:
+    """簡易な日付文字列判定。isoformat() でパースできるか。"""
+    try:
+        dt.date.fromisoformat(s)
+        return True
+    except ValueError:
+        return False
+
+
+# ------------------------------------------------------------
+# 過去日最終値を長期保存用アーカイブに退避する
+# ------------------------------------------------------------
+def archive_finalized_past_data(cache: dict, archive_file: str, today: dt.date):
+    """
+    cache に含まれる宿泊日が today より前のものを、過去日の最終値として
+    archive_file (JSON) に保存する。保存するキーは iso日付文字列で、値は
+    {"vacancy": int, "avg_price": int} だけ。複数回呼び出す中で新しい日付が追加される場合もある。
+    """
+    archive = _load_json_file(archive_file)
+
+    for iso, v in cache.items():
+        if not _is_date_string(iso):
+            continue
+
+        stay_date = dt.date.fromisoformat(iso)
+        if stay_date >= today:
+            continue
+
+        # 保存するのは vacancy と avg_price のみ
+        vac = v.get("vacancy", 0) or 0
+        price = v.get("avg_price", 0) or 0
+
+        archive[iso] = {
+            "vacancy": int(vac),
+            "avg_price": int(price),
+        }
+
+    # ソートして書き出し（任意）
+    archive = dict(sorted(archive.items()))
+    _save_json_file(archive_file, archive)
+    print(f"🗂 archived finalized past data: {archive_file}", file=sys.stderr)
+
+
 # ------------------------------------------------------------
 # 当日以降の未来日を更新（モード別：1名/2名）
 # ------------------------------------------------------------
-def update_cache_mode(start_date: dt.date, months: int, adult_num: int, cache_file: str, prev_file: str) -> dict:
+def update_cache_mode(start_date: dt.date, months: int, adult_num: int, cache_file: str, prev_file: str, final_archive_file: str) -> dict:
     today            = dt.date.today()
     three_months_ago = today - relativedelta(months=3)
     cal              = calendar.Calendar(firstweekday=calendar.SUNDAY)
 
     cache = _load_json_file(cache_file)
     old_cache = _load_json_file(prev_file)
+
+    # 先に過去日のデータをアーカイブへ退避
+    archive_finalized_past_data(cache, final_archive_file, today)
 
     # 過去3か月より前は削除
     cache = {k: v for k, v in cache.items() if _is_date_string(k) and dt.date.fromisoformat(k) >= three_months_ago}
@@ -318,14 +372,6 @@ def update_cache_mode(start_date: dt.date, months: int, adult_num: int, cache_fi
     _save_json_file(prev_file, cache)  # 次回比較用に“今回値”を保存
     print(f"✅ cache updated: {cache_file}", file=sys.stderr)
     return cache
-
-
-def _is_date_string(s: str) -> bool:
-    try:
-        dt.date.fromisoformat(s)
-        return True
-    except ValueError:
-        return False
 
 
 # ------------------------------------------------------------
@@ -495,7 +541,8 @@ if __name__ == "__main__":
         months=9,
         adult_num=1,
         cache_file=CACHE_FILE_1P,
-        prev_file=PREV_CACHE_FILE_1P
+        prev_file=PREV_CACHE_FILE_1P,
+        final_archive_file=FINAL_ARCHIVE_FILE_1P,
     )
     update_history_mode(cache_1p, HISTORICAL_FILE_1P)
 
@@ -513,7 +560,8 @@ if __name__ == "__main__":
         months=9,
         adult_num=2,
         cache_file=CACHE_FILE_2P,
-        prev_file=PREV_CACHE_FILE_2P
+        prev_file=PREV_CACHE_FILE_2P,
+        final_archive_file=FINAL_ARCHIVE_FILE_2P,
     )
     update_history_mode(cache_2p, HISTORICAL_FILE_2P)
 
