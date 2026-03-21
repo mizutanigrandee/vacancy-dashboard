@@ -434,6 +434,8 @@ function renderMonth(y,m) {
     const cell = document.createElement("div");
     cell.className = "calendar-cell";
     cell.dataset.date = iso;
+    if (selectedDate === iso) cell.classList.add("selected");
+  
 
     // 祝日判定
     let holidayName = isHoliday(iso);
