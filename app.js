@@ -624,8 +624,6 @@ if (curVacancy != null || curPrice != null) {
 
   compareHtml += `</div>`;
 }
-  
-  }
 
   const allDates = Object.keys(historicalData).sort(),
         idx = allDates.indexOf(dateStr);
