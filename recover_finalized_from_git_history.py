@@ -51,10 +51,6 @@ def parse_date(s: str):
 
 
 def normalize_record(v: dict):
-    """
-    vacancy / avg_price を int 化して返す。
-    不正値なら None。
-    """
     if not isinstance(v, dict):
         return None
 
@@ -77,17 +73,12 @@ def normalize_record(v: dict):
 
 
 def is_valid_final_value(rec: dict) -> bool:
-    """
-    最終値として採用してよい値か判定。
-    0/0 は採用しない。
-    """
     if not rec:
         return False
 
     vacancy = rec.get("vacancy", 0)
     avg_price = rec.get("avg_price", 0)
 
-    # 今回の救出では 0/0 は明らかにノイズ扱い
     if vacancy == 0 and avg_price == 0:
         return False
 
@@ -101,13 +92,11 @@ def main():
     print(f"RECOVERY_START_DATE: {RECOVERY_START_DATE}")
     print(f"TODAY(JST): {today_jst}")
 
-    # 念のためバックアップ
     current_archive = load_json(CURRENT_ARCHIVE)
     if current_archive:
         save_json(BACKUP_OUTPUT, current_archive)
         print(f"backup saved: {BACKUP_OUTPUT}")
 
-    # 履歴取得（古い順）
     log_text = run_git(["log", "--reverse", "--format=%H|%cI", "--", SOURCE_JSON])
     lines = [line.strip() for line in log_text.splitlines() if line.strip()]
 
@@ -147,12 +136,10 @@ def main():
             if rec is None:
                 continue
 
-            # 0/0 は採用しない
             if not is_valid_final_value(rec):
                 skipped_zero_counter += 1
                 continue
 
-            # 古い順に舐めて、最後に見つかった「有効値」で更新
             recovered[k] = rec
             changed_in_this_commit += 1
 
@@ -162,35 +149,28 @@ def main():
         if commit_counter % 50 == 0:
             print(f"... processed {commit_counter}/{len(lines)} commits")
 
-    # 既存archiveを優先してマージ
-    # すでに本番archiveにある値はそちらを残す
-    merged = dict(recovered)
+    # preview 用
+    preview_merged = dict(recovered)
     for k, v in current_archive.items():
         rec = normalize_record(v)
         if rec and is_valid_final_value(rec):
-            merged[k] = rec
+            preview_merged[k] = rec
+    preview_merged = dict(sorted(preview_merged.items()))
+    save_json(PREVIEW_OUTPUT, preview_merged)
 
-    merged = dict(sorted(merged.items()))
+    # 本番 finalized_daily_data.json も同じ内容で更新
+    save_json(CURRENT_ARCHIVE, preview_merged)
 
-    save_json(PREVIEW_OUTPUT, merged)
-
-    keys = list(merged.keys())
+    keys = list(preview_merged.keys())
     print("=== recovery summary ===")
-    print(f"recovered_preview_count: {len(merged)}")
+    print(f"recovered_preview_count: {len(preview_merged)}")
     print(f"commits_with_hits: {hit_counter}")
     print(f"skipped_zero_counter: {skipped_zero_counter}")
     if keys:
         print(f"earliest_date: {keys[0]}")
         print(f"latest_date: {keys[-1]}")
-        if "2025-04-24" in merged:
-            print(f"sample_2025-04-24: {merged['2025-04-24']}")
-        if "2025-04-25" in merged:
-            print(f"sample_2025-04-25: {merged['2025-04-25']}")
-        if "2025-04-26" in merged:
-            print(f"sample_2025-04-26: {merged['2025-04-26']}")
-        if "2025-04-27" in merged:
-            print(f"sample_2025-04-27: {merged['2025-04-27']}")
     print(f"preview saved: {PREVIEW_OUTPUT}")
+    print(f"archive updated: {CURRENT_ARCHIVE}")
     print("=== done ===")
 
 
