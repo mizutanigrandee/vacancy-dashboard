@@ -663,25 +663,36 @@ if (curVacancy != null || curPrice != null) {
   });
 
   // archive-only の過去日は最終確定値を表示
-  if (!labels.length) {
-    const archived = finalArchiveData[dateStr];
-    if (archived) {
-      gc.innerHTML =
-        (compareHtml || '') +
-        '<div class="graph-btns">' +
-          '<button onclick="closeGraph()"> 当日へ戻る</button>' +
-        '</div>' +
-        `<h3>${dateStr} の最終確定値</h3>` +
-        `<div class="archive-summary-box">
-          <div class="archive-summary-row"><b>残室数：</b>${Number(archived.vacancy || 0).toLocaleString()}件</div>
-          <div class="archive-summary-row"><b>平均価格：</b>￥${Number(archived.avg_price || 0).toLocaleString()}</div>
-          <div class="archive-summary-note">この日付は長期保存データのみのため、推移グラフは表示されません。</div>
-        </div>`;
-    } else {
-      gc.innerHTML = "";
-    }
-    return;
+if (!labels.length) {
+  const archived = finalArchiveData[dateStr];
+
+  if (archived) {
+    gc.innerHTML =
+      (compareHtml || '') +
+      '<div class="graph-btns">' +
+        '<button onclick="closeGraph()"> 当日へ戻る</button>' +
+      '</div>' +
+      `<h3>${dateStr} の最終確定値</h3>` +
+      `<div class="archive-summary-box">
+        <div class="archive-summary-row"><b>残室数：</b>${Number(archived.vacancy || 0).toLocaleString()}件</div>
+        <div class="archive-summary-row"><b>平均価格：</b>￥${Number(archived.avg_price || 0).toLocaleString()}</div>
+        <div class="archive-summary-note">この日付は長期保存データのみのため、推移グラフは表示されません。</div>
+      </div>`;
+  } else {
+    gc.innerHTML =
+      (compareHtml || '') +
+      '<div class="graph-btns">' +
+        '<button onclick="closeGraph()"> 当日へ戻る</button>' +
+      '</div>' +
+      `<h3>${dateStr} の昨対比較</h3>` +
+      `<div class="archive-summary-box">
+        <div class="archive-summary-note">この日付はまだ推移グラフの履歴データがないため、昨対比較のみ表示しています。</div>
+      </div>`;
   }
+
+  return;
+}
+  
 
   // 在庫グラフ
   window.sc = new Chart(
