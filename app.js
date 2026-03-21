@@ -521,10 +521,113 @@ function renderGraph(dateStr){
 
   if (!dateStr) { gc.innerHTML=""; return; }
 
+  // === 昨対比較情報 ===
+  function getComparisonDate(src) {
+    try {
+      const d = new Date(src);
+      const year = d.getFullYear();
+      const month = d.getMonth();
+      const dayOfWeek = d.getDay();
+      const date = d.getDate();
+      const nth = Math.floor((date - 1) / 7);
+      const prevYear = year - 1;
+      let count = 0;
+      let candidate = null;
+      // 前年の同月・同曜日・第N週を探す
+      for (let i = 1; i <= 31; i++) {
+        const dt = new Date(Date.UTC(prevYear, month, i));
+        if (dt.getMonth() !== month) break;
+        if (dt.getUTCDay() === dayOfWeek) {
+          if (count === nth) {
+            candidate = dt;
+            break;
+          }
+          count++;
+        }
+      }
+      // 見つからない場合は同曜日の最終週を採用
+      if (!candidate) {
+        const occurrences = [];
+        for (let i = 1; i <= 31; i++) {
+          const dt = new Date(Date.UTC(prevYear, month, i));
+          if (dt.getMonth() !== month) break;
+          if (dt.getUTCDay() === dayOfWeek) occurrences.push(dt);
+        }
+        if (occurrences.length) {
+          candidate = occurrences[Math.min(nth, occurrences.length - 1)];
+        }
+      }
+      if (!candidate) return null;
+      const y = candidate.getUTCFullYear();
+      const m = String(candidate.getUTCMonth() + 1).padStart(2, "0");
+      const dd = String(candidate.getUTCDate()).padStart(2, "0");
+      return `${y}-${m}-${dd}`;
+    } catch {
+      return null;
+    }
+  }
+  // 比較対象日＆データ取得
+  const compDate = getComparisonDate(dateStr);
+  const curData = getDisplayData(dateStr) || {};
+  const cmpData = compDate ? getDisplayData(compDate) || {} : {};
+  // 在庫・価格
+  const curVacancy = curData.vacancy != null ? Number(curData.vacancy) : null;
+  const curPrice   = curData.avg_price != null ? Number(curData.avg_price) : null;
+  const cmpVacancy = cmpData.vacancy != null ? Number(cmpData.vacancy) : null;
+  const cmpPrice   = cmpData.avg_price != null ? Number(cmpData.avg_price) : null;
+  // 差分計算
+  let diffVacancy = null;
+  if (curVacancy != null && cmpVacancy != null) {
+    diffVacancy = curVacancy - cmpVacancy;
+  }
+  let diffPrice = null, diffPriceRatio = null;
+  if (curPrice != null && cmpPrice != null) {
+    diffPrice = curPrice - cmpPrice;
+    if (cmpPrice !== 0) diffPriceRatio = (diffPrice / cmpPrice) * 100;
+  }
+  const dow = ["日","月","火","水","木","金","土"];
+  const curDow = dow[new Date(dateStr).getDay()];
+  const cmpDow = compDate ? dow[new Date(compDate).getDay()] : null;
+  // 比較情報HTML生成
+  let compareHtml = '';
+  if (curVacancy != null || curPrice != null) {
+    compareHtml += `<div class="compare-info">`;
+    compareHtml += `<h4>昨対比較</h4>`;
+    compareHtml += `<div class="compare-row"><span class="label">対象日：</span><span>${dateStr}（${curDow}）</span></div>`;
+    compareHtml += `<div class="compare-row"><span class="label">在庫数：</span><span>${curVacancy != null ? curVacancy.toLocaleString() : "-"}</span></div>`;
+    compareHtml += `<div class="compare-row"><span class="label">平均価格：</span><span>${curPrice != null ? "￥" + curPrice.toLocaleString() : "-"}</span></div>`;
+    compareHtml += `<div class="compare-row"><span class="label">比較対象：</span><span>${compDate ? `${compDate}（${cmpDow}）` : "—"}</span></div>`;
+    // 在庫差
+    let vacText = "—";
+    let vacClass = "";
+    if (diffVacancy != null) {
+      vacText = `${diffVacancy > 0 ? "+" : diffVacancy < 0 ? "" : "±"}${Math.abs(diffVacancy).toLocaleString()}`;
+      vacClass = diffVacancy > 0 ? "diff-pos" : diffVacancy < 0 ? "diff-neg" : "";
+    }
+    compareHtml += `<div class="compare-row"><span class="label">在庫差：</span><span class="${vacClass}">${vacText}</span></div>`;
+    // 価格差
+    let priceText = "—";
+    let priceClass = "";
+    if (diffPrice != null) {
+      const diffPriceAbs  = Math.abs(diffPrice).toLocaleString();
+      let ratioTxt = "";
+      if (diffPriceRatio != null) {
+        const ratioAbs = Math.abs(diffPriceRatio).toFixed(1);
+        ratioTxt = `（${diffPriceRatio > 0 ? "+" : diffPriceRatio < 0 ? "" : "±"}${ratioAbs}%）`;
+      }
+      priceText = `${diffPrice > 0 ? "+" : diffPrice < 0 ? "" : "±"}￥${diffPriceAbs}${ratioTxt}`;
+      priceClass = diffPrice > 0 ? "price-pos" : diffPrice < 0 ? "price-neg" : "";
+    }
+    compareHtml += `<div class="compare-row"><span class="label">価格差：</span><span class="${priceClass}">${priceText}</span></div>`;
+    compareHtml += `</div>`;
+  }
+
   const allDates = Object.keys(historicalData).sort(),
         idx = allDates.indexOf(dateStr);
 
+  // グラフエリア構築：比較情報を一番上に追加
   gc.innerHTML =
+    (compareHtml || '') +
     '<div class="graph-btns">' +
       '<button onclick="closeGraph()"> 当日へ戻る</button>' +
       '<button onclick="nav(-1)">< 前日</button>' +
@@ -534,6 +637,7 @@ function renderGraph(dateStr){
     '<canvas id="stockChart" width="600" height="250"></canvas>' +
     '<canvas id="priceChart" width="600" height="250"></canvas>';
 
+  // 前日・翌日ナビゲーション
   window.nav = diff => {
     const ni = idx + diff;
     if (ni >= 0 && ni < allDates.length) {
@@ -547,7 +651,7 @@ function renderGraph(dateStr){
   };
 
   // 市場の履歴データ
-  const hist = historicalData[dateStr] || {};
+  const hist   = historicalData[dateStr] || {};
   const labels = [], sv = [], pv = [];
   Object.keys(hist).sort().forEach(d => {
     labels.push(d);
@@ -555,11 +659,12 @@ function renderGraph(dateStr){
     pv.push(hist[d].avg_price);
   });
 
-  // archive-only の過去日は、グラフの代わりに最終確定値を表示
+  // archive-only の過去日は最終確定値を表示
   if (!labels.length) {
     const archived = finalArchiveData[dateStr];
     if (archived) {
       gc.innerHTML =
+        (compareHtml || '') +
         '<div class="graph-btns">' +
           '<button onclick="closeGraph()"> 当日へ戻る</button>' +
         '</div>' +
@@ -592,6 +697,57 @@ function renderGraph(dateStr){
       }
     }
   );
+
+  // 価格グラフ：自社ライン（水平）を条件追加
+  const myPrice = Number((calendarData[dateStr] || {}).my_price || 0);
+  const showMine = isCompareModeOn() && myPrice > 0;
+  const mySeries = showMine ? Array(labels.length).fill(myPrice) : [];
+
+  // Y軸レンジ：市場＋自社を含めて自動調整（最低レンジ5,000円）
+  const yVals = pv.concat(showMine ? [myPrice] : []);
+  let ymin = 10000, ymax = 40000;
+  if (yVals.length) {
+    const nums = yVals.filter(v => typeof v === "number" && isFinite(v));
+    if (nums.length) {
+      const minv = Math.min(...nums), maxv = Math.max(...nums);
+      ymin = Math.min(10000, Math.floor(minv / 1000) * 1000);
+      ymax = Math.max(40000, Math.ceil(maxv / 1000) * 1000);
+      if (ymax - ymin < 5000) ymax = ymin + 5000;
+    }
+  }
+
+  const priceDatasets = [
+    { label: "市場平均", data: pv, fill: false, borderColor: "#e91e63", pointRadius: 2 }
+  ];
+  if (showMine) {
+    priceDatasets.push({
+      label: "自社",
+      data: mySeries,
+      fill: false,
+      borderColor: "#ff9800",
+      borderDash: [6,4],
+      pointRadius: 0
+    });
+  }
+
+  window.pc = new Chart(
+    document.getElementById("priceChart").getContext("2d"),
+    {
+      type: "line",
+      data: { labels, datasets: priceDatasets },
+      options: {
+        plugins: { legend: { display: priceDatasets.length > 1 } },
+        responsive: false,
+        animation: false,
+        spanGaps: true,
+        scales: {
+          y: { beginAtZero: false, min: ymin, max: ymax, title: { display: true, text: "平均価格（円）" } },
+          x: { title: { display: true, text: "日付" } }
+        }
+      }
+    }
+  );
+}
 
   // 価格グラフ：自社ライン（水平）を条件追加
   const myPrice = Number((calendarData[dateStr] || {}).my_price || 0);
