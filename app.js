@@ -6,11 +6,13 @@ const MODE_CONFIG = {
     DATA_PATH: "./vacancy_price_cache.json",
     PREV_PATH: "./vacancy_price_cache_previous.json",
     HIST_PATH: "./historical_data.json",
+    ARCHIVE_PATH: "./finalized_daily_data.json",
   },
   "2p": {
     DATA_PATH: "./vacancy_price_cache_2p.json",
     PREV_PATH: "./vacancy_price_cache_2p_previous.json",
     HIST_PATH: "./historical_data_2p.json",
+    ARCHIVE_PATH: "./finalized_daily_data_2p.json",
   }
 };
 
@@ -35,11 +37,12 @@ function modeLabel() {
 
 
 // グローバル状態
-let calendarData   = {},
-    prevData       = {},
-    eventData      = {},
-    historicalData = {},
-    spikeData      = {};   // ←追加
+let calendarData    = {},
+    prevData        = {},
+    eventData       = {},
+    historicalData  = {},
+    spikeData       = {},
+    finalArchiveData = {};
 let currentYM = [], selectedDate = null;
 let demandBase1pData = {}; // ★追加：🔥判定は常に1名データを使う
 
@@ -60,6 +63,14 @@ const todayIso = () => new Date().toISOString().slice(0,10);
 })();
 const isCompareModeOn = () => localStorage.getItem("compareMode") === "1";
 
+function getDisplayData(dateStr) {
+  return calendarData[dateStr] || finalArchiveData[dateStr] || {};
+}
+
+function getDemandBaseData(dateStr) {
+  return demandBase1pData[dateStr] || getDisplayData(dateStr) || {};
+}
+
 // 汎用ロード
 async function loadJson(path) {
   try {
@@ -72,17 +83,22 @@ async function loadJson(path) {
 }
 async function loadAll() {
   const conf = getModeConf();
-  calendarData   = await loadJson(conf.DATA_PATH);
-  prevData       = await loadJson(conf.PREV_PATH);
-  eventData      = await loadJson(EVENT_PATH);
-  historicalData = await loadJson(conf.HIST_PATH);
-  spikeData      = await loadJson(SPIKE_PATH);   // 当面は1名（後回し）
+  calendarData    = await loadJson(conf.DATA_PATH);
+  prevData        = await loadJson(conf.PREV_PATH);
+  eventData       = await loadJson(EVENT_PATH);
+  historicalData  = await loadJson(conf.HIST_PATH);
+  spikeData       = await loadJson(SPIKE_PATH);   // 当面は1名（後回し）
+  finalArchiveData = await loadJson(conf.ARCHIVE_PATH);
 
   // ★追加：🔥需要シンボル判定は「常に1名データ」を参照
-  // 1名モードなら calendarData をそのまま流用、2名モードなら 1名JSONを別途ロード
-  demandBase1pData = (currentMode === "1p")
-    ? calendarData
-    : await loadJson(MODE_CONFIG["1p"].DATA_PATH);
+  // 1名モードなら calendarData + archiveData を流用、2名モードなら 1名JSONを別途ロード
+  if (currentMode === "1p") {
+    demandBase1pData = { ...finalArchiveData, ...calendarData };
+  } else {
+    const demand1p = await loadJson(MODE_CONFIG["1p"].DATA_PATH);
+    const archive1p = await loadJson(MODE_CONFIG["1p"].ARCHIVE_PATH);
+    demandBase1pData = { ...archive1p, ...demand1p };
+  }
 }
 
 // ========== 1名/2名 タブ（DOMへ自動挿入） ==========
@@ -294,7 +310,6 @@ function renderPage() {
   ensureAvgModeTabs();
   updateAvgModeTabsActive();
 
-    
   // ① バナー
   renderSpikeBanner();
 
@@ -335,9 +350,9 @@ window.renderMyLines = function () {
     const dateStr = cell.dataset.date;
     if (!dateStr) return;
 
-    const cur = calendarData[dateStr] || {};
-    const myPrice   = Number(cur.my_price   || 0);  // 自社価格
-    const areaPrice = Number(cur.avg_price || 0);   // エリア平均
+    const cur = getDisplayData(dateStr);
+    const myPrice   = Number(cur.my_price || 0);  // 自社価格
+    const areaPrice = Number(cur.avg_price || 0); // エリア平均
 
     // 自社価格がなければ何も出さない
     if (!myPrice || !isFinite(myPrice)) return;
@@ -364,9 +379,9 @@ window.renderMyLines = function () {
     // しきい値：±20％未満ならサインなし
     if (absDiff < 20) return;
 
-    const arrow     = diffPct > 0 ? "⬆" : "⬇";
-    const sign      = diffPct > 0 ? "+" : "-";
-    const pctRounded = Math.round(absDiff);   // 18.3 → 18
+    const arrow      = diffPct > 0 ? "⬆" : "⬇";
+    const sign       = diffPct > 0 ? "+" : "-";
+    const pctRounded = Math.round(absDiff);
 
     const diffDiv = document.createElement("div");
     diffDiv.className = "cell-myprice-diff " + (diffPct > 0 ? "higher" : "lower");
@@ -375,7 +390,6 @@ window.renderMyLines = function () {
     cell.appendChild(diffDiv);
   });
 };
-
 
 
 
@@ -434,22 +448,30 @@ function renderMonth(y,m) {
     if (iso < todayIso()) cell.classList.add("past-date");
 
     // データ取得＆差分
-    const cur = calendarData[iso] || {},
-          prv = prevData[iso]      || {};
-    const dv  = typeof cur.vacancy_diff === "number"
-                ? cur.vacancy_diff
-                : (cur.vacancy||0) - (prv.vacancy||0);
-    const dp  = typeof cur.avg_price_diff === "number"
-                ? cur.avg_price_diff
-                : Math.round((cur.avg_price||0) - (prv.avg_price||0));
+    const cur = getDisplayData(iso);
+    const prv = prevData[iso] || {};
+    const isArchiveOnly = !calendarData[iso] && !!finalArchiveData[iso];
+
+    const dv = isArchiveOnly
+      ? 0
+      : (typeof cur.vacancy_diff === "number"
+          ? cur.vacancy_diff
+          : (cur.vacancy || 0) - (prv.vacancy || 0));
+
+    const dp = isArchiveOnly
+      ? 0
+      : (typeof cur.avg_price_diff === "number"
+          ? cur.avg_price_diff
+          : Math.round((cur.avg_price || 0) - (prv.avg_price || 0)));
+
     const stock = cur.vacancy != null ? `${cur.vacancy}件` : "-";
-    const price = cur.avg_price != null ? cur.avg_price.toLocaleString() : "-";
+    const price = cur.avg_price != null ? Number(cur.avg_price).toLocaleString() : "-";
 
     // 括弧付き差分テキスト
     const dvText = dv > 0 ? `(+${dv})` : dv < 0 ? `(${dv})` : `(±0)`;
 
     // 需要シンボル（★常に1名基準で判定）
-    const base = (demandBase1pData && demandBase1pData[iso]) ? demandBase1pData[iso] : cur; // 1名が無ければ保険でcur
+    const base = getDemandBaseData(iso);
     let lvl = 0;
     if (base.vacancy != null && base.avg_price != null){
       if (base.vacancy<=70  || base.avg_price>=50000) lvl=5;
@@ -459,7 +481,6 @@ function renderMonth(y,m) {
       else if (base.vacancy<=250 || base.avg_price>=25000) lvl=1;
     }
     const badge = lvl ? `<div class="cell-demand-badge lv${lvl}">🔥${lvl}</div>` : "";
-
 
     // イベント
     const evs = (eventData[iso] || [])
@@ -526,14 +547,33 @@ function renderGraph(dateStr){
   };
 
   // 市場の履歴データ
-  const hist = historicalData[dateStr] || {}, labels = [], sv = [], pv = [];
+  const hist = historicalData[dateStr] || {};
+  const labels = [], sv = [], pv = [];
   Object.keys(hist).sort().forEach(d => {
     labels.push(d);
     sv.push(hist[d].vacancy);
     pv.push(hist[d].avg_price);
   });
 
-  if (!labels.length) return;
+  // archive-only の過去日は、グラフの代わりに最終確定値を表示
+  if (!labels.length) {
+    const archived = finalArchiveData[dateStr];
+    if (archived) {
+      gc.innerHTML =
+        '<div class="graph-btns">' +
+          '<button onclick="closeGraph()"> 当日へ戻る</button>' +
+        '</div>' +
+        `<h3>${dateStr} の最終確定値</h3>` +
+        `<div class="archive-summary-box">
+          <div class="archive-summary-row"><b>残室数：</b>${Number(archived.vacancy || 0).toLocaleString()}件</div>
+          <div class="archive-summary-row"><b>平均価格：</b>￥${Number(archived.avg_price || 0).toLocaleString()}</div>
+          <div class="archive-summary-note">この日付は長期保存データのみのため、推移グラフは表示されません。</div>
+        </div>`;
+    } else {
+      gc.innerHTML = "";
+    }
+    return;
+  }
 
   // 在庫グラフ
   window.sc = new Chart(
@@ -591,7 +631,7 @@ function renderGraph(dateStr){
       type: "line",
       data: { labels, datasets: priceDatasets },
       options: {
-        plugins: { legend: { display: priceDatasets.length > 1 } }, // 自社表示時だけ凡例ON
+        plugins: { legend: { display: priceDatasets.length > 1 } },
         responsive: false,
         animation: false,
         spanGaps: true,
@@ -632,7 +672,7 @@ window.onload = async () => {
   initMonth();
   if (!selectedDate) selectedDate = todayIso();
   renderPage();
-  updateLastUpdate();        // ← 閲覧時刻ではなく Actions 完了時刻を表示
+  updateLastUpdate();
   setupMonthButtons();
   window.addEventListener('resize', () => { renderPage(); });
 };
