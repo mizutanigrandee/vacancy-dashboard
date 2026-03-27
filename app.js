@@ -766,6 +766,7 @@ function renderGraph(dateStr){
   );
 }
 
+
   // 価格グラフ
   const myPrice = Number((calendarData[dateStr] || {}).my_price || 0);
   const showMine = isCompareModeOn() && myPrice > 0;
