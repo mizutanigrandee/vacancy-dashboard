@@ -592,18 +592,6 @@ function renderGraph(dateStr){
   const cmpDow = compDate ? dow[new Date(compDate).getDay()] : null;
   
   // 比較情報HTML生成
-let compareHtml = '';
-if (curVacancy != null || curPrice != null) {
-  compareHtml += `<div class="compare-info">`;
-  compareHtml += `<h4>昨対比較</h4>`;
-
-  compareHtml += `<div class="compare-row"><span class="label">対象日：</span><span>${dateStr}（${curDow}）</span></div>`;
-  compareHtml += `<div class="compare-row"><span class="label">今年在庫数：</span><span>${curVacancy != null ? curVacancy.toLocaleString() : "-"}</span></div>`;
-  compareHtml += `<div class="compare-row"><span class="label">今年平均価格：</span><span>${curPrice != null ? "￥" + curPrice.toLocaleString() : "-"}</span></div>`;
-
-  compareHtml += `<div class="compare-row"><span class="label">比較対象：</span><span>${compDate ? `${compDate}（${cmpDow}）` : "—"}</span></div>`;
-
-  // 比較情報HTML生成
   let compareHtml = '';
   if (curVacancy != null || curPrice != null) {
     compareHtml += `<div class="compare-info">`;
@@ -646,6 +634,7 @@ if (curVacancy != null || curPrice != null) {
 
   const allDates = Object.keys(historicalData).sort(),
         idx = allDates.indexOf(dateStr);
+  
   
 
   // グラフエリア構築：比較情報を一番上に追加
