@@ -958,6 +958,7 @@ function renderGraph(dateStr){
       }
     }
   );
+}
 
 
 // ========== 最終更新日時（Actions完了時刻を表示） ==========
