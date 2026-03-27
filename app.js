@@ -709,15 +709,45 @@ if (!labels.length) {
     {
       type: "line",
       data: { labels, datasets: [{ data: sv, fill: false, borderColor: "#2196f3", pointRadius: 2 }] },
-      options: {
-        plugins: { legend: { display: false } },
-        responsive: false,
-        animation: false,
-        scales: {
-          y: { beginAtZero: true, min: 50, max: 350, title: { display: true, text: "在庫数" } },
-          x: { title: { display: true, text: "日付" } }
+options: {
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      padding: 10,
+      titleFont: { size: 13, weight: "bold" },
+      bodyFont: { size: 12 },
+      callbacks: {
+        label: function(context) {
+          return `在庫数：${Number(context.parsed.y).toLocaleString()}`;
         }
       }
+    }
+  },
+  responsive: false,
+  animation: false,
+  scales: {
+    y: {
+      beginAtZero: true,
+      min: 50,
+      max: 350,
+      title: { display: true, text: "在庫数" }
+    },
+    x: {
+      title: { display: true, text: "日付" },
+      ticks: {
+        autoSkip: true,
+        maxTicksLimit: 8,
+        maxRotation: 0,
+        minRotation: 0,
+        callback: function(value) {
+          const label = this.getLabelForValue(value);
+          return typeof label === "string" ? label.slice(5) : label;
+        }
+      }
+    }
+  }
+}
+      
     }
   );
 
@@ -758,16 +788,47 @@ if (!labels.length) {
     {
       type: "line",
       data: { labels, datasets: priceDatasets },
-      options: {
-        plugins: { legend: { display: priceDatasets.length > 1 } },
-        responsive: false,
-        animation: false,
-        spanGaps: true,
-        scales: {
-          y: { beginAtZero: false, min: ymin, max: ymax, title: { display: true, text: "平均価格（円）" } },
-          x: { title: { display: true, text: "日付" } }
+options: {
+  plugins: {
+    legend: { display: priceDatasets.length > 1 },
+    tooltip: {
+      padding: 10,
+      titleFont: { size: 13, weight: "bold" },
+      bodyFont: { size: 12 },
+      callbacks: {
+        label: function(context) {
+          const label = context.dataset.label || "";
+          return `${label}：￥${Number(context.parsed.y).toLocaleString()}`;
         }
       }
+    }
+  },
+  responsive: false,
+  animation: false,
+  spanGaps: true,
+  scales: {
+    y: {
+      beginAtZero: false,
+      min: ymin,
+      max: ymax,
+      title: { display: true, text: "平均価格（円）" }
+    },
+    x: {
+      title: { display: true, text: "日付" },
+      ticks: {
+        autoSkip: true,
+        maxTicksLimit: 8,
+        maxRotation: 0,
+        minRotation: 0,
+        callback: function(value) {
+          const label = this.getLabelForValue(value);
+          return typeof label === "string" ? label.slice(5) : label;
+        }
+      }
+    }
+  }
+}
+      
     }
   );
 }
