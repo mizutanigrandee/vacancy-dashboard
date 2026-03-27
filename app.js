@@ -702,7 +702,6 @@ if (!labels.length) {
   return;
 }
   
-
   // 在庫グラフ
   window.sc = new Chart(
     document.getElementById("stockChart").getContext("2d"),
@@ -859,7 +858,7 @@ if (!labels.length) {
       }
     }
   );
-  
+
 
 // ========== 最終更新日時（Actions完了時刻を表示） ==========
 function updateLastUpdate(){
