@@ -712,15 +712,22 @@ if (!labels.length) {
 options: {
   plugins: {
     legend: { display: false },
-    tooltip: {
-      padding: 10,
-      titleFont: { size: 13, weight: "bold" },
-      bodyFont: { size: 12 },
-      callbacks: {
-        label: function(context) {
-          return `在庫数：${Number(context.parsed.y).toLocaleString()}`;
-        }
-      }
+tooltip: {
+  displayColors: false,
+  padding: 14,
+  caretPadding: 8,
+  titleFont: { size: 15, weight: "bold" },
+  bodyFont: { size: 14 },
+  callbacks: {
+    title: function(context) {
+      return context[0]?.label || "";
+    },
+    label: function(context) {
+      return `在庫数：${Number(context.parsed.y).toLocaleString()}`;
+    }
+  }
+}
+    
     }
   },
   responsive: false,
@@ -791,16 +798,22 @@ options: {
 options: {
   plugins: {
     legend: { display: priceDatasets.length > 1 },
-    tooltip: {
-      padding: 10,
-      titleFont: { size: 13, weight: "bold" },
-      bodyFont: { size: 12 },
-      callbacks: {
-        label: function(context) {
-          const label = context.dataset.label || "";
-          return `${label}：￥${Number(context.parsed.y).toLocaleString()}`;
-        }
-      }
+tooltip: {
+  displayColors: false,
+  padding: 14,
+  caretPadding: 8,
+  titleFont: { size: 15, weight: "bold" },
+  bodyFont: { size: 14 },
+  callbacks: {
+    title: function(context) {
+      return context[0]?.label || "";
+    },
+    label: function(context) {
+      return `在庫数：${Number(context.parsed.y).toLocaleString()}`;
+    }
+  }
+}
+    
     }
   },
   responsive: false,
