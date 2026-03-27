@@ -708,53 +708,60 @@ if (!labels.length) {
     document.getElementById("stockChart").getContext("2d"),
     {
       type: "line",
-      data: { labels, datasets: [{ data: sv, fill: false, borderColor: "#2196f3", pointRadius: 2 }] },
-options: {
-  plugins: {
-    legend: { display: false },
-tooltip: {
-  displayColors: false,
-  padding: 14,
-  caretPadding: 8,
-  titleFont: { size: 15, weight: "bold" },
-  bodyFont: { size: 14 },
-  callbacks: {
-    title: function(context) {
-      return context[0]?.label || "";
-    },
-    label: function(context) {
-      return `在庫数：${Number(context.parsed.y).toLocaleString()}`;
-    }
-  }
-}
-    
-    }
-  },
-  responsive: false,
-  animation: false,
-  scales: {
-    y: {
-      beginAtZero: true,
-      min: 50,
-      max: 350,
-      title: { display: true, text: "在庫数" }
-    },
-    x: {
-      title: { display: true, text: "日付" },
-      ticks: {
-        autoSkip: true,
-        maxTicksLimit: 8,
-        maxRotation: 0,
-        minRotation: 0,
-        callback: function(value) {
-          const label = this.getLabelForValue(value);
-          return typeof label === "string" ? label.slice(5) : label;
+      data: {
+        labels,
+        datasets: [
+          {
+            data: sv,
+            fill: false,
+            borderColor: "#2196f3",
+            pointRadius: 2
+          }
+        ]
+      },
+      options: {
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            displayColors: false,
+            padding: 14,
+            caretPadding: 8,
+            titleFont: { size: 15, weight: "bold" },
+            bodyFont: { size: 14 },
+            callbacks: {
+              title: function(context) {
+                return context[0]?.label || "";
+              },
+              label: function(context) {
+                return `在庫数：${Number(context.parsed.y).toLocaleString()}`;
+              }
+            }
+          }
+        },
+        responsive: false,
+        animation: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            min: 50,
+            max: 350,
+            title: { display: true, text: "在庫数" }
+          },
+          x: {
+            title: { display: true, text: "日付" },
+            ticks: {
+              autoSkip: true,
+              maxTicksLimit: 8,
+              maxRotation: 0,
+              minRotation: 0,
+              callback: function(value) {
+                const label = this.getLabelForValue(value);
+                return typeof label === "string" ? label.slice(5) : label;
+              }
+            }
+          }
         }
       }
-    }
-  }
-}
-      
     }
   );
 
@@ -777,15 +784,22 @@ tooltip: {
   }
 
   const priceDatasets = [
-    { label: "市場平均", data: pv, fill: false, borderColor: "#e91e63", pointRadius: 2 }
+    {
+      label: "市場平均",
+      data: pv,
+      fill: false,
+      borderColor: "#e91e63",
+      pointRadius: 2
+    }
   ];
+
   if (showMine) {
     priceDatasets.push({
       label: "自社",
       data: mySeries,
       fill: false,
       borderColor: "#ff9800",
-      borderDash: [6,4],
+      borderDash: [6, 4],
       pointRadius: 0
     });
   }
@@ -794,57 +808,58 @@ tooltip: {
     document.getElementById("priceChart").getContext("2d"),
     {
       type: "line",
-      data: { labels, datasets: priceDatasets },
-options: {
-  plugins: {
-    legend: { display: priceDatasets.length > 1 },
-tooltip: {
-  displayColors: false,
-  padding: 14,
-  caretPadding: 8,
-  titleFont: { size: 15, weight: "bold" },
-  bodyFont: { size: 14 },
-  callbacks: {
-    title: function(context) {
-      return context[0]?.label || "";
-    },
-    label: function(context) {
-      return `在庫数：${Number(context.parsed.y).toLocaleString()}`;
-    }
-  }
-}
-    
-    }
-  },
-  responsive: false,
-  animation: false,
-  spanGaps: true,
-  scales: {
-    y: {
-      beginAtZero: false,
-      min: ymin,
-      max: ymax,
-      title: { display: true, text: "平均価格（円）" }
-    },
-    x: {
-      title: { display: true, text: "日付" },
-      ticks: {
-        autoSkip: true,
-        maxTicksLimit: 8,
-        maxRotation: 0,
-        minRotation: 0,
-        callback: function(value) {
-          const label = this.getLabelForValue(value);
-          return typeof label === "string" ? label.slice(5) : label;
+      data: {
+        labels,
+        datasets: priceDatasets
+      },
+      options: {
+        plugins: {
+          legend: { display: priceDatasets.length > 1 },
+          tooltip: {
+            displayColors: false,
+            padding: 14,
+            caretPadding: 8,
+            titleFont: { size: 15, weight: "bold" },
+            bodyFont: { size: 14 },
+            callbacks: {
+              title: function(context) {
+                return context[0]?.label || "";
+              },
+              label: function(context) {
+                const datasetLabel = context.dataset.label || "";
+                return `${datasetLabel}：￥${Number(context.parsed.y).toLocaleString()}`;
+              }
+            }
+          }
+        },
+        responsive: false,
+        animation: false,
+        spanGaps: true,
+        scales: {
+          y: {
+            beginAtZero: false,
+            min: ymin,
+            max: ymax,
+            title: { display: true, text: "平均価格（円）" }
+          },
+          x: {
+            title: { display: true, text: "日付" },
+            ticks: {
+              autoSkip: true,
+              maxTicksLimit: 8,
+              maxRotation: 0,
+              minRotation: 0,
+              callback: function(value) {
+                const label = this.getLabelForValue(value);
+                return typeof label === "string" ? label.slice(5) : label;
+              }
+            }
+          }
         }
       }
     }
-  }
-}
-      
-    }
   );
-}
+  
 
 // ========== 最終更新日時（Actions完了時刻を表示） ==========
 function updateLastUpdate(){
