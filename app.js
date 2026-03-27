@@ -764,7 +764,7 @@ function renderGraph(dateStr){
       }
     }
   );
-}
+
 
 
   // 価格グラフ
@@ -862,7 +862,7 @@ function renderGraph(dateStr){
       }
     }
   );
-}
+
 
   // 価格グラフ：自社ライン（水平）を条件追加
   const myPrice = Number((calendarData[dateStr] || {}).my_price || 0);
