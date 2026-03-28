@@ -23,19 +23,16 @@
     .compare-toggle[aria-pressed="true"]{ background:#f7f7fb; }
     .compare-toggle .dot{ width:10px; height:10px; border-radius:999px; background:#bbb; }
     .compare-toggle[aria-pressed="true"] .dot{ background:#2d9cdb; }
-    .app-header { display: none !important; }
+
 
     /* 比較モードON時はイベント行を隠す（自社行のスペース確保） */
     body.cm-on .cell-event-list { display: none !important; }
 
     /* 右カレンダーを基準にする */
-    .calendar-container{
-      position: relative;
-      overflow: visible !important;
-    }
-
-    /* PC用：カレンダー枠外右上に浮かせる */
-    .calendar-container{ position: relative; overflow: visible !important; }
+.calendar-container{
+  position: relative;
+  overflow: visible !important;
+}
     .compare-toggle-fixed{
       position: absolute;
       top: -36px;
@@ -100,11 +97,6 @@
       color: #31445c;
     }
 
-    .last-update{
-      font-size: 12px;
-      color: #6a7b90;
-      margin-bottom: 12px;
-    }
 
     .footnote-head{
       display: flex;
@@ -250,27 +242,15 @@
   font-size: 12px;
   color: #6a7b90;
   line-height: 1.4;
-  margin-left: 6px;
+  margin: 0 0 10px 6px;
 }
-
+    
 @media (max-width:768px){
   .graph-last-update-wrap{
     width: calc(100% - 24px);
     margin: 0 auto 6px;
   }
 
-  .graph-last-update{
-    margin-left: 2px;
-    font-size: 11px;
-  }
-}
-
-    .graph-last-update{
-      font-size: 12px;
-      color: #6a7b90;
-      margin: 0 0 10px 6px;
-      line-height: 1.4;
-    }
 
     @media (max-width:768px){
       .graph-last-update{
@@ -282,9 +262,7 @@
   </style>
 </head>
 <body>
-  <header class="app-header">
-    <img src="バナー画像3.png" class="app-banner" alt="バナー">
-  </header>
+
 
   <!-- 需要急騰日履歴バナー -->
   <div id="spike-banner"></div>
