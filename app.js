@@ -691,60 +691,80 @@ function renderGraph(dateStr){
   }
 
   // 在庫グラフ
-  window.sc = new Chart(
-    document.getElementById("stockChart").getContext("2d"),
-    {
-      type: "line",
-      data: {
-        labels,
-        datasets: [{ data: sv, fill: false, borderColor: "#2196f3", pointRadius: 2, hitRadius: 12, hoverRadius: 6 }]
+// 在庫グラフ用の縦軸レンジを動的計算
+const stockNums = sv.filter(v => typeof v === "number" && isFinite(v));
+let stockMin = 50;
+let stockMax = 350;
+if (stockNums.length) {
+  const minv = Math.min(...stockNums);
+  const maxv = Math.max(...stockNums);
+  const spread = maxv - minv;
+  const pad = Math.max(8, Math.ceil(spread * 0.15));
+  stockMin = Math.max(0, Math.floor((minv - pad) / 10) * 10);
+  stockMax = Math.ceil((maxv + pad) / 10) * 10;
+
+  if (stockMax - stockMin < 40) {
+    const center = (minv + maxv) / 2;
+    stockMin = Math.max(0, Math.floor((center - 20) / 10) * 10);
+    stockMax = Math.ceil((center + 20) / 10) * 10;
+  }
+}
+
+// 在庫グラフ
+window.sc = new Chart(
+  document.getElementById("stockChart").getContext("2d"),
+  {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{ data: sv, fill: false, borderColor: "#2196f3", pointRadius: 2, hitRadius: 12, hoverRadius: 6 }]
+    },
+    options: {
+      interaction: {
+        mode: "nearest",
+        intersect: false
       },
-      options: {
-        interaction: {
-          mode: "nearest",
-          intersect: false
-        },   
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            displayColors: false,
-            padding: 14,
-            caretPadding: 8,
-            titleFont: { size: 15, weight: "bold" },
-            bodyFont: { size: 14 },
-            callbacks: {
-              title: (ctx) => ctx[0]?.label || "",
-              label: (ctx) => `在庫数：${Number(ctx.parsed.y).toLocaleString()}`
-            }
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          displayColors: false,
+          padding: 14,
+          caretPadding: 8,
+          titleFont: { size: 15, weight: "bold" },
+          bodyFont: { size: 14 },
+          callbacks: {
+            title: (ctx) => ctx[0]?.label || "",
+            label: (ctx) => `在庫数：${Number(ctx.parsed.y).toLocaleString()}`
           }
+        }
+      },
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      scales: {
+        y: {
+          beginAtZero: false,
+          min: stockMin,
+          max: stockMax,
+          title: { display: true, text: "在庫数" }
         },
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: false,
-        scales: {
-          y: {
-            beginAtZero: true,
-            min: 50,
-            max: 350,
-            title: { display: true, text: "在庫数" }
-          },
-          x: {
-            title: { display: true, text: "日付" },
-            ticks: {
-              autoSkip: true,
-              maxTicksLimit: 8,
-              maxRotation: 0,
-              minRotation: 0,
-              callback: function(value) {
-                const label = this.getLabelForValue(value);
-                return typeof label === "string" ? label.slice(5) : label;
-              }
+        x: {
+          title: { display: true, text: "日付" },
+          ticks: {
+            autoSkip: true,
+            maxTicksLimit: 8,
+            maxRotation: 0,
+            minRotation: 0,
+            callback: function(value) {
+              const label = this.getLabelForValue(value);
+              return typeof label === "string" ? label.slice(5) : label;
             }
           }
         }
       }
     }
-  );
+  }
+);
 
   // 価格グラフ（自社ライン含む）
   const myPriceVal = Number((calendarData[dateStr] || {}).my_price || 0);
