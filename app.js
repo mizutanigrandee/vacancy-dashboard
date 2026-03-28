@@ -700,6 +700,10 @@ function renderGraph(dateStr){
         datasets: [{ data: sv, fill: false, borderColor: "#2196f3", pointRadius: 2, hitRadius: 12, hoverRadius: 6 }]
       },
       options: {
+        interaction: {
+          mode: "nearest",
+          intersect: false
+        },   
         plugins: {
           legend: { display: false },
           tooltip: {
@@ -779,6 +783,10 @@ function renderGraph(dateStr){
       type: "line",
       data: { labels, datasets: priceDatasets },
       options: {
+        interaction: {
+          mode: "nearest",
+          intersect: false
+        }, 
         plugins: {
           legend: { display: priceDatasets.length > 1 },
           tooltip: {
