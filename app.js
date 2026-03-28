@@ -638,8 +638,8 @@ function renderGraph(dateStr){
       '<button onclick="nav(1)">翌日 ></button>' +
     '</div>' +
     `<h3>${dateStr} の在庫・価格推移</h3>` +
-    '<canvas id="stockChart" width="600" height="250"></canvas>' +
-    '<canvas id="priceChart" width="600" height="250"></canvas>';
+    '<div class="chart-wrap"><canvas id="stockChart"></canvas></div>' +
+    '<div class="chart-wrap"><canvas id="priceChart"></canvas></div>';
 
   // ナビゲーション関数
   window.nav = diff => {
@@ -718,7 +718,8 @@ function renderGraph(dateStr){
             }
           }
         },
-        responsive: false,
+        responsive: true,
+        maintainAspectRatio: false,
         animation: false,
         scales: {
           y: {
@@ -804,8 +805,9 @@ function renderGraph(dateStr){
             }
           }
         },
-        responsive: false,
-        animation: false,
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false
         spanGaps: true,
         scales: {
           y: {
