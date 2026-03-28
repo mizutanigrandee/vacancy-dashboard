@@ -697,7 +697,7 @@ function renderGraph(dateStr){
       type: "line",
       data: {
         labels,
-        datasets: [{ data: sv, fill: false, borderColor: "#2196f3", pointRadius: 2 }]
+        datasets: [{ data: sv, fill: false, borderColor: "#2196f3", pointRadius: 2, hitRadius: 12, hoverRadius: 6 }]
       },
       options: {
         plugins: {
@@ -758,7 +758,7 @@ function renderGraph(dateStr){
     }
   }
   const priceDatasets = [
-    { label: "市場平均", data: pv, fill: false, borderColor: "#e91e63", pointRadius: 2 }
+    { label: "市場平均", data: pv, fill: false, borderColor: "#e91e63", pointRadius: 2, hitRadius: 12, hoverRadius: 6 }
   ];
   if (showMine) {
     priceDatasets.push({
@@ -767,7 +767,9 @@ function renderGraph(dateStr){
       fill: false,
       borderColor: "#ff9800",
       borderDash: [6, 4],
-      pointRadius: 0
+      pointRadius: 0,
+      hitRadius: 12,
+      hoverRadius: 4
     });
   }
 
