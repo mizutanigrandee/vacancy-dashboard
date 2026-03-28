@@ -807,7 +807,7 @@ function renderGraph(dateStr){
         },
         responsive: true,
         maintainAspectRatio: false,
-        animation: false
+        animation: false,
         spanGaps: true,
         scales: {
           y: {
