@@ -790,3 +790,14 @@ body {
   line-height: 1.45;
 }
 
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  height: 250px;
+  margin-bottom: 16px;
+}
+
+.chart-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
