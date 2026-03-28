@@ -744,13 +744,13 @@ body {
 
 /* ===== 左パネルUI 微調整 ===== */
 .compare-info {
-  margin-bottom: 10px;
-  padding: 10px 12px;
-  line-height: 1.45;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  line-height: 1.35;
 }
 
 .compare-info .compare-row {
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .graph-side h3 {
