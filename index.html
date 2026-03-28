@@ -240,11 +240,30 @@
         grid-template-columns: 1fr;
       }
     }
-        .graph-side-wrap{
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-    }
+.graph-last-update-wrap{
+  width: min(1200px, calc(100% - 48px));
+  margin: 0 auto 8px;
+}
+
+.graph-last-update{
+  max-width: 520px;
+  font-size: 12px;
+  color: #6a7b90;
+  line-height: 1.4;
+  margin-left: 6px;
+}
+
+@media (max-width:768px){
+  .graph-last-update-wrap{
+    width: calc(100% - 24px);
+    margin: 0 auto 6px;
+  }
+
+  .graph-last-update{
+    margin-left: 2px;
+    font-size: 11px;
+  }
+}
 
     .graph-last-update{
       font-size: 12px;
@@ -277,17 +296,17 @@
     <button id="nextMonthBtn" class="custom-button"><span class="icon">➡️</span> 次月</button>
   </div>
 
-  <main class="calendar-main">
-    <div class="graph-side-wrap">
-      <div id="last-update" class="graph-last-update">最終更新日時：—</div>
-      <div class="graph-side" id="graph-container"></div>
-    </div>
+<div class="graph-last-update-wrap">
+  <div id="last-update" class="graph-last-update">最終更新日時：—</div>
+</div>
 
-    <!-- 右：カレンダー（中身は app.js が描画） -->
-    <div class="calendar-container" id="calendar-container">
-      <!-- JS が末尾にトグルを重ねて追加します -->
-    </div>
-  </main>
+<main class="calendar-main">
+  <div class="graph-side" id="graph-container"></div>
+
+  <div class="calendar-container" id="calendar-container">
+    <!-- JS が末尾にトグルを重ねて追加します -->
+  </div>
+</main>
 
 <footer class="app-footer">
   <div class="dashboard-footnote">
