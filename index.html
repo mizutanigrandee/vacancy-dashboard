@@ -11,7 +11,6 @@
   <script src="japanese-holidays.js"></script>
   <link rel="stylesheet" href="assets/site.css">
 
-
   <!-- 本番追加CSS（既存style.cssは触らない） -->
   <style>
     /* トグルの見た目 */
@@ -26,40 +25,37 @@
     .compare-toggle[aria-pressed="true"] .dot{ background:#2d9cdb; }
     .app-header { display: none !important; }
 
-
     /* 比較モードON時はイベント行を隠す（自社行のスペース確保） */
     body.cm-on .cell-event-list { display: none !important; }
 
-/* 右カレンダーを基準にする */
-.calendar-container{ 
-  position: relative; 
-  overflow: visible !important; 
-}
+    /* 右カレンダーを基準にする */
+    .calendar-container{
+      position: relative;
+      overflow: visible !important;
+    }
 
-/* PC用：カレンダー枠外右上に浮かせる */
-.calendar-container{ position: relative; overflow: visible !important; }
-.compare-toggle-fixed{
-  position: absolute;
-  top: -36px;
-  right: -8px;
-  z-index: 3000;
-  pointer-events: auto;
-}
+    /* PC用：カレンダー枠外右上に浮かせる */
+    .calendar-container{ position: relative; overflow: visible !important; }
+    .compare-toggle-fixed{
+      position: absolute;
+      top: -36px;
+      right: -8px;
+      z-index: 3000;
+      pointer-events: auto;
+    }
 
-/* スマホ用：ナビゲーションボタンの下に右寄せ */
-@media (max-width:768px){
-  .compare-toggle-fixed{
-    position: relative;
-    top: 8px;
-    right: 0;
-    margin-left: auto;
-    width: fit-content;
-    transform: scale(.9);
-    transform-origin: right center;
-  }
-}
-
-
+    /* スマホ用：ナビゲーションボタンの下に右寄せ */
+    @media (max-width:768px){
+      .compare-toggle-fixed{
+        position: relative;
+        top: 8px;
+        right: 0;
+        margin-left: auto;
+        width: fit-content;
+        transform: scale(.9);
+        transform-origin: right center;
+      }
+    }
 
     /* 自社行の見た目（ON時だけ差し込む） */
     .myline{ margin-top:2px; font-size:12px; line-height:1.2; white-space:nowrap; }
@@ -75,11 +71,153 @@
       display: none !important;
     }
 
-        /* スマホ表示時に自社行の文字サイズを小さくして枠内に収める */
+    /* スマホ表示時に自社行の文字サイズを小さくして枠内に収める */
     @media (max-width:768px){
       .myline {
         font-size:7px;
         line-height:1.1;
+      }
+    }
+
+    /* 注釈カード */
+    .dashboard-footnote{
+      width: min(1200px, calc(100% - 48px));
+      margin: 18px auto 34px;
+    }
+
+    .app-footer{
+      width: 100%;
+    }
+
+    .footnote-card{
+      max-width: 520px;
+      margin-left: 0;
+      margin-right: auto;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      border: 1px solid #dbe6f3;
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(28,56,104,.08);
+      padding: 18px 20px;
+      color: #31445c;
+    }
+
+    .last-update{
+      font-size: 13px;
+      color: #5d6f86;
+      margin-bottom: 12px;
+    }
+
+    .footnote-head{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .footnote-head h3{
+      margin: 0;
+      font-size: 18px;
+      color: #2c4260;
+      letter-spacing: .02em;
+    }
+
+    .footnote-badge{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 24px;
+      padding: 0 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      color: #fff;
+      background: linear-gradient(90deg, #4d8fd6 0%, #8a6fd6 100%);
+    }
+
+    .footnote-section + .footnote-section{
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px dashed #d8e2ee;
+    }
+
+    .footnote-section p{
+      margin: 0 0 8px;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    .footnote-section p:last-child{
+      margin-bottom: 0;
+    }
+
+    .footnote-section h4{
+      margin: 0 0 8px;
+      font-size: 13px;
+      color: #537197;
+    }
+
+    .footnote-strong{
+      font-weight: 700;
+      color: #35537a;
+    }
+
+    .footnote-list{
+      margin: 0;
+      padding-left: 1.2em;
+    }
+
+    .footnote-list li{
+      margin: 0 0 6px;
+      font-size: 13px;
+      line-height: 1.75;
+    }
+
+    .demand-guide{
+      display: grid;
+      gap: 8px;
+    }
+
+    .demand-guide span{
+      display: block;
+      font-size: 13px;
+      line-height: 1.6;
+      padding: 8px 10px;
+      background: #f4f8fc;
+      border-radius: 10px;
+      border: 1px solid #e3ecf6;
+      color: #3f5878;
+      font-weight: 600;
+    }
+
+    .mini-plus{ color:#2e7dff; font-weight:700; }
+    .mini-minus{ color:#d65a5a; font-weight:700; }
+    .mini-up{ color:#d65a5a; font-weight:700; }
+    .mini-down{ color:#2e7dff; font-weight:700; }
+    .mini-red{ color:#cc3d4a; font-weight:700; }
+    .mini-blue{ color:#3b6fd8; font-weight:700; }
+    .mini-black{ color:#666; font-weight:700; }
+
+    @media (max-width:768px){
+      .dashboard-footnote{
+        width: calc(100% - 24px);
+        margin: 16px auto 28px;
+      }
+
+      .footnote-card{
+        max-width: none;
+        padding: 16px;
+        border-radius: 14px;
+      }
+
+      .footnote-head h3{
+        font-size: 16px;
+      }
+
+      .footnote-section p,
+      .footnote-list li,
+      .demand-guide span{
+        font-size: 12px;
       }
     }
   </style>
@@ -109,21 +247,42 @@
   </main>
 
   <footer class="app-footer">
-    <div id="last-update"></div>
-    <div class="footer-note">
-      <strong>《注釈》</strong><br>
-      ・在庫数、平均価格は「なんば・心斎橋・天王寺・阿倍野・長居」エリアから抽出しています。<br>
-      ・表示される「平均価格」は、楽天トラベル検索上位施設の<strong>1名1室or2名1室の最安価格</strong>を施設ごとに取り出し、その平均です。<br>
-      ・自社価格は<strong>1名1室or2名1室の最安</strong>の最新値を表示（履歴は保持しない可視化です）。<br>
-      ・空室数の <span style="color:blue;">（+N）</span> / <span style="color:red;">（−N）</span> は、前回巡回時点との在庫数の増減です。<br>
-      ・平均価格の <span style="color:red;">↑</span> / <span style="color:blue;">↓</span> は、前回巡回時点との平均価格の上昇/下降です。<br>
-      ・会場アイコン：<span style="color:#e53939;">🔴</span>京セラドーム / <span style="color:#357ebd;">🔵</span>ヤンマースタジアム / <span style="color:#888;">★</span>その他会場<br>
-      ・炎マークは「常に1名平均の在庫・価格」を基準に判定しています（2名平均表示中も同じ判定結果を表示）。<br>
-      　　<span style="color:#ffa600;">🔥1</span>：残室 ≤250 または 価格 ≥25,000円<br>
-      　　<span style="color:#be0c0c;">🔥2</span>：残室 ≤200 または 価格 ≥30,000円<br>
-      　　<span style="color:#e94e77;">🔥3</span>：残室 ≤150 または 価格 ≥35,000円<br>
-      　　<span style="color:#ff6600;">🔥4</span>：残室 ≤100 または 価格 ≥40,000円<br>
-      　　<span style="color:#421c16;">🔥5</span>：残室 ≤70 または 価格 ≥50,000円<br>
+    <div class="dashboard-footnote">
+      <div class="footnote-card">
+        <div id="last-update" class="last-update">最終更新日時：—</div>
+
+        <div class="footnote-head">
+          <span class="footnote-badge">NOTE</span>
+          <h3>表示について</h3>
+        </div>
+
+        <div class="footnote-section">
+          <p>在庫数・平均価格は「なんば・心斎橋・天王寺・阿倍野・長居」エリアから抽出しています。</p>
+          <p>表示される平均価格は、楽天トラベル検索上位施設の <span class="footnote-strong">1名1室 or 2名1室の最安価格</span> を施設ごとに取り出し、その平均です。</p>
+          <p>自社価格は <span class="footnote-strong">1名1室 or 2名1室の最安</span> の最新値を表示します。</p>
+        </div>
+
+        <div class="footnote-section">
+          <h4>差分・アイコンの意味</h4>
+          <ul class="footnote-list">
+            <li>空室数の <span class="mini-plus">(+N)</span> / <span class="mini-minus">(-N)</span> は、前回巡回時点との在庫数の増減です。</li>
+            <li>平均価格の <span class="mini-up">↑</span> / <span class="mini-down">↓</span> は、前回巡回時点との平均価格の上昇 / 下降です。</li>
+            <li>会場アイコン：<span class="mini-red">🔴 京セラドーム</span> / <span class="mini-blue">🔵 ヤンマースタジアム</span> / <span class="mini-black">★ その他会場</span></li>
+            <li>🔥マークは <span class="footnote-strong">常に1名平均の在庫・価格</span> を基準に判定しています（2名平均表示中も同じです）。</li>
+          </ul>
+        </div>
+
+        <div class="footnote-section">
+          <h4>需要シンボル基準</h4>
+          <div class="demand-guide">
+            <span>🔥1：残室 ≤250 または 価格 ≥25,000円</span>
+            <span>🔥2：残室 ≤200 または 価格 ≥30,000円</span>
+            <span>🔥3：残室 ≤150 または 価格 ≥35,000円</span>
+            <span>🔥4：残室 ≤100 または 価格 ≥40,000円</span>
+            <span>🔥5：残室 ≤70 または 価格 ≥50,000円</span>
+          </div>
+        </div>
+      </div>
     </div>
   </footer>
 
