@@ -331,6 +331,7 @@ body {
   color: #222 !important;
   font-weight: bold;
   margin-bottom: 2px;
+  white-space: nowrap;
 }
 .cell-price-diff.up   { color: #d32f2f; }
 .cell-price-diff.down { color: #1565c0; }
