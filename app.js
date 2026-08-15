@@ -489,7 +489,7 @@ function renderMonth(y,m) {
       .map(ev => `<a href="https://www.google.com/search?q=${encodeURIComponent(ev.name)}" target="_blank" title="「${ev.name}」について調べる" class="event-link">
                     ${ev.icon} ${ev.name}
                   </a>`)
-      .join("<br>");
+      .join("");
 
     cell.innerHTML =
       `<div class="cell-date">${d}</div>` +
