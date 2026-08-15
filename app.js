@@ -487,7 +487,7 @@ function renderMonth(y,m) {
     // イベント
     const evs = (eventData[iso] || [])
       .map(ev => `<a href="https://www.google.com/search?q=${encodeURIComponent(ev.name)}" target="_blank" title="「${ev.name}」について調べる" class="event-link">
-                    ${ev.icon} ${ev.name}
+                    ${ev.icon}${ev.name}
                   </a>`)
       .join("");
 
