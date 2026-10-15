@@ -1,5 +1,4 @@
 {
-  "2026-07-16": [],
   "2026-07-17": [],
   "2026-07-18": [],
   "2026-07-19": [],
@@ -112,6 +111,30 @@
       "last_vac": 284,
       "vacancy_diff": -34,
       "vacancy_ratio": -0.1197
+    }
+  ],
+  "2026-10-15": [
+    {
+      "spike_date": "2026-10-15",
+      "price": 18027.0,
+      "last_price": 16459.0,
+      "price_diff": 1568.0,
+      "price_ratio": 0.0953,
+      "vacancy": 250,
+      "last_vac": 284,
+      "vacancy_diff": -34,
+      "vacancy_ratio": -0.1197
+    },
+    {
+      "spike_date": "2026-10-17",
+      "price": 28338.0,
+      "last_price": 26555.0,
+      "price_diff": 1783.0,
+      "price_ratio": 0.0671,
+      "vacancy": 189,
+      "last_vac": 204,
+      "vacancy_diff": -15,
+      "vacancy_ratio": -0.0735
     }
   ]
 }
