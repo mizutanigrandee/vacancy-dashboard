@@ -1,5 +1,4 @@
 {
-  "2026-07-26": [],
   "2026-07-27": [],
   "2026-07-28": [],
   "2026-07-29": [],
@@ -108,19 +107,7 @@
   ],
   "2026-10-17": [],
   "2026-10-18": [],
-  "2026-10-19": [
-    {
-      "spike_date": "2026-10-24",
-      "price": 37900.0,
-      "last_price": 34428.0,
-      "price_diff": 3472.0,
-      "price_ratio": 0.1008,
-      "vacancy": 155,
-      "last_vac": 168,
-      "vacancy_diff": -13,
-      "vacancy_ratio": -0.0774
-    }
-  ],
+  "2026-10-19": [],
   "2026-10-20": [
     {
       "spike_date": "2026-11-14",
@@ -237,5 +224,29 @@
       "vacancy_ratio": -1.0
     }
   ],
-  "2026-10-24": []
+  "2026-10-24": [],
+  "2026-10-25": [
+    {
+      "spike_date": "2026-11-14",
+      "price": 42548.0,
+      "last_price": 40034.0,
+      "price_diff": 2514.0,
+      "price_ratio": 0.0628,
+      "vacancy": 95,
+      "last_vac": 100,
+      "vacancy_diff": -5,
+      "vacancy_ratio": -0.05
+    },
+    {
+      "spike_date": "2026-11-21",
+      "price": 49251.0,
+      "last_price": 43708.0,
+      "price_diff": 5543.0,
+      "price_ratio": 0.1268,
+      "vacancy": 84,
+      "last_vac": 96,
+      "vacancy_diff": -12,
+      "vacancy_ratio": -0.125
+    }
+  ]
 }
