@@ -1,5 +1,4 @@
 {
-  "2026-07-31": [],
   "2026-08-01": [],
   "2026-08-02": [],
   "2026-08-03": [],
@@ -294,6 +293,19 @@
       "last_vac": 286,
       "vacancy_diff": -59,
       "vacancy_ratio": -0.2063
+    }
+  ],
+  "2026-10-30": [
+    {
+      "spike_date": "2026-10-31",
+      "price": 59262.0,
+      "last_price": 53378.0,
+      "price_diff": 5884.0,
+      "price_ratio": 0.1102,
+      "vacancy": 53,
+      "last_vac": 78,
+      "vacancy_diff": -25,
+      "vacancy_ratio": -0.3205
     }
   ]
 }
