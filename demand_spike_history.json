@@ -1,5 +1,4 @@
 {
-  "2026-08-11": [],
   "2026-08-12": [],
   "2026-08-13": [],
   "2026-08-14": [],
@@ -274,5 +273,29 @@
       "vacancy_ratio": -0.0909
     }
   ],
-  "2026-11-09": []
+  "2026-11-09": [],
+  "2026-11-10": [
+    {
+      "spike_date": "2027-05-04",
+      "price": 24250.0,
+      "last_price": 17691.0,
+      "price_diff": 6559.0,
+      "price_ratio": 0.3708,
+      "vacancy": 211,
+      "last_vac": 251,
+      "vacancy_diff": -40,
+      "vacancy_ratio": -0.1594
+    },
+    {
+      "spike_date": "2027-05-05",
+      "price": 15887.0,
+      "last_price": 13629.0,
+      "price_diff": 2258.0,
+      "price_ratio": 0.1657,
+      "vacancy": 240,
+      "last_vac": 259,
+      "vacancy_diff": -19,
+      "vacancy_ratio": -0.0734
+    }
+  ]
 }
